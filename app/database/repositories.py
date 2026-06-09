@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -143,6 +145,15 @@ class AssessmentRepository:
     def list(self) -> list[models.RiskAssessment]:
         return list(self.db.scalars(select(models.RiskAssessment).order_by(models.RiskAssessment.created_at.desc())))
 
+    def list_by_status(self, statuses: list[str]) -> list[models.RiskAssessment]:
+        return list(
+            self.db.scalars(
+                select(models.RiskAssessment)
+                .where(models.RiskAssessment.status.in_(statuses))
+                .order_by(models.RiskAssessment.created_at.desc())
+            )
+        )
+
     def update_status(self, assessment: models.RiskAssessment, status: str, notes: str | None = None) -> None:
         data = dict(assessment.assessment_json)
         data["status"] = status
@@ -151,4 +162,3 @@ class AssessmentRepository:
         assessment.status = status
         assessment.assessment_json = data
         self.db.commit()
-

@@ -182,6 +182,11 @@ with tabs[5]:
 
 with tabs[6]:
     if assessment:
+        st.subheader("Review queue")
+        try:
+            st.dataframe(api_get("/reviews/queue"), use_container_width=True)
+        except Exception as exc:
+            st.warning(str(exc))
         st.write(f"Current status: `{assessment['human_review_status']}`")
         reviewer = st.text_input("Reviewer", value="Compliance Reviewer")
         notes = st.text_area("Reviewer notes", value="Reviewed as draft. Evidence gaps must be tracked.")
@@ -197,6 +202,8 @@ with tabs[6]:
                 f"/reviews/{assessment['id']}/request-more-evidence", {"reviewer": reviewer, "notes": notes}
             )
             st.info(f"Assessment {result['status']}")
+        st.subheader("Review history")
+        st.dataframe(api_get(f"/reviews/{assessment['id']}/history"), use_container_width=True)
 
 with tabs[7]:
     try:

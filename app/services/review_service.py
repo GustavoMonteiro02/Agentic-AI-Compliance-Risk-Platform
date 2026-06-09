@@ -1,9 +1,10 @@
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import models
 from app.database.repositories import AssessmentRepository
-from app.schemas.review import ReviewDecision, ReviewRead
+from app.schemas.review import ReviewDecision, ReviewQueueItem, ReviewRead
 
 
 class ReviewService:
@@ -39,3 +40,39 @@ class ReviewService:
         self.db.commit()
         return ReviewRead(assessment_id=assessment_id, reviewer=payload.reviewer, status=status, notes=notes)
 
+    def queue(self, statuses: list[str] | None = None) -> list[ReviewQueueItem]:
+        selected_statuses = statuses or ["needs_review", "needs_more_evidence"]
+        records = self.assessments.list_by_status(selected_statuses)
+        items: list[ReviewQueueItem] = []
+        for record in records:
+            data = record.assessment_json
+            items.append(
+                ReviewQueueItem(
+                    assessment_id=record.id,
+                    system_id=record.system_id,
+                    system_name=data["profile"]["system_name"],
+                    risk_level=data["risk_classification"]["risk_level"],
+                    status=record.status,
+                    critical_gap_count=len(data["gap_analysis"]["critical_gaps"]),
+                    missing_evidence_count=sum(
+                        1 for item in data["evidence_checklist"] if item["status"] == "missing"
+                    ),
+                )
+            )
+        return items
+
+    def history(self, assessment_id: str) -> list[ReviewRead]:
+        reviews = self.db.scalars(
+            select(models.HumanReview)
+            .where(models.HumanReview.assessment_id == assessment_id)
+            .order_by(models.HumanReview.created_at.desc())
+        )
+        return [
+            ReviewRead(
+                assessment_id=review.assessment_id,
+                reviewer=review.reviewer,
+                status=review.status,
+                notes=review.notes,
+            )
+            for review in reviews
+        ]

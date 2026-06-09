@@ -42,3 +42,26 @@ def test_human_review_can_approve_with_notes():
     assert response.status_code == 200
     assert response.json()["status"] == "approved"
 
+
+def test_review_queue_and_history_are_available():
+    system = client.post(
+        "/systems",
+        json={
+            "name": "Queue Workflow System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    ).json()
+    assessment = client.post(f"/systems/{system['id']}/assess").json()
+
+    queue_response = client.get("/reviews/queue")
+    queue_ids = {item["assessment_id"] for item in queue_response.json()}
+    assert assessment["id"] in queue_ids
+
+    client.post(
+        f"/reviews/{assessment['id']}/request-more-evidence",
+        json={"reviewer": "Compliance Reviewer", "notes": "Need evaluation report."},
+    )
+    history = client.get(f"/reviews/{assessment['id']}/history").json()
+
+    assert history[0]["status"] == "needs_more_evidence"
+    assert history[0]["reviewer"] == "Compliance Reviewer"

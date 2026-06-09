@@ -14,3 +14,12 @@ class ReviewRead(BaseModel):
     status: str
     notes: str
 
+
+class ReviewQueueItem(BaseModel):
+    assessment_id: str
+    system_id: str
+    system_name: str
+    risk_level: str
+    status: str
+    critical_gap_count: int
+    missing_evidence_count: int
