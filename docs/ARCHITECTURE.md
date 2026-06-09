@@ -4,7 +4,7 @@
 
 The platform is an AI governance and audit-readiness assistant. It helps teams prepare structured analysis, evidence, and documentation, but it does not replace legal, compliance, security, or data-protection review.
 
-## Core Workflow
+## Core LangGraph Workflow
 
 ```mermaid
 flowchart TD
@@ -36,6 +36,20 @@ flowchart TD
 - `data`: summarized regulations, policies, controls, and sample systems.
 - `tests`: unit, API, guardrail, and evaluation tests.
 
+## LangGraph State Management
+
+The workflow is compiled with `langgraph.graph.StateGraph` in [app/agents/graph.py](/Users/gdev/Documents/Codex/2026-06-08/files-mentioned-by-the-user-pasted-3/app/agents/graph.py). Each node receives and returns `GovernanceAssessmentState`, which keeps the complete assessment trace:
+
+- raw intake text and adaptive follow-up questions
+- structured system profile
+- preliminary risk classification
+- retrieved policy and regulation requirements
+- mapped controls, gap analysis, and evidence checklist
+- generated system card and audit report
+- human-review status, tool calls, and errors
+
+The MVP graph is linear for auditability. Later milestones can add conditional edges for missing-information loops, reviewer escalation, and MCP-backed tool execution.
+
 ## Human Review Principle
 
 The graph always ends in a human-review state. A generated assessment can be `draft` or `needs_review`, but only an explicit reviewer action can set it to `approved`.
@@ -47,4 +61,3 @@ Recommendations should reference retrieved internal policy or regulation summari
 ## Observability
 
 Agent runs and tool calls are logged to the database. LangSmith tracing can be enabled through environment variables in later integrations.
-

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from uuid import uuid4
 
 from app.agents.nodes.audit_report_generator import audit_report_generator_node
@@ -28,6 +29,49 @@ WORKFLOW_NODE_NAMES = [
 ]
 
 
+NODE_SEQUENCE: list[Callable[[GovernanceAssessmentState], GovernanceAssessmentState]] = [
+    intake_node,
+    missing_info_checker_node,
+    risk_classifier_node,
+    regulatory_retriever_node,
+    control_mapper_node,
+    gap_analyzer_node,
+    evidence_generator_node,
+    system_card_generator_node,
+    audit_report_generator_node,
+    human_review_node,
+]
+
+
+def build_governance_graph():
+    """Build the production LangGraph workflow.
+
+    The node implementations are deterministic in the MVP, but the graph shape mirrors the
+    future LLM/tool-calling workflow and can be extended with conditional edges.
+    """
+    from langgraph.graph import END, START, StateGraph
+
+    graph = StateGraph(GovernanceAssessmentState)
+    for name, node in zip(WORKFLOW_NODE_NAMES, NODE_SEQUENCE, strict=True):
+        graph.add_node(name, node)
+
+    graph.add_edge(START, WORKFLOW_NODE_NAMES[0])
+    for source, target in zip(WORKFLOW_NODE_NAMES, WORKFLOW_NODE_NAMES[1:], strict=False):
+        graph.add_edge(source, target)
+    graph.add_edge(WORKFLOW_NODE_NAMES[-1], END)
+    return graph.compile()
+
+
+def run_state_graph(state: GovernanceAssessmentState) -> GovernanceAssessmentState:
+    try:
+        return build_governance_graph().invoke(state)
+    except Exception as exc:  # pragma: no cover - fallback for stripped-down installs
+        state.setdefault("errors", []).append({"node": "langgraph", "error": str(exc)})
+        for node in NODE_SEQUENCE:
+            state = node(state)
+        return state
+
+
 def run_governance_assessment(system_id: str, description: str) -> GovernanceAssessment:
     state: GovernanceAssessmentState = {
         "assessment_id": str(uuid4()),
@@ -37,19 +81,7 @@ def run_governance_assessment(system_id: str, description: str) -> GovernanceAss
         "errors": [],
         "status": "draft",
     }
-    for node in [
-        intake_node,
-        missing_info_checker_node,
-        risk_classifier_node,
-        regulatory_retriever_node,
-        control_mapper_node,
-        gap_analyzer_node,
-        evidence_generator_node,
-        system_card_generator_node,
-        audit_report_generator_node,
-        human_review_node,
-    ]:
-        state = node(state)
+    state = run_state_graph(state)
 
     return GovernanceAssessment(
         id=state["assessment_id"],
@@ -68,4 +100,3 @@ def run_governance_assessment(system_id: str, description: str) -> GovernanceAss
         status="needs_review",
         tool_calls=state.get("tool_calls", []),
     )
-
