@@ -8,6 +8,10 @@ from app.rag.retriever import LocalComplianceRetriever
 def seed_requirements(db: Session) -> int:
     """Seed requirement rows from the local Markdown knowledge base."""
     chunks = LocalComplianceRetriever().load()
+    valid_codes = {chunk.requirement_id for chunk in chunks}
+    for stale in db.scalars(select(models.Requirement).where(models.Requirement.requirement_code.not_in(valid_codes))):
+        db.delete(stale)
+
     created = 0
     for chunk in chunks:
         existing = db.scalar(
