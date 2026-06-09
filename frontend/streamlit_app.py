@@ -42,6 +42,7 @@ st.title("AI Governance & Compliance Intelligence Platform")
 tabs = st.tabs([
     "Dashboard",
     "AI System Intake",
+    "Demo Scenarios",
     "Assessment",
     "Requirements",
     "Evidence",
@@ -153,6 +154,33 @@ with tabs[1]:
         st.session_state["assessment_id"] = assessment["id"]
         st.success("Assessment generated and queued for human review.")
 
+with tabs[2]:
+    st.subheader("Demo Scenario Pack")
+    scenarios = api_get("/demo/scenarios")
+    st.dataframe(
+        [
+            {
+                "Slug": item["slug"],
+                "System": item["name"],
+                "Business unit": item.get("business_unit"),
+                "Deployment": item.get("deployment_status"),
+            }
+            for item in scenarios
+        ],
+        use_container_width=True,
+    )
+    if scenarios:
+        selected_scenario = st.selectbox(
+            "Scenario",
+            options=scenarios,
+            format_func=lambda item: item["name"],
+        )
+        st.write(selected_scenario["description"])
+        if st.button("Create and assess scenario"):
+            assessment = api_post(f"/demo/scenarios/{selected_scenario['slug']}/assess")
+            st.session_state["assessment_id"] = assessment["id"]
+            st.success("Demo assessment generated.")
+
 assessment_id = st.session_state.get("assessment_id")
 if not assessment_id:
     try:
@@ -163,7 +191,7 @@ if not assessment_id:
 
 assessment = api_get(f"/assessments/{assessment_id}") if assessment_id else None
 
-with tabs[2]:
+with tabs[3]:
     if assessment:
         risk = assessment["risk_classification"]
         st.metric("Risk level", risk_badge(risk["risk_level"]), f"{risk['confidence']:.0%} confidence")
@@ -179,7 +207,7 @@ with tabs[2]:
     else:
         st.info("Create an AI system to view an assessment.")
 
-with tabs[3]:
+with tabs[4]:
     st.subheader("Requirement Knowledge Base")
     query = st.text_input("Search requirements", value="human oversight")
     requirements_path = f"/requirements?q={query}" if query else "/requirements"
@@ -189,7 +217,7 @@ with tabs[3]:
     except Exception as exc:
         st.error(str(exc))
 
-with tabs[4]:
+with tabs[5]:
     if assessment:
         readiness = api_get(f"/evidence/assessments/{assessment['id']}/readiness-score")
         st.metric("Compliance readiness score", f"{readiness['score']:.1f}%")
@@ -215,25 +243,29 @@ with tabs[4]:
                 )
                 st.success("Evidence updated.")
 
-with tabs[5]:
+with tabs[6]:
     if assessment:
-        st.download_button(
-            "Download system card markdown",
+        col_md, col_pdf = st.columns(2)
+        col_md.download_button(
+            "Download Markdown",
             data=assessment["ai_system_card"]["content_markdown"],
             file_name=f"{assessment['profile']['system_name'].lower().replace(' ', '_')}_system_card.md",
         )
+        col_pdf.link_button("Download PDF", f"{API_BASE_URL}/reports/{assessment['id']}/system-card.pdf")
         st.markdown(assessment["ai_system_card"]["content_markdown"])
 
-with tabs[6]:
+with tabs[7]:
     if assessment:
-        st.download_button(
-            "Download audit report markdown",
+        col_md, col_pdf = st.columns(2)
+        col_md.download_button(
+            "Download Markdown",
             data=assessment["audit_report"]["content_markdown"],
             file_name=f"{assessment['profile']['system_name'].lower().replace(' ', '_')}_audit_report.md",
         )
+        col_pdf.link_button("Download PDF", f"{API_BASE_URL}/reports/{assessment['id']}.pdf")
         st.markdown(assessment["audit_report"]["content_markdown"])
 
-with tabs[7]:
+with tabs[8]:
     if assessment:
         st.subheader("Review queue")
         try:
@@ -258,7 +290,7 @@ with tabs[7]:
         st.subheader("Review history")
         st.dataframe(api_get(f"/reviews/{assessment['id']}/history"), use_container_width=True)
 
-with tabs[8]:
+with tabs[9]:
     try:
         st.dataframe(api_get("/evaluation/results"), use_container_width=True)
     except Exception as exc:
