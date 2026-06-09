@@ -30,6 +30,11 @@ class AssessmentService:
             "decision_impact": system.decision_impact,
             "autonomy_level": system.autonomy_level,
             "human_oversight_process": system.human_oversight_process,
+            "external_users_affected": (system.system_metadata or {}).get("external_users_affected", False),
+            "integrations_tools_used": (system.system_metadata or {}).get("integrations_tools_used", []),
+            "monitoring_status": (system.system_metadata or {}).get("monitoring_status"),
+            "evaluation_status": (system.system_metadata or {}).get("evaluation_status"),
+            "security_testing_status": (system.system_metadata or {}).get("security_testing_status"),
             **request.additional_context,
         }
         assessment = run_governance_assessment(

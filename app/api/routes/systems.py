@@ -10,6 +10,7 @@ router = APIRouter(prefix="/systems", tags=["systems"])
 
 
 def serialize_system(system) -> dict:
+    metadata = system.system_metadata or {}
     return {
         "id": system.id,
         "name": system.name,
@@ -19,13 +20,18 @@ def serialize_system(system) -> dict:
         "technical_owner": system.technical_owner,
         "deployment_status": system.deployment_status,
         "users_affected": system.users_affected,
+        "external_users_affected": metadata.get("external_users_affected", False),
         "data_types": system.data_types,
         "model_provider": system.model_provider,
         "model_type": system.model_type,
         "decision_impact": system.decision_impact,
         "autonomy_level": system.autonomy_level,
         "human_oversight_process": system.human_oversight_process,
-        "metadata": system.system_metadata,
+        "integrations_tools_used": metadata.get("integrations_tools_used", []),
+        "monitoring_status": metadata.get("monitoring_status"),
+        "evaluation_status": metadata.get("evaluation_status"),
+        "security_testing_status": metadata.get("security_testing_status"),
+        "metadata": metadata,
         "created_at": system.created_at,
         "updated_at": system.updated_at,
     }

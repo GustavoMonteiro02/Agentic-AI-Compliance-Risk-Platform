@@ -94,6 +94,24 @@ with tabs[1]:
         name = st.text_input("System name", value="Recruitment CV Screening Assistant")
         business_unit = st.text_input("Business unit", value="People Operations")
         owner = st.text_input("Owner", value="Head of Talent")
+        technical_owner = st.text_input("Technical owner", value="AI Engineering Lead")
+        deployment_status = st.selectbox("Deployment status", ["prototype", "internal", "production", "external"])
+        users_affected = st.text_input("Users affected", value="job candidates")
+        external_users_affected = st.checkbox("External users affected", value=True)
+        data_types = st.text_input("Data types", value="CVs/resumes, embeddings, candidate fit scores")
+        model_provider = st.text_input("Model provider", value="OpenAI")
+        model_type = st.text_input("Model type", value="LLM-assisted workflow")
+        decision_impact = st.selectbox("Decision impact", ["recommendation", "low", "medium", "high"])
+        autonomy_level = st.selectbox("Level of autonomy", ["human-in-the-loop", "human-on-the-loop", "automated", "unknown"])
+        integrations_tools_used = st.text_input("Integrations/tools used", value="ATS, vector database")
+        monitoring_status = st.text_input("Monitoring status", value="Not yet documented")
+        evaluation_status = st.text_input("Evaluation status", value="Evaluation dataset pending")
+        security_testing_status = st.text_input("Security testing status", value="Prompt injection testing pending")
+        human_oversight_process = st.text_area(
+            "Human oversight process",
+            value="Recruiters review AI rankings before any hiring decision.",
+            height=80,
+        )
         description = st.text_area(
             "Use case description",
             value=(
@@ -113,7 +131,22 @@ with tabs[1]:
                 "description": description,
                 "business_unit": business_unit,
                 "owner": owner,
-                "deployment_status": "prototype",
+                "technical_owner": technical_owner,
+                "deployment_status": deployment_status,
+                "users_affected": [item.strip() for item in users_affected.split(",") if item.strip()],
+                "external_users_affected": external_users_affected,
+                "data_types": [item.strip() for item in data_types.split(",") if item.strip()],
+                "model_provider": model_provider,
+                "model_type": model_type,
+                "decision_impact": decision_impact,
+                "autonomy_level": autonomy_level,
+                "human_oversight_process": human_oversight_process,
+                "integrations_tools_used": [
+                    item.strip() for item in integrations_tools_used.split(",") if item.strip()
+                ],
+                "monitoring_status": monitoring_status,
+                "evaluation_status": evaluation_status,
+                "security_testing_status": security_testing_status,
             },
         )
         assessment = api_post(f"/systems/{system['id']}/assess")

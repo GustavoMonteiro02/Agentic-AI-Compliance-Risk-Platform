@@ -20,7 +20,13 @@ def missing_info_checker_node(state: GovernanceAssessmentState) -> GovernanceAss
     if profile.get("human_oversight") == "unknown":
         missing.append("human_oversight")
     answered_fields = {item.get("field") for item in state.get("user_answers", [])}
-    for optional_field in ["evaluation_status", "audit_logging", "fallback_process"]:
+    if not profile.get("evaluation_status") and "evaluation_status" not in answered_fields:
+        missing.append("evaluation_status")
+    if not profile.get("monitoring_status") and "monitoring_status" not in answered_fields:
+        missing.append("monitoring_status")
+    if not profile.get("security_testing_status") and "security_testing_status" not in answered_fields:
+        missing.append("security_testing_status")
+    for optional_field in ["audit_logging", "fallback_process"]:
         if optional_field not in answered_fields:
             missing.append(optional_field)
 

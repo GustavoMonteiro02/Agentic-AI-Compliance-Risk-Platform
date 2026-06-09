@@ -13,6 +13,14 @@ class SystemRepository:
         self.db = db
 
     def create(self, payload: AISystemCreate) -> models.AISystem:
+        system_metadata = {
+            **payload.metadata,
+            "external_users_affected": payload.external_users_affected,
+            "integrations_tools_used": payload.integrations_tools_used,
+            "monitoring_status": payload.monitoring_status,
+            "evaluation_status": payload.evaluation_status,
+            "security_testing_status": payload.security_testing_status,
+        }
         system = models.AISystem(
             name=payload.name,
             description=payload.description,
@@ -27,7 +35,7 @@ class SystemRepository:
             decision_impact=payload.decision_impact,
             autonomy_level=payload.autonomy_level,
             human_oversight_process=payload.human_oversight_process,
-            system_metadata=payload.metadata,
+            system_metadata=system_metadata,
         )
         self.db.add(system)
         self.db.commit()
@@ -43,10 +51,21 @@ class SystemRepository:
     def update(self, system: models.AISystem, payload: AISystemUpdate) -> models.AISystem:
         values = payload.model_dump(exclude_unset=True)
         metadata_value = values.pop("metadata", None)
+        metadata_fields = {
+            key: values.pop(key)
+            for key in [
+                "external_users_affected",
+                "integrations_tools_used",
+                "monitoring_status",
+                "evaluation_status",
+                "security_testing_status",
+            ]
+            if key in values
+        }
         for key, value in values.items():
             setattr(system, key, value)
-        if metadata_value is not None:
-            system.system_metadata = metadata_value
+        if metadata_value is not None or metadata_fields:
+            system.system_metadata = {**(system.system_metadata or {}), **(metadata_value or {}), **metadata_fields}
         self.db.commit()
         self.db.refresh(system)
         return system

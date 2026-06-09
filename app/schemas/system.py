@@ -12,12 +12,17 @@ class AISystemCreate(BaseModel):
     technical_owner: str | None = None
     deployment_status: str = "draft"
     users_affected: list[str] = Field(default_factory=list)
+    external_users_affected: bool = False
     data_types: list[str] = Field(default_factory=list)
     model_provider: str | None = None
     model_type: str | None = None
     decision_impact: str | None = None
     autonomy_level: str | None = None
     human_oversight_process: str | None = None
+    integrations_tools_used: list[str] = Field(default_factory=list)
+    monitoring_status: str | None = None
+    evaluation_status: str | None = None
+    security_testing_status: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -29,12 +34,17 @@ class AISystemUpdate(BaseModel):
     technical_owner: str | None = None
     deployment_status: str | None = None
     users_affected: list[str] | None = None
+    external_users_affected: bool | None = None
     data_types: list[str] | None = None
     model_provider: str | None = None
     model_type: str | None = None
     decision_impact: str | None = None
     autonomy_level: str | None = None
     human_oversight_process: str | None = None
+    integrations_tools_used: list[str] | None = None
+    monitoring_status: str | None = None
+    evaluation_status: str | None = None
+    security_testing_status: str | None = None
     metadata: dict[str, Any] | None = None
 
 
@@ -44,4 +54,3 @@ class AISystemRead(AISystemCreate):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
-

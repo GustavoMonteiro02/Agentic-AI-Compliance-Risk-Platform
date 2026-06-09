@@ -18,15 +18,20 @@ class SystemProfile(BaseModel):
     technical_owner: str | None = None
     business_domain: str = "unknown"
     affected_users: list[str] = Field(default_factory=list)
+    external_users_affected: bool = False
     data_types: list[str] = Field(default_factory=list)
     model_provider: str | None = None
     model_type: str | None = None
+    integrations_tools_used: list[str] = Field(default_factory=list)
     personal_data: bool = False
     sensitive_data: bool = False
     decision_impact: str = "unknown"
     autonomy_level: str = "unknown"
     human_oversight: str = "unknown"
     deployment_status: str = "unknown"
+    monitoring_status: str | None = None
+    evaluation_status: str | None = None
+    security_testing_status: str | None = None
     missing_information: list[str] = Field(default_factory=list)
 
 
