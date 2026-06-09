@@ -1,0 +1,43 @@
+# Requirements Coverage
+
+This document maps the original project requirements to the current implementation.
+
+## Implemented
+
+- Local Git repository with milestone commits.
+- Professional README, architecture, roadmap, and portfolio positioning.
+- FastAPI backend with health, systems, assessments, reports, evidence, requirements, reviews, and evaluation routes.
+- SQLAlchemy persistence compatible with SQLite for local development and PostgreSQL through Docker Compose.
+- AI system inventory fields for owner, business unit, deployment status, affected users, data types, model provider, model type, decision impact, autonomy, and human oversight.
+- Structured intake agent with adaptive missing-information questions.
+- Follow-up answers accepted through `POST /systems/{system_id}/assess`.
+- LangGraph-compiled governance workflow with intake, missing-info check, risk classification, regulatory retrieval, control mapping, gap analysis, evidence generation, system card generation, audit report generation, and human review gate.
+- Local RAG knowledge base with policies, controls, regulation summaries, and sample AI systems.
+- Requirements seeding into the `requirements` database table from Markdown knowledge-base documents.
+- Requirement search API and Streamlit Requirements tab.
+- MCP tool, resource, and prompt catalog with tests.
+- Evidence checklist records, evidence status updates, and compliance readiness score.
+- AI system card and audit report Markdown generation/export.
+- Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, and review history.
+- Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.
+- Evaluation suite covering risk classification consistency, retrieval grounding, system card coverage, evidence completeness, human approval bypass resistance, and legal-advice guardrails.
+- Guardrails preventing automatic approval or final legal compliance claims without human review.
+- Dockerfile, Docker Compose, Makefile, CI workflow, and pytest suite.
+
+## Intentionally Deferred External Integrations
+
+These are represented by stable interfaces and roadmap entries, but are not enabled by default because the local MVP is designed to run without cloud credentials:
+
+- Real LLM provider calls through LangChain.
+- LangSmith hosted tracing and experiment uploads.
+- Qdrant or Pinecone as a persistent vector database.
+- Production FastMCP deployment behind a process manager.
+- PDF export pipeline for audit reports.
+- Full official legal/regulatory corpora ingestion.
+
+## Current Verification
+
+- Test suite: `24 passed`.
+- Local API: `http://127.0.0.1:8000`.
+- Local UI: `http://127.0.0.1:8501`.
+

@@ -32,6 +32,8 @@ flowchart LR
 
 The MVP is intentionally deterministic by default so it can run locally without API keys. The agent nodes are designed to be upgraded with LangChain model calls and LangSmith tracing through the same interfaces.
 
+See [Requirements Coverage](docs/REQUIREMENTS_COVERAGE.md) for a mapping from the original project brief to the current implementation.
+
 ## Stack
 
 - Python, FastAPI, Pydantic, SQLAlchemy
