@@ -28,6 +28,11 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db() -> None:
     from app.database import models  # noqa: F401
+    from app.database.seed import seed_requirements
 
     Base.metadata.create_all(bind=engine)
-
+    db = SessionLocal()
+    try:
+        seed_requirements(db)
+    finally:
+        db.close()
