@@ -11,3 +11,7 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 def report_markdown(assessment_id: str, db: DbSession) -> str:
     return AssessmentService(db).get(assessment_id).audit_report.content_markdown
 
+
+@router.get("/{assessment_id}/system-card", response_class=PlainTextResponse)
+def system_card_markdown(assessment_id: str, db: DbSession) -> str:
+    return AssessmentService(db).get(assessment_id).ai_system_card.content_markdown

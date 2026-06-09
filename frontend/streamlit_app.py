@@ -21,6 +21,12 @@ def api_post(path: str, payload: dict | None = None):
     return response.json()
 
 
+def api_patch(path: str, payload: dict):
+    response = requests.patch(f"{API_BASE_URL}{path}", json=payload, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+
 def risk_badge(level: str) -> str:
     return {
         "high": "High",
@@ -43,12 +49,20 @@ with tabs[0]:
     missing_evidence = sum(
         1 for assessment in assessments for item in assessment["evidence_checklist"] if item["status"] == "missing"
     )
+    readiness_scores = []
+    for item in assessments:
+        try:
+            readiness_scores.append(api_get(f"/evidence/assessments/{item['id']}/readiness-score")["score"])
+        except Exception:
+            readiness_scores.append(0)
+    average_readiness = sum(readiness_scores) / len(readiness_scores) if readiness_scores else 0
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Total AI systems", len(systems))
     col2.metric("High-risk systems", len(high_risk))
     col3.metric("Pending reviews", len(pending))
     col4.metric("Missing evidence", missing_evidence)
+    col5.metric("Avg readiness", f"{average_readiness:.0f}%")
 
     if assessments:
         st.dataframe(
@@ -124,14 +138,46 @@ with tabs[2]:
 
 with tabs[3]:
     if assessment:
-        st.dataframe(assessment["evidence_checklist"], use_container_width=True)
+        readiness = api_get(f"/evidence/assessments/{assessment['id']}/readiness-score")
+        st.metric("Compliance readiness score", f"{readiness['score']:.1f}%")
+        evidence_records = api_get(f"/evidence/assessments/{assessment['id']}")
+        st.dataframe(evidence_records, use_container_width=True)
+        if evidence_records:
+            selected = st.selectbox(
+                "Evidence item",
+                options=evidence_records,
+                format_func=lambda item: f"{item['name']} ({item['status']})",
+            )
+            new_status = st.selectbox(
+                "Status",
+                ["missing", "partial", "generated", "uploaded", "approved", "rejected"],
+                index=["missing", "partial", "generated", "uploaded", "approved", "rejected"].index(selected["status"]),
+            )
+            description = st.text_area("Evidence notes", value=selected.get("description") or "")
+            file_url = st.text_input("Evidence URL", value=selected.get("file_url") or "")
+            if st.button("Update evidence"):
+                api_patch(
+                    f"/evidence/items/{selected['id']}",
+                    {"status": new_status, "description": description, "file_url": file_url or None},
+                )
+                st.success("Evidence updated.")
 
 with tabs[4]:
     if assessment:
+        st.download_button(
+            "Download system card markdown",
+            data=assessment["ai_system_card"]["content_markdown"],
+            file_name=f"{assessment['profile']['system_name'].lower().replace(' ', '_')}_system_card.md",
+        )
         st.markdown(assessment["ai_system_card"]["content_markdown"])
 
 with tabs[5]:
     if assessment:
+        st.download_button(
+            "Download audit report markdown",
+            data=assessment["audit_report"]["content_markdown"],
+            file_name=f"{assessment['profile']['system_name'].lower().replace(' ', '_')}_audit_report.md",
+        )
         st.markdown(assessment["audit_report"]["content_markdown"])
 
 with tabs[6]:
@@ -157,4 +203,3 @@ with tabs[7]:
         st.dataframe(api_get("/evaluation/results"), use_container_width=True)
     except Exception as exc:
         st.error(str(exc))
-

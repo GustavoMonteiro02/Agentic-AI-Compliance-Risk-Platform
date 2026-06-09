@@ -36,3 +36,21 @@ def test_create_system_and_assessment():
     assert assessment["status"] == "needs_review"
     assert assessment["retrieved_requirements"]
 
+
+def test_report_exports_markdown():
+    system_response = client.post(
+        "/systems",
+        json={
+            "name": "Report Export System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    )
+    assessment = client.post(f"/systems/{system_response.json()['id']}/assess").json()
+
+    report_response = client.get(f"/reports/{assessment['id']}")
+    card_response = client.get(f"/reports/{assessment['id']}/system-card")
+
+    assert report_response.status_code == 200
+    assert "# Audit Readiness Report" in report_response.text
+    assert card_response.status_code == 200
+    assert "# AI System Card" in card_response.text
