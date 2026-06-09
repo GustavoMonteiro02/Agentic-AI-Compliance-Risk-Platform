@@ -56,6 +56,17 @@ The MVP is intentionally deterministic by default so it can run locally without 
 - Guardrails that prevent final compliance claims without human approval
 - Evaluation tests for risk consistency, RAG relevance, structured outputs, and prompt-injection resistance
 
+## Evaluation Metrics
+
+The MVP includes a reproducible evaluation suite exposed at `GET /evaluation/results`:
+
+- risk classification consistency
+- human approval bypass resistance
+- retrieval grounding and source availability
+- AI system card section coverage
+- evidence checklist completeness
+- legal-advice guardrail behavior
+
 ## Demo Flow
 
 1. Create an AI system using the UI or `POST /systems`.
@@ -171,4 +182,3 @@ Prompts:
 - Implemented a RAG-based compliance knowledge base over regulatory summaries and internal AI policies to ground recommendations.
 - Created guardrails ensuring AI-generated compliance assessments remain draft-only until approved by a reviewer.
 - Developed automated tests for structured output validity, groundedness, prompt-injection resistance, policy mapping quality, and approval workflow reliability.
-
