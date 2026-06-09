@@ -54,3 +54,23 @@ def test_report_exports_markdown():
     assert "# Audit Readiness Report" in report_response.text
     assert card_response.status_code == 200
     assert "# AI System Card" in card_response.text
+
+
+def test_report_exports_pdf():
+    system_response = client.post(
+        "/systems",
+        json={
+            "name": "PDF Export System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    )
+    assessment = client.post(f"/systems/{system_response.json()['id']}/assess").json()
+
+    report_response = client.get(f"/reports/{assessment['id']}.pdf")
+    card_response = client.get(f"/reports/{assessment['id']}/system-card.pdf")
+
+    assert report_response.status_code == 200
+    assert report_response.headers["content-type"] == "application/pdf"
+    assert report_response.content.startswith(b"%PDF")
+    assert card_response.status_code == 200
+    assert card_response.content.startswith(b"%PDF")

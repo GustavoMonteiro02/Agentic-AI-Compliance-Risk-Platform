@@ -1,4 +1,5 @@
 from app.agents.state import GovernanceAssessmentState
+from app.llm.provider import OptionalLLMProvider
 
 
 HIGH_RISK_DOMAINS = {"employment", "financial_services", "healthcare"}
@@ -36,17 +37,31 @@ def risk_classifier_node(state: GovernanceAssessmentState) -> GovernanceAssessme
         confidence = 0.58
 
     requires_additional = bool(profile.get("missing_information")) and confidence < 0.8
+    reasoning_summary = (
+        "Preliminary classification based on domain, data sensitivity, decision impact, "
+        "autonomy, and oversight signals. Human compliance review is required."
+    )
+    llm_advice = OptionalLLMProvider().advisory_completion(
+        "You are an AI governance assistant. Do not provide legal advice or final compliance claims.",
+        f"Summarize the risk rationale for this AI system profile in one sentence: {profile}",
+    )
+    if llm_advice:
+        reasoning_summary = f"{reasoning_summary} LLM advisory note: {llm_advice}"
+
     state["risk_classification"] = {
         "risk_level": risk_level,
         "confidence": confidence,
         "risk_factors": factors,
-        "reasoning_summary": (
-            "Preliminary classification based on domain, data sensitivity, decision impact, "
-            "autonomy, and oversight signals. Human compliance review is required."
-        ),
+        "reasoning_summary": reasoning_summary,
         "requires_human_review": True,
         "requires_additional_information": requires_additional,
     }
     state["requires_human_review"] = True
-    state.setdefault("tool_calls", []).append({"tool_name": "classify_ai_system_risk", "status": "success"})
+    state.setdefault("tool_calls", []).append(
+        {
+            "tool_name": "classify_ai_system_risk",
+            "status": "success",
+            "mode": "openai" if llm_advice else "deterministic",
+        }
+    )
     return state

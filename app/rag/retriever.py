@@ -3,6 +3,7 @@ import re
 
 from app.config import get_settings
 from app.rag.chunker import DocumentChunk, parse_markdown_requirements
+from app.rag.vector_store import QdrantVectorStore
 
 
 TOKEN_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9_-]+")
@@ -28,6 +29,15 @@ class LocalComplianceRetriever:
         return chunks
 
     def search(self, query: str, top_k: int = 6) -> list[dict[str, str]]:
+        settings = get_settings()
+        if settings.vector_db == "qdrant":
+            qdrant = QdrantVectorStore(settings.qdrant_url, settings.qdrant_collection)
+            try:
+                health = qdrant.health()
+            except Exception as exc:
+                health = {"available": False, "error": str(exc)}
+        else:
+            health = {"available": False}
         query_tokens = _tokens(query)
         scored = []
         for chunk in self.load():
@@ -45,7 +55,7 @@ class LocalComplianceRetriever:
                 "source": chunk.source,
                 "summary": chunk.text,
                 "relevance": "high" if score >= 4 else "medium",
+                "retriever": "qdrant-ready" if health.get("available") else "local-lexical",
             }
             for score, chunk in scored[:top_k]
         ]
-

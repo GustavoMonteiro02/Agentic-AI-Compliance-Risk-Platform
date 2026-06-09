@@ -12,6 +12,7 @@ from app.agents.nodes.regulatory_retriever import regulatory_retriever_node
 from app.agents.nodes.risk_classifier import risk_classifier_node
 from app.agents.nodes.system_card_generator import system_card_generator_node
 from app.agents.state import GovernanceAssessmentState
+from app.observability.langsmith import langsmith_trace_metadata
 from app.schemas.assessment import GovernanceAssessment
 
 
@@ -89,6 +90,11 @@ def run_governance_assessment(
         "status": "draft",
     }
     state = run_state_graph(state)
+    trace_metadata = langsmith_trace_metadata(state["assessment_id"], "governance_assessment")
+    if trace_metadata["enabled"]:
+        state.setdefault("tool_calls", []).append(
+            {"tool_name": "langsmith_trace", "status": "configured", **trace_metadata}
+        )
 
     return GovernanceAssessment(
         id=state["assessment_id"],
