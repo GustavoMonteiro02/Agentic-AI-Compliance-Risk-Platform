@@ -8,7 +8,7 @@ This document maps the original project requirements to the current implementati
 - Professional README, architecture, roadmap, and portfolio positioning.
 - FastAPI backend with health, systems, assessments, reports, evidence, requirements, reviews, and evaluation routes.
 - SQLAlchemy persistence compatible with SQLite for local development and PostgreSQL through Docker Compose.
-- AI system inventory fields for owner, business unit, deployment status, affected users, data types, model provider, model type, decision impact, autonomy, and human oversight.
+- AI system inventory fields for owner, technical owner, business unit, deployment status, affected users, external users, data types, model provider, model type, decision impact, autonomy, human oversight, integrations/tools, monitoring status, evaluation status, and security testing status.
 - Structured intake agent with adaptive missing-information questions.
 - Follow-up answers accepted through `POST /systems/{system_id}/assess`.
 - LangGraph-compiled governance workflow with intake, missing-info check, risk classification, regulatory retrieval, control mapping, gap analysis, evidence generation, system card generation, audit report generation, and human review gate.
@@ -18,6 +18,7 @@ This document maps the original project requirements to the current implementati
 - MCP tool, resource, and prompt catalog with tests.
 - Evidence checklist records, evidence status updates, and compliance readiness score.
 - AI system card and audit report Markdown generation/export.
+- Dedicated Pydantic schema modules for risk, controls, requirements, evidence, review, report, system, and assessment contracts.
 - Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, and review history.
 - Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.
 - Evaluation suite covering risk classification consistency, retrieval grounding, system card coverage, evidence completeness, human approval bypass resistance, and legal-advice guardrails.
@@ -40,4 +41,3 @@ These are represented by stable interfaces and roadmap entries, but are not enab
 - Test suite: `24 passed`.
 - Local API: `http://127.0.0.1:8000`.
 - Local UI: `http://127.0.0.1:8501`.
-
