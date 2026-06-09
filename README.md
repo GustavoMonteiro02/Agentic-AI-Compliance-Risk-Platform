@@ -34,13 +34,26 @@ The MVP is intentionally deterministic by default so it can run locally without 
 
 See [Requirements Coverage](docs/REQUIREMENTS_COVERAGE.md) for a mapping from the original project brief to the current implementation.
 
+## Screenshots
+
+![Dashboard](docs/assets/dashboard.png)
+
+![Risk assessment](docs/assets/risk-assessment.png)
+
+![Evidence center](docs/assets/evidence-center.png)
+
+![Demo flow](docs/assets/demo-flow.gif)
+
+See [Demo Guide](docs/DEMO.md) for the recommended walkthrough.
+
 ## Stack
 
 - Python, FastAPI, Pydantic, SQLAlchemy
 - LangGraph-compatible workflow abstraction with optional LangGraph integration
 - RAG over local Markdown compliance knowledge base
 - MCP/FastMCP server exposing tools, resources, and prompts
-- PostgreSQL via Docker Compose, SQLite for fast local development and tests
+- PostgreSQL and Qdrant via Docker Compose, SQLite for fast local development and tests
+- Optional OpenAI advisory mode and LangSmith trace metadata
 - Streamlit product UI
 - pytest evaluation and guardrail tests
 
@@ -57,6 +70,8 @@ See [Requirements Coverage](docs/REQUIREMENTS_COVERAGE.md) for a mapping from th
 - Human review workflow: draft, approved, rejected, needs more evidence
 - Guardrails that prevent final compliance claims without human approval
 - Evaluation tests for risk consistency, RAG relevance, structured outputs, and prompt-injection resistance
+- Markdown and PDF exports for system cards and audit reports
+- Demo scenario pack for portfolio walkthroughs
 
 ## Evaluation Metrics
 
@@ -76,6 +91,7 @@ The MVP includes a reproducible evaluation suite exposed at `GET /evaluation/res
 3. Review risk level, retrieved requirements, mapped controls, gaps, evidence, system card, and audit report.
 4. Submit a human review decision.
 5. Search the requirements knowledge base and update evidence readiness.
+6. Export the system card or audit report as Markdown/PDF.
 
 Example input:
 
@@ -116,9 +132,12 @@ docker compose up --build
 Copy `.env.example` to `.env` and adjust values.
 
 - `DATABASE_URL`: defaults to local SQLite if not provided
-- `LANGSMITH_TRACING`: optional
-- `LANGSMITH_API_KEY`: optional
-- `VECTOR_DB`: `local` in the MVP
+- `AI_GENERATION_MODE`: `deterministic` by default, or `openai`
+- `OPENAI_API_KEY`: optional for OpenAI advisory mode
+- `LANGSMITH_TRACING`: optional trace metadata
+- `LANGSMITH_API_KEY`: optional for hosted LangSmith usage
+- `VECTOR_DB`: `local` by default, or `qdrant`
+- `QDRANT_URL`: defaults to `http://localhost:6333`
 
 ## Agents
 
@@ -176,7 +195,7 @@ Prompts:
 - Regulatory documents are summarized internal demo documents, not full legal sources.
 - The MVP uses deterministic policy logic by default for reproducible tests.
 - Risk results are preliminary and require human compliance/legal review.
-- Vector search uses local lexical retrieval in the MVP; Qdrant/Pinecone can be added in later milestones.
+- Vector search uses local lexical retrieval by default with a Qdrant-ready adapter and Docker service.
 
 ## Portfolio Value
 
