@@ -12,15 +12,15 @@ class DocumentChunk:
 
 def parse_markdown_requirements(source: str, text: str) -> list[DocumentChunk]:
     chunks: list[DocumentChunk] = []
-    current_id = source.upper().replace("/", "_").replace(".", "_")
-    current_title = source
+    current_id = ""
+    current_title = ""
     current_category = "general"
     buffer: list[str] = []
 
     for line in text.splitlines():
         stripped = line.strip()
         if stripped.startswith("## "):
-            if buffer:
+            if current_title and buffer:
                 chunks.append(
                     DocumentChunk(current_id, current_title, source, current_category, "\n".join(buffer).strip())
                 )
@@ -29,10 +29,9 @@ def parse_markdown_requirements(source: str, text: str) -> list[DocumentChunk]:
             current_id = current_title.upper().replace(" ", "_").replace("-", "_")
         elif stripped.startswith("Category:"):
             current_category = stripped.removeprefix("Category:").strip().lower()
-        elif stripped:
+        elif current_title and stripped and not stripped.startswith("# "):
             buffer.append(stripped)
 
-    if buffer:
+    if current_title and buffer:
         chunks.append(DocumentChunk(current_id, current_title, source, current_category, "\n".join(buffer).strip()))
     return chunks
-

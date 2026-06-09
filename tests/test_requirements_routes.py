@@ -13,6 +13,7 @@ def test_requirements_are_seeded_from_knowledge_base():
     requirements = response.json()
     assert len(requirements) >= 10
     assert any(item["requirement_code"].startswith("HUMAN_OVERSIGHT") for item in requirements)
+    assert not any(item["requirement_code"].endswith("_MD") for item in requirements)
 
 
 def test_requirements_search_filters_seeded_requirements():
