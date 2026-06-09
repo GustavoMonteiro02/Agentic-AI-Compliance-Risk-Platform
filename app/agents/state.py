@@ -5,6 +5,7 @@ class GovernanceAssessmentState(TypedDict, total=False):
     assessment_id: str
     system_id: str
     raw_user_description: str
+    system_context: dict[str, Any]
     follow_up_questions: list[dict[str, Any]]
     user_answers: list[dict[str, Any]]
     system_profile: dict[str, Any]
@@ -22,4 +23,3 @@ class GovernanceAssessmentState(TypedDict, total=False):
     tool_calls: list[dict[str, Any]]
     errors: list[dict[str, Any]]
     status: str
-

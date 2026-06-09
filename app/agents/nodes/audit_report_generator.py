@@ -27,6 +27,10 @@ The system is preliminarily classified as **{risk['risk_level']}** risk. The ass
 
 {profile['use_case']}
 
+Business unit: {profile.get('business_unit') or 'Not specified'}
+Owner: {profile.get('system_owner') or 'Not specified'}
+Deployment status: {profile.get('deployment_status') or 'Unknown'}
+
 ## Key Risk Factors
 
 {chr(10).join(f"- {factor}" for factor in risk['risk_factors'])}
@@ -60,4 +64,3 @@ Needs Review
     }
     state.setdefault("tool_calls", []).append({"tool_name": "generate_audit_report", "status": "success"})
     return state
-

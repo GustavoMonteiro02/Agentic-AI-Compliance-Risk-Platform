@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.agents.graph import run_governance_assessment
 from app.database.repositories import AssessmentRepository, SystemRepository
-from app.schemas.assessment import GovernanceAssessment
+from app.schemas.assessment import AssessmentRunRequest, GovernanceAssessment
 
 
 class AssessmentService:
@@ -12,11 +12,32 @@ class AssessmentService:
         self.systems = SystemRepository(db)
         self.assessments = AssessmentRepository(db)
 
-    def assess_system(self, system_id: str) -> GovernanceAssessment:
+    def assess_system(self, system_id: str, payload: AssessmentRunRequest | None = None) -> GovernanceAssessment:
         system = self.systems.get(system_id)
         if not system:
             raise HTTPException(status_code=404, detail="AI system not found")
-        assessment = run_governance_assessment(system.id, system.description)
+        request = payload or AssessmentRunRequest()
+        context = {
+            "name": system.name,
+            "business_unit": system.business_unit,
+            "owner": system.owner,
+            "technical_owner": system.technical_owner,
+            "deployment_status": system.deployment_status,
+            "users_affected": system.users_affected,
+            "data_types": system.data_types,
+            "model_provider": system.model_provider,
+            "model_type": system.model_type,
+            "decision_impact": system.decision_impact,
+            "autonomy_level": system.autonomy_level,
+            "human_oversight_process": system.human_oversight_process,
+            **request.additional_context,
+        }
+        assessment = run_governance_assessment(
+            system.id,
+            system.description,
+            system_context=context,
+            user_answers=[item.model_dump() for item in request.user_answers],
+        )
         self.assessments.save(assessment)
         return assessment
 
@@ -34,4 +55,3 @@ class AssessmentService:
 
     def list(self) -> list[GovernanceAssessment]:
         return [GovernanceAssessment.model_validate(item.assessment_json) for item in self.assessments.list()]
-

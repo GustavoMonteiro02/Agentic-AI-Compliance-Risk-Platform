@@ -19,7 +19,10 @@ def missing_info_checker_node(state: GovernanceAssessmentState) -> GovernanceAss
         missing.append("data_sources")
     if profile.get("human_oversight") == "unknown":
         missing.append("human_oversight")
-    missing.extend(["evaluation_status", "audit_logging", "fallback_process"])
+    answered_fields = {item.get("field") for item in state.get("user_answers", [])}
+    for optional_field in ["evaluation_status", "audit_logging", "fallback_process"]:
+        if optional_field not in answered_fields:
+            missing.append(optional_field)
 
     questions = [
         {"field": key, "question": QUESTION_BANK.get(key, f"Please clarify {key}."), "priority": "high"}
@@ -35,4 +38,3 @@ def missing_info_checker_node(state: GovernanceAssessmentState) -> GovernanceAss
     state["follow_up_questions"] = questions[:5]
     state.setdefault("tool_calls", []).append({"tool_name": "missing_info_checker", "status": "success"})
     return state
-

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.deps import DbSession
+from app.schemas.assessment import AssessmentRunRequest
 from app.schemas.system import AISystemCreate, AISystemUpdate
 from app.services.assessment_service import AssessmentService
 from app.services.system_service import SystemService
@@ -51,16 +52,15 @@ def update_system(system_id: str, payload: AISystemUpdate, db: DbSession) -> dic
 
 
 @router.post("/{system_id}/intake")
-def intake_system(system_id: str, db: DbSession) -> dict:
-    return AssessmentService(db).assess_system(system_id).model_dump(mode="json")["profile"]
+def intake_system(system_id: str, db: DbSession, payload: AssessmentRunRequest | None = None) -> dict:
+    return AssessmentService(db).assess_system(system_id, payload).model_dump(mode="json")["profile"]
 
 
 @router.post("/{system_id}/assess")
-def assess_system(system_id: str, db: DbSession) -> dict:
-    return AssessmentService(db).assess_system(system_id).model_dump(mode="json")
+def assess_system(system_id: str, db: DbSession, payload: AssessmentRunRequest | None = None) -> dict:
+    return AssessmentService(db).assess_system(system_id, payload).model_dump(mode="json")
 
 
 @router.get("/{system_id}/assessment")
 def latest_assessment(system_id: str, db: DbSession) -> dict:
     return AssessmentService(db).latest_for_system(system_id).model_dump(mode="json")
-

@@ -13,9 +13,14 @@ LEGAL_REVIEW_DISCLAIMER = (
 class SystemProfile(BaseModel):
     system_name: str
     use_case: str
+    business_unit: str | None = None
+    system_owner: str | None = None
+    technical_owner: str | None = None
     business_domain: str = "unknown"
     affected_users: list[str] = Field(default_factory=list)
     data_types: list[str] = Field(default_factory=list)
+    model_provider: str | None = None
+    model_type: str | None = None
     personal_data: bool = False
     sensitive_data: bool = False
     decision_impact: str = "unknown"
@@ -29,6 +34,16 @@ class FollowUpQuestion(BaseModel):
     field: str
     question: str
     priority: str = "medium"
+
+
+class UserAnswer(BaseModel):
+    field: str
+    answer: str
+
+
+class AssessmentRunRequest(BaseModel):
+    user_answers: list[UserAnswer] = Field(default_factory=list)
+    additional_context: dict[str, Any] = Field(default_factory=dict)
 
 
 class RiskClassification(BaseModel):
@@ -106,4 +121,3 @@ class GovernanceAssessment(BaseModel):
     updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
-

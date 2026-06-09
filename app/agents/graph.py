@@ -72,11 +72,18 @@ def run_state_graph(state: GovernanceAssessmentState) -> GovernanceAssessmentSta
         return state
 
 
-def run_governance_assessment(system_id: str, description: str) -> GovernanceAssessment:
+def run_governance_assessment(
+    system_id: str,
+    description: str,
+    system_context: dict | None = None,
+    user_answers: list[dict] | None = None,
+) -> GovernanceAssessment:
     state: GovernanceAssessmentState = {
         "assessment_id": str(uuid4()),
         "system_id": system_id,
         "raw_user_description": description,
+        "system_context": system_context or {},
+        "user_answers": user_answers or [],
         "tool_calls": [],
         "errors": [],
         "status": "draft",
