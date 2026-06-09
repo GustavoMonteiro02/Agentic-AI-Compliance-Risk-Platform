@@ -34,9 +34,11 @@ def system_card_generator_node(state: GovernanceAssessmentState) -> GovernanceAs
         "> Draft for human compliance review. This document is not legal advice.",
         "",
         f"## Purpose\n{profile['use_case']}",
+        "## Business Owner\nNot specified in intake.",
         f"## Users Affected\n{', '.join(profile.get('affected_users') or ['Unknown'])}",
         f"## Data Sources\n{', '.join(profile.get('data_types') or ['Unknown'])}",
         "## Model and Provider\nNot specified in intake.",
+        "## Inputs and Outputs\nInputs and outputs require confirmation during human review.",
         f"## Decision Impact\n{profile.get('decision_impact', 'unknown')}",
         "## Known Limitations\nGenerated from limited intake information and summarized policy documents.",
         f"## Risk Classification\n{risk['risk_level']} ({risk['confidence']:.0%} confidence)",
@@ -58,4 +60,3 @@ def system_card_generator_node(state: GovernanceAssessmentState) -> GovernanceAs
     }
     state.setdefault("tool_calls", []).append({"tool_name": "generate_ai_system_card", "status": "success"})
     return state
-
