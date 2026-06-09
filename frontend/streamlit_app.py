@@ -39,7 +39,17 @@ def risk_badge(level: str) -> str:
 
 st.title("AI Governance & Compliance Intelligence Platform")
 
-tabs = st.tabs(["Dashboard", "AI System Intake", "Assessment", "Evidence", "System Card", "Audit Report", "Human Review", "Evaluation"])
+tabs = st.tabs([
+    "Dashboard",
+    "AI System Intake",
+    "Assessment",
+    "Requirements",
+    "Evidence",
+    "System Card",
+    "Audit Report",
+    "Human Review",
+    "Evaluation",
+])
 
 with tabs[0]:
     systems = api_get("/systems")
@@ -137,6 +147,16 @@ with tabs[2]:
         st.info("Create an AI system to view an assessment.")
 
 with tabs[3]:
+    st.subheader("Requirement Knowledge Base")
+    query = st.text_input("Search requirements", value="human oversight")
+    requirements_path = f"/requirements?q={query}" if query else "/requirements"
+    try:
+        requirements = api_get(requirements_path)
+        st.dataframe(requirements, use_container_width=True)
+    except Exception as exc:
+        st.error(str(exc))
+
+with tabs[4]:
     if assessment:
         readiness = api_get(f"/evidence/assessments/{assessment['id']}/readiness-score")
         st.metric("Compliance readiness score", f"{readiness['score']:.1f}%")
@@ -162,7 +182,7 @@ with tabs[3]:
                 )
                 st.success("Evidence updated.")
 
-with tabs[4]:
+with tabs[5]:
     if assessment:
         st.download_button(
             "Download system card markdown",
@@ -171,7 +191,7 @@ with tabs[4]:
         )
         st.markdown(assessment["ai_system_card"]["content_markdown"])
 
-with tabs[5]:
+with tabs[6]:
     if assessment:
         st.download_button(
             "Download audit report markdown",
@@ -180,7 +200,7 @@ with tabs[5]:
         )
         st.markdown(assessment["audit_report"]["content_markdown"])
 
-with tabs[6]:
+with tabs[7]:
     if assessment:
         st.subheader("Review queue")
         try:
@@ -205,7 +225,7 @@ with tabs[6]:
         st.subheader("Review history")
         st.dataframe(api_get(f"/reviews/{assessment['id']}/history"), use_container_width=True)
 
-with tabs[7]:
+with tabs[8]:
     try:
         st.dataframe(api_get("/evaluation/results"), use_container_width=True)
     except Exception as exc:

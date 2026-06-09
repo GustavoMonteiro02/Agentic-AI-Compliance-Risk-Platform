@@ -73,6 +73,7 @@ The MVP includes a reproducible evaluation suite exposed at `GET /evaluation/res
 2. Run `POST /systems/{system_id}/assess`.
 3. Review risk level, retrieved requirements, mapped controls, gaps, evidence, system card, and audit report.
 4. Submit a human review decision.
+5. Search the requirements knowledge base and update evidence readiness.
 
 Example input:
 
