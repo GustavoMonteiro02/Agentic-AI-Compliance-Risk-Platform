@@ -1,0 +1,23 @@
+from fastapi import APIRouter
+
+from app.api.deps import DbSession
+from app.schemas.review import ReviewDecision
+from app.services.review_service import ReviewService
+
+router = APIRouter(prefix="/reviews", tags=["reviews"])
+
+
+@router.post("/{assessment_id}/approve")
+def approve(assessment_id: str, payload: ReviewDecision, db: DbSession) -> dict:
+    return ReviewService(db).decide(assessment_id, "approved", payload).model_dump()
+
+
+@router.post("/{assessment_id}/reject")
+def reject(assessment_id: str, payload: ReviewDecision, db: DbSession) -> dict:
+    return ReviewService(db).decide(assessment_id, "rejected", payload).model_dump()
+
+
+@router.post("/{assessment_id}/request-more-evidence")
+def request_more_evidence(assessment_id: str, payload: ReviewDecision, db: DbSession) -> dict:
+    return ReviewService(db).decide(assessment_id, "needs_more_evidence", payload).model_dump()
+

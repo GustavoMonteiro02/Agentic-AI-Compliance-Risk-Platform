@@ -1,0 +1,8 @@
+{
+  "name": "Recruitment CV Screening Assistant",
+  "description": "We use an AI assistant in HR to analyze CVs, rank candidates and generate recommendations for recruiters. The system processes personal data, stores embeddings of CVs and produces candidate fit scores. Final hiring decisions are reviewed by humans.",
+  "business_unit": "People Operations",
+  "owner": "Head of Talent",
+  "deployment_status": "prototype"
+}
+

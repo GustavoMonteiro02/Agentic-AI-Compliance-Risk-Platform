@@ -1,0 +1,8 @@
+{
+  "name": "Customer Support AI Copilot",
+  "description": "An internal customer support copilot drafts replies for agents, summarizes tickets, and suggests refunds that must be approved by a human supervisor.",
+  "business_unit": "Customer Operations",
+  "owner": "Support Operations",
+  "deployment_status": "internal"
+}
+

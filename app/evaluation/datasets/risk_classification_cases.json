@@ -1,0 +1,13 @@
+[
+  {
+    "name": "HR CV screening",
+    "description": "AI assistant in HR analyzes CVs, ranks candidates, processes personal data, and recommends candidates to recruiters.",
+    "expected_risk": "high"
+  },
+  {
+    "name": "Internal knowledge assistant",
+    "description": "Internal RAG assistant answers employee questions about policies and does not make decisions about people.",
+    "expected_risk": "minimal"
+  }
+]
+

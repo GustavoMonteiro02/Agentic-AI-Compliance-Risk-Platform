@@ -1,0 +1,8 @@
+{
+  "name": "Internal Knowledge Base Assistant",
+  "description": "A RAG assistant helps employees search internal policies and operational documents. It does not make decisions about people.",
+  "business_unit": "Operations",
+  "owner": "Knowledge Management",
+  "deployment_status": "internal"
+}
+

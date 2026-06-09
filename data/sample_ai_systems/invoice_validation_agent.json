@@ -1,0 +1,8 @@
+{
+  "name": "Invoice Validation AI Agent",
+  "description": "An AI agent extracts invoice fields, validates payment details, and flags anomalies for finance analysts before payment approval.",
+  "business_unit": "Finance",
+  "owner": "Accounts Payable",
+  "deployment_status": "prototype"
+}
+

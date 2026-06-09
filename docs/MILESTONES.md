@@ -1,0 +1,50 @@
+# Technical Backlog
+
+## v0.1 Core MVP
+
+- FastAPI service with health, systems, assessments, reviews, reports, and evaluation routes.
+- SQLAlchemy persistence with SQLite dev support and PostgreSQL compatibility.
+- Deterministic agent workflow covering intake, risk, RAG, controls, gaps, evidence, card, report, and human review.
+- Streamlit UI for dashboard, intake, assessment, evidence, report, and review queue.
+- pytest coverage for core guardrails and API.
+
+## v0.2 RAG Knowledge Base
+
+- Add richer policy and regulatory summaries.
+- Add Qdrant integration behind the existing retriever interface.
+- Add document ingestion CLI and chunk metadata.
+- Add retrieval quality evaluation dataset.
+
+## v0.3 Evidence and Audit Reports
+
+- Markdown and PDF export.
+- Evidence upload metadata and approval statuses.
+- Remediation plan generation.
+
+## v0.4 Human Review Workflow
+
+- Reviewer assignment and queues.
+- Risk override with justification.
+- Approval history and audit log.
+- Stronger status transition rules.
+
+## v0.5 MCP Server
+
+- FastMCP runtime server.
+- Agent calls via MCP client.
+- Full resource and prompt catalog.
+
+## v0.6 Evaluation and Guardrails
+
+- RAG groundedness scoring.
+- Prompt-injection challenge set.
+- Structured output regression tests.
+- LangSmith experiment integration.
+
+## v1.0 Portfolio Ready
+
+- Screenshots and demo GIF.
+- Architecture diagrams.
+- Deployment guide.
+- CV and interview talking points.
+

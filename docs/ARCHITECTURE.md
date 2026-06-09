@@ -1,0 +1,50 @@
+# Architecture
+
+## Product Boundary
+
+The platform is an AI governance and audit-readiness assistant. It helps teams prepare structured analysis, evidence, and documentation, but it does not replace legal, compliance, security, or data-protection review.
+
+## Core Workflow
+
+```mermaid
+flowchart TD
+    A["User creates AI system"] --> B["AI System Intake Agent"]
+    B --> C["Missing Information Check"]
+    C -->|Missing critical facts| D["Generate adaptive follow-up questions"]
+    C -->|Enough context| E["Risk Classification Agent"]
+    D --> E
+    E --> F["Regulatory RAG Agent"]
+    F --> G["Control Mapping Agent"]
+    G --> H["Gap Analysis Agent"]
+    H --> I["Evidence Checklist Generator"]
+    I --> J["AI System Card Generator"]
+    J --> K["Audit Report Generator"]
+    K --> L["Human Review Node"]
+    L --> M["Final Assessment Status"]
+```
+
+## Refined Architecture
+
+- `app/api`: HTTP API and route boundaries.
+- `app/agents`: workflow state, graph assembly, and deterministic node implementations.
+- `app/rag`: local document loading, chunking, and lexical retrieval.
+- `app/mcp_server`: reusable compliance tools, resources, and prompts exposed for agents.
+- `app/database`: SQLAlchemy models, session lifecycle, and repositories.
+- `app/schemas`: Pydantic contracts for API, agents, and persistence.
+- `app/services`: orchestration layer that joins repositories and agent workflows.
+- `frontend`: Streamlit UI for product workflow.
+- `data`: summarized regulations, policies, controls, and sample systems.
+- `tests`: unit, API, guardrail, and evaluation tests.
+
+## Human Review Principle
+
+The graph always ends in a human-review state. A generated assessment can be `draft` or `needs_review`, but only an explicit reviewer action can set it to `approved`.
+
+## RAG Principle
+
+Recommendations should reference retrieved internal policy or regulation summaries. The MVP uses local Markdown documents and lexical ranking. Later milestones can replace the retriever with Qdrant or Pinecone without changing the agent contract.
+
+## Observability
+
+Agent runs and tool calls are logged to the database. LangSmith tracing can be enabled through environment variables in later integrations.
+
