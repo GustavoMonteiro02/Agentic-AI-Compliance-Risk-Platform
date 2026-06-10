@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.config import get_settings
 from app.llm.provider import OptionalLLMProvider
+from app.prompts.registry import PROMPT_REGISTRY
 
 router = APIRouter(prefix="/runtime", tags=["runtime"])
 
@@ -17,4 +18,5 @@ def runtime_status() -> dict:
         "langsmith_project": settings.langsmith_project,
         "vector_db": settings.vector_db,
         "qdrant_url": settings.qdrant_url if settings.vector_db == "qdrant" else None,
+        "prompt_versions": {name: prompt.version for name, prompt in PROMPT_REGISTRY.items()},
     }

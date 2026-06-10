@@ -1,22 +1,37 @@
 import json
+from typing import Any
 
 from pydantic import ValidationError
 
 from app.agents.state import GovernanceAssessmentState
 from app.llm.provider import OptionalLLMProvider
+from app.prompts.registry import get_prompt
 from app.schemas.assessment import EvidenceItem, GapAnalysis, GeneratedDocument, MappedControl, RiskClassification
 
 
-SYSTEM_PROMPT = """You are an AI governance and compliance engineering assistant.
-You help prepare audit-readiness drafts, not legal advice.
-Never claim final compliance. Always require qualified human review.
-Return only valid JSON matching the requested keys."""
+def _run_structured_refinement(provider: Any, system_prompt: str, user_prompt: str) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    if hasattr(provider, "structured_json_result"):
+        result = provider.structured_json_result(system_prompt, user_prompt)
+        if not result:
+            return None, {}
+        refined, metadata = result
+        return refined, metadata
+    return provider.structured_json(system_prompt, user_prompt), {}
 
 
 def llm_refiner_node(state: GovernanceAssessmentState) -> GovernanceAssessmentState:
     provider = OptionalLLMProvider()
+    prompt = get_prompt("llm_refiner")
     if not provider.enabled():
-        state.setdefault("tool_calls", []).append({"tool_name": "llm_refiner", "status": "skipped", "mode": "deterministic"})
+        state.setdefault("tool_calls", []).append(
+            {
+                "tool_name": "llm_refiner",
+                "status": "skipped",
+                "mode": "deterministic",
+                "prompt_name": prompt.name,
+                "prompt_version": prompt.version,
+            }
+        )
         return state
 
     payload = {
@@ -27,25 +42,21 @@ def llm_refiner_node(state: GovernanceAssessmentState) -> GovernanceAssessmentSt
         "gap_analysis": state.get("gap_analysis", {}),
         "evidence_checklist": state.get("evidence_checklist", []),
     }
-    user_prompt = f"""
-Refine this governance assessment as production-quality structured output.
-
-Return JSON with exactly these keys:
-- risk_classification: object with risk_level, confidence, risk_factors, reasoning_summary, requires_human_review, requires_additional_information
-- mapped_controls: array of objects with requirement_id, requirement, mapped_control, evidence_needed, control_status
-- gap_analysis: object with overall_status, critical_gaps, medium_gaps, low_gaps, priority_actions
-- evidence_checklist: array of objects with evidence, status, priority, owner
-- ai_system_card_markdown: markdown string
-- audit_report_markdown: markdown string
-
-Keep all analysis preliminary. Do not provide legal advice. Require human review.
-
-Assessment:
-{json.dumps(payload, ensure_ascii=True)}
-"""
+    user_prompt = prompt.user_template.format(assessment_json=json.dumps(payload, ensure_ascii=True))
     try:
-        refined = provider.structured_json(SYSTEM_PROMPT, user_prompt)
+        refined, metadata = _run_structured_refinement(provider, prompt.system, user_prompt)
         if not refined:
+            state.setdefault("tool_calls", []).append(
+                {
+                    "tool_name": "llm_refiner",
+                    "status": "skipped",
+                    "mode": "openai",
+                    "reason": "empty_response",
+                    "prompt_name": prompt.name,
+                    "prompt_version": prompt.version,
+                    **metadata,
+                }
+            )
             return state
 
         state["risk_classification"] = RiskClassification.model_validate(refined["risk_classification"]).model_dump()
@@ -70,8 +81,25 @@ Assessment:
                 content_json=state["audit_report"].get("content_json", {}),
                 status="draft",
             ).model_dump()
-        state.setdefault("tool_calls", []).append({"tool_name": "llm_refiner", "status": "success", "mode": "openai"})
+        state.setdefault("tool_calls", []).append(
+            {
+                "tool_name": "llm_refiner",
+                "status": "success",
+                "mode": "openai",
+                "prompt_name": prompt.name,
+                "prompt_version": prompt.version,
+                **metadata,
+            }
+        )
     except (KeyError, ValidationError, ValueError, Exception) as exc:
         state.setdefault("errors", []).append({"node": "llm_refiner", "error": str(exc)})
-        state.setdefault("tool_calls", []).append({"tool_name": "llm_refiner", "status": "failed", "mode": "openai"})
+        state.setdefault("tool_calls", []).append(
+            {
+                "tool_name": "llm_refiner",
+                "status": "failed",
+                "mode": "openai",
+                "prompt_name": prompt.name,
+                "prompt_version": prompt.version,
+            }
+        )
     return state

@@ -40,6 +40,8 @@ The deterministic workflow always runs first. When `AI_GENERATION_MODE=openai` a
 
 The LLM output is validated with Pydantic before it can replace deterministic outputs. Failed LLM calls are logged in the graph state and do not break the assessment workflow.
 
+Prompt templates are versioned in `app/prompts/registry.py`. Each LLM refinement tool call records the prompt name, prompt version, provider, model, latency, and token usage when the provider returns usage metadata. This keeps generated assessments auditable and makes prompt changes reviewable like code changes.
+
 ## Human Review Guardrail
 
 Even in LLM mode, assessments remain `needs_review` until a reviewer explicitly approves, rejects, or requests more evidence. The LLM is not allowed to produce final legal-compliance claims.
@@ -53,6 +55,7 @@ curl http://127.0.0.1:8000/runtime/status
 ```
 
 This reports whether LLM mode, LangSmith metadata, and vector DB settings are active.
+It also reports active prompt versions so operators can tie generated outputs to the prompt registry.
 
 ## RAG Ingestion
 

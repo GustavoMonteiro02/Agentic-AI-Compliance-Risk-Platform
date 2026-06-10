@@ -14,3 +14,4 @@ def test_runtime_status_reports_production_toggles():
     assert payload["ai_generation_mode"] == "deterministic"
     assert payload["llm_enabled"] is False
     assert payload["vector_db"] == "local"
+    assert payload["prompt_versions"]["llm_refiner"] == "2026-06-10.v1"

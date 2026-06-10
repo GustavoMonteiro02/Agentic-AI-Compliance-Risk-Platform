@@ -45,6 +45,16 @@ def test_llm_refiner_applies_structured_output(monkeypatch):
                 "audit_report_markdown": "# Audit Report\n\nDraft only.",
             }
 
+        def structured_json_result(self, system_prompt, user_prompt):
+            return self.structured_json(system_prompt, user_prompt), {
+                "provider": "openai",
+                "model": "test-model",
+                "latency_ms": 12.5,
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "total_tokens": 150,
+            }
+
     monkeypatch.setattr("app.agents.nodes.llm_refiner.OptionalLLMProvider", FakeProvider)
     state = {
         "system_profile": {"system_name": "HR Assistant"},
@@ -64,4 +74,6 @@ def test_llm_refiner_applies_structured_output(monkeypatch):
     assert updated["risk_classification"]["confidence"] == 0.91
     assert updated["ai_system_card"]["content_markdown"].startswith("# AI System Card")
     assert updated["tool_calls"][-1]["status"] == "success"
-
+    assert updated["tool_calls"][-1]["prompt_name"] == "llm_refiner"
+    assert updated["tool_calls"][-1]["prompt_version"] == "2026-06-10.v1"
+    assert updated["tool_calls"][-1]["total_tokens"] == 150

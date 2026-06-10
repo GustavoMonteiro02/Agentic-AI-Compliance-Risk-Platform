@@ -142,6 +142,8 @@ Copy `.env.example` to `.env` and adjust values.
 - `QDRANT_COLLECTION`: defaults to `ai_governance_requirements`
 - `EMBEDDING_DIMENSIONS`: local deterministic embedding size for offline dev/test retrieval
 
+LLM prompt templates are versioned in `app/prompts/registry.py`; LLM tool calls include prompt version, model, latency, and token metadata where available.
+
 When Qdrant is running, populate the persistent collection with:
 
 ```bash
