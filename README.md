@@ -139,6 +139,14 @@ Copy `.env.example` to `.env` and adjust values.
 - `LANGSMITH_API_KEY`: optional for hosted LangSmith usage
 - `VECTOR_DB`: `local` by default, or `qdrant`
 - `QDRANT_URL`: defaults to `http://localhost:6333`
+- `QDRANT_COLLECTION`: defaults to `ai_governance_requirements`
+- `EMBEDDING_DIMENSIONS`: local deterministic embedding size for offline dev/test retrieval
+
+When Qdrant is running, populate the persistent collection with:
+
+```bash
+make ingest-qdrant
+```
 
 ## Agents
 

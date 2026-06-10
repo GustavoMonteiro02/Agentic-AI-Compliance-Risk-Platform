@@ -4,6 +4,7 @@ from typing import Any
 
 from app.config import get_settings
 from app.rag.chunker import DocumentChunk, parse_markdown_requirements
+from app.rag.embeddings import LocalHashEmbeddingProvider
 from app.rag.vector_store import QdrantVectorStore
 
 
@@ -116,20 +117,38 @@ class LocalComplianceRetriever:
                 break
         return selected
 
+    def _qdrant_scores(self, settings: Any, query: str, limit: int) -> tuple[dict[str, float], dict[str, Any]]:
+        if settings.vector_db != "qdrant":
+            return {}, {"available": False}
+
+        qdrant = QdrantVectorStore(
+            settings.qdrant_url,
+            settings.qdrant_collection,
+            LocalHashEmbeddingProvider(settings.embedding_dimensions),
+        )
+        try:
+            health = qdrant.health()
+            if not health.get("available"):
+                return {}, health
+            results = qdrant.search(query, limit=limit)
+        except Exception as exc:
+            return {}, {"available": False, "error": str(exc)}
+
+        scores = {
+            result.get("payload", {}).get("requirement_id"): float(result.get("score") or 0)
+            for result in results
+            if result.get("payload", {}).get("requirement_id")
+        }
+        return scores, {"available": True, "result_count": len(scores)}
+
     def search(self, query: str, top_k: int = 6) -> list[dict[str, Any]]:
         settings = get_settings()
-        if settings.vector_db == "qdrant":
-            qdrant = QdrantVectorStore(settings.qdrant_url, settings.qdrant_collection)
-            try:
-                health = qdrant.health()
-            except Exception as exc:
-                health = {"available": False, "error": str(exc)}
-        else:
-            health = {"available": False}
+        vector_scores, health = self._qdrant_scores(settings, query, limit=max(top_k * 3, 12))
         query_tokens = _tokens(query)
         query_phrases = _phrases(query)
         scored = []
         for chunk in self.load():
+            vector_score = vector_scores.get(chunk.requirement_id, 0.0)
             lexical_score = (
                 _weighted_overlap(query_tokens, chunk.title, 3.0)
                 + _weighted_overlap(query_tokens, chunk.category, 2.5)
@@ -144,7 +163,7 @@ class LocalComplianceRetriever:
             )
             metadata_score = _metadata_score(query_tokens, query, chunk)
             source_quality = _source_quality(chunk)
-            final_score = lexical_score + (phrase_score * 1.4) + metadata_score + source_quality
+            final_score = lexical_score + (phrase_score * 1.4) + metadata_score + source_quality + (vector_score * 8)
             if final_score:
                 scored.append(
                     (
@@ -155,6 +174,7 @@ class LocalComplianceRetriever:
                             "phrase": round(phrase_score, 3),
                             "metadata": round(metadata_score, 3),
                             "source_quality": round(source_quality, 3),
+                            "vector": round(vector_score, 3),
                             "final": round(final_score, 3),
                         },
                     )
@@ -181,6 +201,12 @@ class LocalComplianceRetriever:
                 "score": round(score, 3),
                 "score_breakdown": breakdown,
                 "metadata": chunk.metadata,
+                "citation": {
+                    "label": f"{chunk.authority}: {chunk.title}",
+                    "source": chunk.source,
+                    "source_url": chunk.source_url,
+                    "requirement_id": chunk.requirement_id,
+                },
             }
             for score, chunk, breakdown in reranked
         ]

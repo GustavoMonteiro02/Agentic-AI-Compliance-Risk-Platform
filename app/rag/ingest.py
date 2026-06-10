@@ -1,7 +1,10 @@
 from pathlib import Path
 
+from app.config import get_settings
 from app.rag.chunker import parse_markdown_requirements
+from app.rag.embeddings import LocalHashEmbeddingProvider
 from app.rag.vector_store import LocalVectorStore
+from app.rag.vector_store import QdrantVectorStore
 
 
 def ingest_markdown_directory(base_path: Path) -> LocalVectorStore:
@@ -15,3 +18,21 @@ def ingest_markdown_directory(base_path: Path) -> LocalVectorStore:
 def ingest_summary(base_path: Path) -> dict:
     store = ingest_markdown_directory(base_path)
     return {"chunk_count": store.count(), "sources": store.sources()}
+
+
+def ingest_qdrant(base_path: Path) -> dict:
+    settings = get_settings()
+    store = ingest_markdown_directory(base_path)
+    qdrant = QdrantVectorStore(
+        settings.qdrant_url,
+        settings.qdrant_collection,
+        LocalHashEmbeddingProvider(settings.embedding_dimensions),
+    )
+    result = qdrant.upsert(store.chunks())
+    return {
+        "chunk_count": store.count(),
+        "sources": store.sources(),
+        "vector_db": "qdrant",
+        "collection": settings.qdrant_collection,
+        **result,
+    }

@@ -75,6 +75,7 @@ class RetrievedRequirement(BaseModel):
     score: float | None = None
     score_breakdown: dict[str, float] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    citation: dict[str, Any] = Field(default_factory=dict)
 
 
 class MappedControl(BaseModel):

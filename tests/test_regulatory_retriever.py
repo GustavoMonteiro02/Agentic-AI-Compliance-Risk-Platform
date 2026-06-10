@@ -16,7 +16,8 @@ def test_retriever_marks_local_hybrid_rerank_mode_by_default():
     assert results
     assert results[0]["retriever"] == "local-hybrid-rerank"
     assert results[0]["score"] > 0
-    assert {"lexical", "phrase", "metadata", "source_quality", "final"} <= set(results[0]["score_breakdown"])
+    assert {"lexical", "phrase", "metadata", "source_quality", "vector", "final"} <= set(results[0]["score_breakdown"])
+    assert results[0]["citation"]["requirement_id"] == results[0]["requirement_id"]
 
 
 def test_retriever_surfaces_source_metadata_for_regulations():

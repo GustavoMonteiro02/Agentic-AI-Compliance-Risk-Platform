@@ -24,6 +24,7 @@ LANGSMITH_PROJECT=ai-governance-compliance-platform
 VECTOR_DB=qdrant
 QDRANT_URL=http://qdrant:6333
 QDRANT_COLLECTION=ai_governance_requirements
+EMBEDDING_DIMENSIONS=128
 ```
 
 ## LLM Behavior
@@ -53,6 +54,16 @@ curl http://127.0.0.1:8000/runtime/status
 
 This reports whether LLM mode, LangSmith metadata, and vector DB settings are active.
 
+## RAG Ingestion
+
+The local fallback uses hybrid lexical, phrase, metadata, and citation-aware reranking. When Qdrant is available, ingest the same knowledge-base chunks into a persistent vector collection:
+
+```bash
+make ingest-qdrant
+```
+
+The Qdrant payload stores requirement metadata, tags, source URLs, effective dates, and citation labels. The default embedding provider is deterministic and local for repeatable development; production can replace it with managed embeddings behind the same vector-store contract.
+
 ## Run
 
 ```bash
@@ -63,4 +74,3 @@ Then open:
 
 - API: `http://127.0.0.1:8000`
 - UI: `http://127.0.0.1:8501`
-

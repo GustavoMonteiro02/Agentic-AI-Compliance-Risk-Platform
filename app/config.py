@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     vector_db: str = "local"
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "ai_governance_requirements"
+    embedding_dimensions: int = 128
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
