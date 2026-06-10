@@ -7,6 +7,7 @@ from app.agents.nodes.evidence_generator import evidence_generator_node
 from app.agents.nodes.gap_analyzer import gap_analyzer_node
 from app.agents.nodes.human_review import human_review_node
 from app.agents.nodes.intake import intake_node
+from app.agents.nodes.llm_refiner import llm_refiner_node
 from app.agents.nodes.missing_info_checker import missing_info_checker_node
 from app.agents.nodes.regulatory_retriever import regulatory_retriever_node
 from app.agents.nodes.risk_classifier import risk_classifier_node
@@ -26,6 +27,7 @@ WORKFLOW_NODE_NAMES = [
     "evidence_generator",
     "system_card_generator",
     "audit_report_generator",
+    "llm_refiner",
     "human_review",
 ]
 
@@ -40,6 +42,7 @@ NODE_SEQUENCE: list[Callable[[GovernanceAssessmentState], GovernanceAssessmentSt
     evidence_generator_node,
     system_card_generator_node,
     audit_report_generator_node,
+    llm_refiner_node,
     human_review_node,
 ]
 

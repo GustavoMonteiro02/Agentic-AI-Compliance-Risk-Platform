@@ -24,5 +24,6 @@ def test_workflow_node_catalog_is_complete():
         "evidence_generator",
         "system_card_generator",
         "audit_report_generator",
+        "llm_refiner",
         "human_review",
     ]

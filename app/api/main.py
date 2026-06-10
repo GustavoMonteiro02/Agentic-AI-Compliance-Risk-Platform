@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import assessments, demo, evaluation, evidence, reports, requirements, reviews, systems
+from app.api.routes import assessments, demo, evaluation, evidence, reports, requirements, reviews, runtime, systems
 from app.config import get_settings
 from app.database.session import init_db
 
@@ -29,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(reviews.router)
     app.include_router(reports.router)
     app.include_router(requirements.router)
+    app.include_router(runtime.router)
     app.include_router(evaluation.router)
     return app
 

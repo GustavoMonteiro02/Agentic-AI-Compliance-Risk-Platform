@@ -45,6 +45,7 @@ See [Requirements Coverage](docs/REQUIREMENTS_COVERAGE.md) for a mapping from th
 ![Demo flow](docs/assets/demo-flow.gif)
 
 See [Demo Guide](docs/DEMO.md) for the recommended walkthrough.
+See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, LangSmith metadata, PostgreSQL, and Qdrant.
 
 ## Stack
 

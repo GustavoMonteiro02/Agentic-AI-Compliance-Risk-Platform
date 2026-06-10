@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote
 
 import requests
 import streamlit as st
@@ -6,17 +7,47 @@ import streamlit as st
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
-st.set_page_config(page_title="AI Governance Platform", layout="wide")
+st.set_page_config(page_title="AI Governance Platform", layout="wide", initial_sidebar_state="expanded")
+
+st.markdown(
+    """
+    <style>
+    .block-container {padding-top: 1.25rem; padding-bottom: 2rem; max-width: 1280px;}
+    [data-testid="stMetric"] {
+        background: #ffffff;
+        border: 1px solid #e4e7ec;
+        border-radius: 8px;
+        padding: 14px 16px;
+        min-height: 104px;
+    }
+    div[data-testid="stDataFrame"] {border: 1px solid #e4e7ec; border-radius: 8px;}
+    .section-title {font-size: 1.15rem; font-weight: 700; margin: 0.5rem 0 0.75rem 0;}
+    .muted {color: #667085; font-size: 0.92rem;}
+    .status-pill {
+        display: inline-block;
+        padding: 0.18rem 0.55rem;
+        border-radius: 999px;
+        background: #eef4ff;
+        color: #3538cd;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 0.75rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 def api_get(path: str):
-    response = requests.get(f"{API_BASE_URL}{path}", timeout=20)
+    response = requests.get(f"{API_BASE_URL}{path}", timeout=30)
     response.raise_for_status()
-    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+    content_type = response.headers.get("content-type", "")
+    return response.json() if content_type.startswith("application/json") else response.text
 
 
 def api_post(path: str, payload: dict | None = None):
-    response = requests.post(f"{API_BASE_URL}{path}", json=payload or {}, timeout=60)
+    response = requests.post(f"{API_BASE_URL}{path}", json=payload or {}, timeout=90)
     response.raise_for_status()
     return response.json()
 
@@ -27,38 +58,91 @@ def api_patch(path: str, payload: dict):
     return response.json()
 
 
-def risk_badge(level: str) -> str:
+def split_csv(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def risk_label(level: str) -> str:
     return {
         "high": "High",
         "medium": "Medium",
         "limited": "Limited",
         "minimal": "Minimal",
         "unknown": "Unknown",
+        "unacceptable": "Unacceptable",
     }.get(level, level.title())
 
 
-st.title("AI Governance & Compliance Intelligence Platform")
+def current_assessment():
+    assessment_id = st.session_state.get("assessment_id")
+    if not assessment_id:
+        try:
+            recent = api_get("/assessments")
+            assessment_id = recent[0]["id"] if recent else None
+        except Exception:
+            assessment_id = None
+    return api_get(f"/assessments/{assessment_id}") if assessment_id else None
 
-tabs = st.tabs([
-    "Dashboard",
-    "AI System Intake",
-    "Demo Scenarios",
-    "Assessment",
-    "Requirements",
-    "Evidence",
-    "System Card",
-    "Audit Report",
-    "Human Review",
-    "Evaluation",
-])
 
-with tabs[0]:
+def page_header(title: str, subtitle: str):
+    st.title(title)
+    st.markdown(f"<div class='muted'>{subtitle}</div>", unsafe_allow_html=True)
+
+
+def show_assessment_picker():
+    try:
+        assessments = api_get("/assessments")
+    except Exception:
+        return
+    if not assessments:
+        return
+    selected = st.sidebar.selectbox(
+        "Active assessment",
+        assessments,
+        format_func=lambda item: f"{item['profile']['system_name']} - {item['status']}",
+    )
+    if selected:
+        st.session_state["assessment_id"] = selected["id"]
+
+
+st.sidebar.title("AI Governance")
+try:
+    runtime = api_get("/runtime/status")
+    st.sidebar.caption(
+        f"Mode: {runtime['ai_generation_mode']} | LLM: {'on' if runtime['llm_enabled'] else 'off'} | Vector: {runtime['vector_db']}"
+    )
+except Exception:
+    st.sidebar.caption("Runtime status unavailable")
+page = st.sidebar.radio(
+    "Navigation",
+    [
+        "Dashboard",
+        "Intake",
+        "Demo Scenarios",
+        "Assessment",
+        "Requirements",
+        "Evidence",
+        "System Card",
+        "Audit Report",
+        "Human Review",
+        "Evaluation",
+    ],
+)
+st.sidebar.caption(f"API: {API_BASE_URL}")
+show_assessment_picker()
+
+assessment = current_assessment()
+
+if page == "Dashboard":
+    page_header("Governance Dashboard", "Portfolio-grade overview for AI systems, reviews, evidence and readiness.")
     systems = api_get("/systems")
     assessments = api_get("/assessments")
     high_risk = [item for item in assessments if item["risk_classification"]["risk_level"] == "high"]
+    approved = [item for item in assessments if item["human_review_status"] == "approved"]
+    rejected = [item for item in assessments if item["human_review_status"] == "rejected"]
     pending = [item for item in assessments if item["human_review_status"] == "needs_review"]
     missing_evidence = sum(
-        1 for assessment in assessments for item in assessment["evidence_checklist"] if item["status"] == "missing"
+        1 for item in assessments for evidence in item["evidence_checklist"] if evidence["status"] == "missing"
     )
     readiness_scores = []
     for item in assessments:
@@ -68,62 +152,74 @@ with tabs[0]:
             readiness_scores.append(0)
     average_readiness = sum(readiness_scores) / len(readiness_scores) if readiness_scores else 0
 
-    col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("Total AI systems", len(systems))
-    col2.metric("High-risk systems", len(high_risk))
-    col3.metric("Pending reviews", len(pending))
-    col4.metric("Missing evidence", missing_evidence)
-    col5.metric("Avg readiness", f"{average_readiness:.0f}%")
+    cols = st.columns(6)
+    cols[0].metric("AI systems", len(systems))
+    cols[1].metric("High risk", len(high_risk))
+    cols[2].metric("Pending", len(pending))
+    cols[3].metric("Approved", len(approved))
+    cols[4].metric("Rejected", len(rejected))
+    cols[5].metric("Readiness", f"{average_readiness:.0f}%")
+    st.metric("Missing evidence items", missing_evidence)
 
     if assessments:
+        st.markdown("<div class='section-title'>Recent assessments</div>", unsafe_allow_html=True)
         st.dataframe(
             [
                 {
                     "System": item["profile"]["system_name"],
-                    "Risk": risk_badge(item["risk_classification"]["risk_level"]),
-                    "Status": item["status"],
-                    "Evidence items": len(item["evidence_checklist"]),
+                    "Risk": risk_label(item["risk_classification"]["risk_level"]),
+                    "Review": item["human_review_status"],
+                    "Critical gaps": len(item["gap_analysis"]["critical_gaps"]),
+                    "Evidence": len(item["evidence_checklist"]),
                 }
-                for item in assessments
+                for item in assessments[:15]
             ],
+            hide_index=True,
             use_container_width=True,
+            height=420,
         )
 
-with tabs[1]:
-    st.subheader("Register AI System")
+elif page == "Intake":
+    page_header("AI System Intake", "Register a system with structured governance fields and run an assessment.")
     with st.form("system_form"):
-        name = st.text_input("System name", value="Recruitment CV Screening Assistant")
-        business_unit = st.text_input("Business unit", value="People Operations")
-        owner = st.text_input("Owner", value="Head of Talent")
-        technical_owner = st.text_input("Technical owner", value="AI Engineering Lead")
-        deployment_status = st.selectbox("Deployment status", ["prototype", "internal", "production", "external"])
-        users_affected = st.text_input("Users affected", value="job candidates")
-        external_users_affected = st.checkbox("External users affected", value=True)
-        data_types = st.text_input("Data types", value="CVs/resumes, embeddings, candidate fit scores")
-        model_provider = st.text_input("Model provider", value="OpenAI")
-        model_type = st.text_input("Model type", value="LLM-assisted workflow")
-        decision_impact = st.selectbox("Decision impact", ["recommendation", "low", "medium", "high"])
-        autonomy_level = st.selectbox("Level of autonomy", ["human-in-the-loop", "human-on-the-loop", "automated", "unknown"])
-        integrations_tools_used = st.text_input("Integrations/tools used", value="ATS, vector database")
-        monitoring_status = st.text_input("Monitoring status", value="Not yet documented")
-        evaluation_status = st.text_input("Evaluation status", value="Evaluation dataset pending")
-        security_testing_status = st.text_input("Security testing status", value="Prompt injection testing pending")
+        left, right = st.columns(2)
+        with left:
+            name = st.text_input("System name", value="Recruitment CV Screening Assistant")
+            business_unit = st.text_input("Business unit", value="People Operations")
+            owner = st.text_input("System owner", value="Head of Talent")
+            technical_owner = st.text_input("Technical owner", value="AI Engineering Lead")
+            deployment_status = st.selectbox("Deployment status", ["prototype", "internal", "production", "external"])
+            users_affected = st.text_input("Users affected", value="job candidates")
+            external_users_affected = st.checkbox("External users affected", value=True)
+        with right:
+            data_types = st.text_input("Data types", value="CVs/resumes, embeddings, candidate fit scores")
+            model_provider = st.text_input("Model provider", value="OpenAI")
+            model_type = st.text_input("Model type", value="LLM-assisted workflow")
+            decision_impact = st.selectbox("Decision impact", ["recommendation", "low", "medium", "high"])
+            autonomy_level = st.selectbox(
+                "Level of autonomy", ["human-in-the-loop", "human-on-the-loop", "automated", "unknown"]
+            )
+            integrations_tools_used = st.text_input("Integrations/tools used", value="ATS, vector database")
+
+        status_cols = st.columns(3)
+        monitoring_status = status_cols[0].text_input("Monitoring status", value="Not yet documented")
+        evaluation_status = status_cols[1].text_input("Evaluation status", value="Evaluation dataset pending")
+        security_testing_status = status_cols[2].text_input("Security testing status", value="Prompt injection testing pending")
         human_oversight_process = st.text_area(
             "Human oversight process",
             value="Recruiters review AI rankings before any hiring decision.",
-            height=80,
+            height=90,
         )
         description = st.text_area(
             "Use case description",
             value=(
                 "We use an AI assistant in HR to analyze CVs, rank candidates and generate "
                 "recommendations for recruiters. The system processes personal data, stores "
-                "embeddings of CVs and produces candidate fit scores. Final hiring decisions "
-                "are reviewed by humans."
+                "embeddings of CVs and produces candidate fit scores. Final hiring decisions are reviewed by humans."
             ),
-            height=160,
+            height=150,
         )
-        submitted = st.form_submit_button("Create and assess")
+        submitted = st.form_submit_button("Create and assess", use_container_width=True)
     if submitted:
         system = api_post(
             "/systems",
@@ -134,164 +230,154 @@ with tabs[1]:
                 "owner": owner,
                 "technical_owner": technical_owner,
                 "deployment_status": deployment_status,
-                "users_affected": [item.strip() for item in users_affected.split(",") if item.strip()],
+                "users_affected": split_csv(users_affected),
                 "external_users_affected": external_users_affected,
-                "data_types": [item.strip() for item in data_types.split(",") if item.strip()],
+                "data_types": split_csv(data_types),
                 "model_provider": model_provider,
                 "model_type": model_type,
                 "decision_impact": decision_impact,
                 "autonomy_level": autonomy_level,
                 "human_oversight_process": human_oversight_process,
-                "integrations_tools_used": [
-                    item.strip() for item in integrations_tools_used.split(",") if item.strip()
-                ],
+                "integrations_tools_used": split_csv(integrations_tools_used),
                 "monitoring_status": monitoring_status,
                 "evaluation_status": evaluation_status,
                 "security_testing_status": security_testing_status,
             },
         )
-        assessment = api_post(f"/systems/{system['id']}/assess")
-        st.session_state["assessment_id"] = assessment["id"]
+        result = api_post(f"/systems/{system['id']}/assess")
+        st.session_state["assessment_id"] = result["id"]
         st.success("Assessment generated and queued for human review.")
 
-with tabs[2]:
-    st.subheader("Demo Scenario Pack")
+elif page == "Demo Scenarios":
+    page_header("Demo Scenario Pack", "One-click assessments for portfolio walkthroughs.")
     scenarios = api_get("/demo/scenarios")
     st.dataframe(
         [
             {
-                "Slug": item["slug"],
-                "System": item["name"],
+                "Scenario": item["name"],
                 "Business unit": item.get("business_unit"),
                 "Deployment": item.get("deployment_status"),
+                "Slug": item["slug"],
             }
             for item in scenarios
         ],
+        hide_index=True,
         use_container_width=True,
+        height=260,
     )
-    if scenarios:
-        selected_scenario = st.selectbox(
-            "Scenario",
-            options=scenarios,
-            format_func=lambda item: item["name"],
-        )
-        st.write(selected_scenario["description"])
-        if st.button("Create and assess scenario"):
-            assessment = api_post(f"/demo/scenarios/{selected_scenario['slug']}/assess")
-            st.session_state["assessment_id"] = assessment["id"]
-            st.success("Demo assessment generated.")
+    selected = st.selectbox("Scenario", scenarios, format_func=lambda item: item["name"])
+    st.info(selected["description"])
+    if st.button("Create and assess scenario", use_container_width=True):
+        result = api_post(f"/demo/scenarios/{selected['slug']}/assess")
+        st.session_state["assessment_id"] = result["id"]
+        st.success("Demo assessment generated.")
 
-assessment_id = st.session_state.get("assessment_id")
-if not assessment_id:
-    try:
-        recent = api_get("/assessments")
-        assessment_id = recent[0]["id"] if recent else None
-    except Exception:
-        assessment_id = None
-
-assessment = api_get(f"/assessments/{assessment_id}") if assessment_id else None
-
-with tabs[3]:
-    if assessment:
-        risk = assessment["risk_classification"]
-        st.metric("Risk level", risk_badge(risk["risk_level"]), f"{risk['confidence']:.0%} confidence")
-        st.write(risk["reasoning_summary"])
-        st.subheader("Risk factors")
-        st.write(risk["risk_factors"])
-        st.subheader("Relevant requirements")
-        st.dataframe(assessment["retrieved_requirements"], use_container_width=True)
-        st.subheader("Mapped controls")
-        st.dataframe(assessment["mapped_controls"], use_container_width=True)
-        st.subheader("Gaps")
-        st.json(assessment["gap_analysis"])
+elif page == "Assessment":
+    page_header("Risk Assessment", "Risk, grounded requirements, controls, gaps and recommended actions.")
+    if not assessment:
+        st.info("Create or select an assessment first.")
     else:
-        st.info("Create an AI system to view an assessment.")
+        risk = assessment["risk_classification"]
+        cols = st.columns(4)
+        cols[0].metric("Risk level", risk_label(risk["risk_level"]))
+        cols[1].metric("Confidence", f"{risk['confidence']:.0%}")
+        cols[2].metric("Critical gaps", len(assessment["gap_analysis"]["critical_gaps"]))
+        cols[3].metric("Review status", assessment["human_review_status"])
+        st.markdown(f"<span class='status-pill'>{assessment['disclaimer']}</span>", unsafe_allow_html=True)
+        st.write(risk["reasoning_summary"])
+        with st.expander("Risk factors", expanded=True):
+            st.write(risk["risk_factors"])
+        with st.expander("Relevant requirements", expanded=True):
+            st.dataframe(assessment["retrieved_requirements"], hide_index=True, use_container_width=True, height=300)
+        with st.expander("Mapped controls", expanded=True):
+            st.dataframe(assessment["mapped_controls"], hide_index=True, use_container_width=True, height=300)
+        with st.expander("Gap analysis", expanded=True):
+            st.json(assessment["gap_analysis"], expanded=False)
 
-with tabs[4]:
-    st.subheader("Requirement Knowledge Base")
+elif page == "Requirements":
+    page_header("Requirement Knowledge Base", "Search seeded policy, control and regulation requirements.")
     query = st.text_input("Search requirements", value="human oversight")
-    requirements_path = f"/requirements?q={query}" if query else "/requirements"
-    try:
-        requirements = api_get(requirements_path)
-        st.dataframe(requirements, use_container_width=True)
-    except Exception as exc:
-        st.error(str(exc))
+    requirements_path = f"/requirements?q={quote(query)}" if query else "/requirements"
+    requirements = api_get(requirements_path)
+    st.dataframe(requirements, hide_index=True, use_container_width=True, height=560)
 
-with tabs[5]:
-    if assessment:
+elif page == "Evidence":
+    page_header("Evidence Center", "Track evidence status, owners, links and readiness.")
+    if not assessment:
+        st.info("Create or select an assessment first.")
+    else:
         readiness = api_get(f"/evidence/assessments/{assessment['id']}/readiness-score")
-        st.metric("Compliance readiness score", f"{readiness['score']:.1f}%")
+        cols = st.columns(4)
+        cols[0].metric("Readiness", f"{readiness['score']:.1f}%")
+        cols[1].metric("Approved", readiness["approved"])
+        cols[2].metric("Missing", readiness["missing"])
+        cols[3].metric("Total", readiness["total"])
         evidence_records = api_get(f"/evidence/assessments/{assessment['id']}")
-        st.dataframe(evidence_records, use_container_width=True)
-        if evidence_records:
-            selected = st.selectbox(
-                "Evidence item",
-                options=evidence_records,
-                format_func=lambda item: f"{item['name']} ({item['status']})",
+        st.dataframe(evidence_records, hide_index=True, use_container_width=True, height=360)
+        selected = st.selectbox("Evidence item", evidence_records, format_func=lambda item: f"{item['name']} - {item['status']}")
+        edit_cols = st.columns([1, 2])
+        new_status = edit_cols[0].selectbox(
+            "Status",
+            ["missing", "partial", "generated", "uploaded", "approved", "rejected"],
+            index=["missing", "partial", "generated", "uploaded", "approved", "rejected"].index(selected["status"]),
+        )
+        file_url = edit_cols[1].text_input("Evidence URL", value=selected.get("file_url") or "")
+        description = st.text_area("Evidence notes", value=selected.get("description") or "", height=90)
+        if st.button("Update evidence", use_container_width=True):
+            api_patch(
+                f"/evidence/items/{selected['id']}",
+                {"status": new_status, "description": description, "file_url": file_url or None},
             )
-            new_status = st.selectbox(
-                "Status",
-                ["missing", "partial", "generated", "uploaded", "approved", "rejected"],
-                index=["missing", "partial", "generated", "uploaded", "approved", "rejected"].index(selected["status"]),
-            )
-            description = st.text_area("Evidence notes", value=selected.get("description") or "")
-            file_url = st.text_input("Evidence URL", value=selected.get("file_url") or "")
-            if st.button("Update evidence"):
-                api_patch(
-                    f"/evidence/items/{selected['id']}",
-                    {"status": new_status, "description": description, "file_url": file_url or None},
-                )
-                st.success("Evidence updated.")
+            st.success("Evidence updated.")
 
-with tabs[6]:
-    if assessment:
+elif page == "System Card":
+    page_header("AI System Card", "Generated system documentation for human review.")
+    if not assessment:
+        st.info("Create or select an assessment first.")
+    else:
         col_md, col_pdf = st.columns(2)
         col_md.download_button(
             "Download Markdown",
             data=assessment["ai_system_card"]["content_markdown"],
             file_name=f"{assessment['profile']['system_name'].lower().replace(' ', '_')}_system_card.md",
+            use_container_width=True,
         )
-        col_pdf.link_button("Download PDF", f"{API_BASE_URL}/reports/{assessment['id']}/system-card.pdf")
+        col_pdf.link_button("Download PDF", f"{API_BASE_URL}/reports/{assessment['id']}/system-card.pdf", use_container_width=True)
         st.markdown(assessment["ai_system_card"]["content_markdown"])
 
-with tabs[7]:
-    if assessment:
+elif page == "Audit Report":
+    page_header("Audit Report", "Audit-readiness report with gaps, controls and evidence.")
+    if not assessment:
+        st.info("Create or select an assessment first.")
+    else:
         col_md, col_pdf = st.columns(2)
         col_md.download_button(
             "Download Markdown",
             data=assessment["audit_report"]["content_markdown"],
             file_name=f"{assessment['profile']['system_name'].lower().replace(' ', '_')}_audit_report.md",
+            use_container_width=True,
         )
-        col_pdf.link_button("Download PDF", f"{API_BASE_URL}/reports/{assessment['id']}.pdf")
+        col_pdf.link_button("Download PDF", f"{API_BASE_URL}/reports/{assessment['id']}.pdf", use_container_width=True)
         st.markdown(assessment["audit_report"]["content_markdown"])
 
-with tabs[8]:
-    if assessment:
-        st.subheader("Review queue")
-        try:
-            st.dataframe(api_get("/reviews/queue"), use_container_width=True)
-        except Exception as exc:
-            st.warning(str(exc))
-        st.write(f"Current status: `{assessment['human_review_status']}`")
+elif page == "Human Review":
+    page_header("Human Review", "Review queue, status decisions, notes and history.")
+    if not assessment:
+        st.info("Create or select an assessment first.")
+    else:
+        st.dataframe(api_get("/reviews/queue"), hide_index=True, use_container_width=True, height=280)
+        st.markdown(f"Current status: `{assessment['human_review_status']}`")
         reviewer = st.text_input("Reviewer", value="Compliance Reviewer")
-        notes = st.text_area("Reviewer notes", value="Reviewed as draft. Evidence gaps must be tracked.")
+        notes = st.text_area("Reviewer notes", value="Reviewed as draft. Evidence gaps must be tracked.", height=100)
         col1, col2, col3 = st.columns(3)
-        if col1.button("Approve"):
-            result = api_post(f"/reviews/{assessment['id']}/approve", {"reviewer": reviewer, "notes": notes})
-            st.success(f"Assessment {result['status']}")
-        if col2.button("Reject"):
-            result = api_post(f"/reviews/{assessment['id']}/reject", {"reviewer": reviewer, "notes": notes})
-            st.warning(f"Assessment {result['status']}")
-        if col3.button("Request more evidence"):
-            result = api_post(
-                f"/reviews/{assessment['id']}/request-more-evidence", {"reviewer": reviewer, "notes": notes}
-            )
-            st.info(f"Assessment {result['status']}")
-        st.subheader("Review history")
-        st.dataframe(api_get(f"/reviews/{assessment['id']}/history"), use_container_width=True)
+        if col1.button("Approve", use_container_width=True):
+            st.success(api_post(f"/reviews/{assessment['id']}/approve", {"reviewer": reviewer, "notes": notes})["status"])
+        if col2.button("Reject", use_container_width=True):
+            st.warning(api_post(f"/reviews/{assessment['id']}/reject", {"reviewer": reviewer, "notes": notes})["status"])
+        if col3.button("Request evidence", use_container_width=True):
+            st.info(api_post(f"/reviews/{assessment['id']}/request-more-evidence", {"reviewer": reviewer, "notes": notes})["status"])
+        st.dataframe(api_get(f"/reviews/{assessment['id']}/history"), hide_index=True, use_container_width=True, height=220)
 
-with tabs[9]:
-    try:
-        st.dataframe(api_get("/evaluation/results"), use_container_width=True)
-    except Exception as exc:
-        st.error(str(exc))
+elif page == "Evaluation":
+    page_header("Evaluation Dashboard", "Guardrail, retrieval, structure and workflow metrics.")
+    st.dataframe(api_get("/evaluation/results"), hide_index=True, use_container_width=True, height=520)
