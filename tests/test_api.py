@@ -11,6 +11,7 @@ def test_health():
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+    assert response.json()["kind"] == "liveness"
 
 
 def test_create_system_and_assessment():

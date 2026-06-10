@@ -26,7 +26,7 @@ This document maps the original project requirements to the current implementati
 - Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.
 - Evaluation suite covering risk classification consistency, retrieval grounding, system card coverage, evidence completeness, human approval bypass resistance, and legal-advice guardrails.
 - Guardrails preventing automatic approval or final legal compliance claims without human review.
-- Dockerfile, Docker Compose, Makefile, CI workflow, security/configuration scan, and pytest suite.
+- Dockerfile, Docker Compose, Makefile, CI workflow, security/configuration scan, runtime readiness checks, Docker healthchecks, and pytest suite.
 - Optional OpenAI LLM refinement mode, LangSmith run metadata, Qdrant Docker service, and PDF report export.
 
 ## Intentionally Deferred External Integrations

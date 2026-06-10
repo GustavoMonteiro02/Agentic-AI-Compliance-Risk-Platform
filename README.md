@@ -69,6 +69,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Evidence checklist generation with owner, due-date, expiry, approval, and readiness lifecycle tracking
 - Risk register and policy exception workflows with compensating controls
 - Structured audit trail for evidence updates and human review decisions
+- Runtime readiness checks and Docker healthchecks for production operations
 - AI system card and audit report generation
 - Human review workflow: draft, approved, rejected, needs more evidence
 - Guardrails that prevent final compliance claims without human approval

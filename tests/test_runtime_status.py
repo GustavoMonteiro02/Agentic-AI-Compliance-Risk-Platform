@@ -16,3 +16,14 @@ def test_runtime_status_reports_production_toggles():
     assert payload["vector_db"] == "local"
     assert payload["prompt_versions"]["llm_refiner"] == "2026-06-10.v1"
     assert payload["auth_mode"] == "disabled"
+
+
+def test_runtime_readiness_reports_operational_checks():
+    response = client.get("/runtime/readiness")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["ready"] is True
+    assert payload["checks"]["database"]["ok"] is True
+    assert payload["checks"]["knowledge_base"]["chunk_count"] > 0
+    assert payload["checks"]["vector_db"]["ok"] is True

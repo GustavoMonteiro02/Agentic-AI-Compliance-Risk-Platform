@@ -80,10 +80,12 @@ Use:
 
 ```bash
 curl http://127.0.0.1:8000/runtime/status
+curl http://127.0.0.1:8000/runtime/readiness
 ```
 
 This reports whether LLM mode, LangSmith metadata, and vector DB settings are active.
 It also reports active prompt versions so operators can tie generated outputs to the prompt registry.
+Readiness validates database connectivity, knowledge-base loading, auth configuration, LLM configuration, and vector DB availability when Qdrant is enabled.
 
 ## RAG Ingestion
 
@@ -104,6 +106,7 @@ make ci
 ```
 
 The CI gate runs a repository security/configuration scan and the pytest suite. GitHub Actions runs the same checks on push and pull request.
+Docker images include a liveness healthcheck, and Docker Compose includes service healthchecks for the API, PostgreSQL, and Qdrant.
 
 ## Run
 
