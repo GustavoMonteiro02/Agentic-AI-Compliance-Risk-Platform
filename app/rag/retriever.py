@@ -194,6 +194,8 @@ class LocalComplianceRetriever:
                 "jurisdiction": chunk.jurisdiction,
                 "document_type": chunk.document_type,
                 "authority": chunk.authority,
+                "locator": chunk.locator,
+                "content_hash": chunk.content_hash,
                 "tags": list(chunk.tags),
                 "summary": chunk.text,
                 "relevance": "high" if score >= 6 else "medium",
@@ -206,6 +208,7 @@ class LocalComplianceRetriever:
                     "source": chunk.source,
                     "source_url": chunk.source_url,
                     "requirement_id": chunk.requirement_id,
+                    "locator": chunk.locator,
                 },
             }
             for score, chunk, breakdown in reranked

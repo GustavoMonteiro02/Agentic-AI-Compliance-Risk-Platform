@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from app.config import get_settings
 from app.rag.chunker import parse_markdown_requirements
@@ -17,7 +18,31 @@ def ingest_markdown_directory(base_path: Path) -> LocalVectorStore:
 
 def ingest_summary(base_path: Path) -> dict:
     store = ingest_markdown_directory(base_path)
-    return {"chunk_count": store.count(), "sources": store.sources()}
+    return {
+        "chunk_count": store.count(),
+        "sources": store.sources(),
+        "legal_sources": legal_source_summary(base_path),
+    }
+
+
+def legal_source_summary(base_path: Path) -> dict:
+    manifest_path = base_path / "legal_sources_manifest.json"
+    if not manifest_path.exists():
+        return {"manifest": None, "sources": []}
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    sources = []
+    for source in manifest.get("sources", []):
+        local_path = base_path / source["local_path"]
+        sources.append(
+            {
+                **source,
+                "available": local_path.exists(),
+                "chunk_count": len(parse_markdown_requirements(source["local_path"], local_path.read_text(encoding="utf-8")))
+                if local_path.exists()
+                else 0,
+            }
+        )
+    return {"manifest": manifest.get("version"), "sources": sources}
 
 
 def ingest_qdrant(base_path: Path) -> dict:

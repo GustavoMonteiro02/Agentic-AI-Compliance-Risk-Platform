@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import hashlib
 
 
 @dataclass(frozen=True)
@@ -14,6 +15,8 @@ class DocumentChunk:
     source_url: str | None = None
     effective_date: str | None = None
     tags: tuple[str, ...] = ()
+    locator: str | None = None
+    content_hash: str | None = None
 
     @property
     def metadata(self) -> dict[str, str | list[str] | None]:
@@ -24,6 +27,8 @@ class DocumentChunk:
             "source_url": self.source_url,
             "effective_date": self.effective_date,
             "tags": list(self.tags),
+            "locator": self.locator,
+            "content_hash": self.content_hash,
         }
 
 
@@ -35,12 +40,15 @@ METADATA_KEYS = {
     "source url",
     "effective date",
     "tags",
+    "locator",
 }
 
 
 def _source_defaults(source: str) -> dict[str, str | None]:
     lowered = source.lower()
     if lowered.startswith("regulations/"):
+        return {"jurisdiction": "EU", "document_type": "regulation", "authority": "European Union"}
+    if lowered.startswith("legal_sources/"):
         return {"jurisdiction": "EU", "document_type": "regulation", "authority": "European Union"}
     if lowered.startswith("policies/"):
         return {"jurisdiction": "internal", "document_type": "policy", "authority": "Internal AI governance policy"}
@@ -84,18 +92,21 @@ def _build_chunk(
         for tag in (metadata.get("tags") or "").split(",")
         if tag.strip()
     )
+    body = "\n".join(buffer).strip()
     return DocumentChunk(
         requirement_id=requirement_id,
         title=title,
         source=source,
         category=(metadata.get("category") or "general").lower(),
-        text="\n".join(buffer).strip(),
+        text=body,
         jurisdiction=metadata.get("jurisdiction") or "internal",
         document_type=metadata.get("document_type") or "unknown",
         authority=metadata.get("authority") or "Internal",
         source_url=metadata.get("source_url") or None,
         effective_date=metadata.get("effective_date") or None,
         tags=tags,
+        locator=metadata.get("locator") or None,
+        content_hash=hashlib.sha256(body.encode("utf-8")).hexdigest()[:16] if body else None,
     )
 
 
@@ -108,11 +119,11 @@ def parse_markdown_requirements(source: str, text: str) -> list[DocumentChunk]:
 
     for line in text.splitlines():
         stripped = line.strip()
-        if stripped.startswith("## "):
+        if stripped.startswith("## ") or stripped.startswith("### "):
             if current_title and buffer:
                 chunks.append(_build_chunk(current_id, current_title, source, current_metadata, buffer))
                 buffer = []
-            current_title = stripped.removeprefix("## ").strip()
+            current_title = stripped.removeprefix("### ").removeprefix("## ").strip()
             current_id = current_title.upper().replace(" ", "_").replace("-", "_")
             current_metadata = _empty_metadata(source)
         elif current_title and (metadata_line := _parse_metadata_line(stripped)):

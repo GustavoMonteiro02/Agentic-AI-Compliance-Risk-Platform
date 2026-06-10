@@ -117,6 +117,8 @@ class QdrantVectorStore:
             "authority": chunk.authority,
             "source_url": chunk.source_url,
             "effective_date": chunk.effective_date,
+            "locator": chunk.locator,
+            "content_hash": chunk.content_hash,
             "tags": list(chunk.tags),
             "metadata": chunk.metadata,
             "embedding_provider": self.embedding_provider.provider_name,

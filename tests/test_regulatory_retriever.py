@@ -28,3 +28,9 @@ def test_retriever_surfaces_source_metadata_for_regulations():
     assert top["jurisdiction"] == "EU"
     assert top["document_type"] == "regulation"
     assert top["source_url"] == "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+
+
+def test_retriever_can_return_article_level_locator():
+    results = LocalComplianceRetriever().search("AI Act Article 14 human oversight intervention")
+
+    assert any(item.get("locator") == "Article 14" for item in results)

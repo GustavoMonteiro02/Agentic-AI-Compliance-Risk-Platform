@@ -64,6 +64,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Adaptive missing-information questions
 - Risk classification with uncertainty and human-review flags
 - Internal regulatory/policy retrieval with citations
+- Legal-source manifest for article-level official corpus ingestion
 - Requirement-to-control mapping
 - Compliance gap analysis
 - Evidence checklist generation with owner, due-date, expiry, approval, and readiness lifecycle tracking

@@ -67,6 +67,7 @@ The graph always ends in a human-review state. A generated assessment can be `dr
 
 Recommendations should reference retrieved internal policy or regulation summaries. The local RAG path uses Markdown documents enriched with jurisdiction, authority, source URL, document type, effective date, tags, and citation labels. Retrieval combines lexical overlap, phrase matching, metadata boosts, optional Qdrant vector scores, and reranking with a score breakdown. Qdrant can be populated through `make ingest-qdrant` and stores the same citation-rich payload used by the local fallback.
 Embedding providers are pluggable: `local_hash` keeps development deterministic, while `openai` enables managed production embeddings for Qdrant ingestion and search.
+Official legal-corpus ingestion is organized through `data/legal_sources_manifest.json`. Article-level Markdown files under `data/legal_sources/` can carry locators, source URLs, effective dates, tags, and content hashes for citation-grade retrieval.
 
 ## Observability
 

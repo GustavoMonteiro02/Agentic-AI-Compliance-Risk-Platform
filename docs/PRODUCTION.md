@@ -99,6 +99,8 @@ make ingest-qdrant
 
 The Qdrant payload stores requirement metadata, tags, source URLs, effective dates, and citation labels. The default embedding provider is deterministic and local for repeatable development. Production can set `EMBEDDING_PROVIDER=openai` to use managed OpenAI embeddings behind the same vector-store contract.
 
+For full legal corpora, add official article-level Markdown files under `data/legal_sources/` and register them in `data/legal_sources_manifest.json`. The manifest records source URL, jurisdiction, document type, ingestion status, and local path. Chunks include locator and content hash metadata for citation-grade retrieval.
+
 ## Release Gate
 
 Before pushing a production branch, run:

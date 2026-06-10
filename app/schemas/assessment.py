@@ -70,6 +70,8 @@ class RetrievedRequirement(BaseModel):
     jurisdiction: str | None = None
     document_type: str | None = None
     authority: str | None = None
+    locator: str | None = None
+    content_hash: str | None = None
     tags: list[str] = Field(default_factory=list)
     retriever: str | None = None
     score: float | None = None
