@@ -2,7 +2,7 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.rag.chunker import parse_markdown_requirements
-from app.rag.embeddings import LocalHashEmbeddingProvider
+from app.rag.embeddings import build_embedding_provider
 from app.rag.vector_store import LocalVectorStore
 from app.rag.vector_store import QdrantVectorStore
 
@@ -26,7 +26,7 @@ def ingest_qdrant(base_path: Path) -> dict:
     qdrant = QdrantVectorStore(
         settings.qdrant_url,
         settings.qdrant_collection,
-        LocalHashEmbeddingProvider(settings.embedding_dimensions),
+        build_embedding_provider(settings),
     )
     result = qdrant.upsert(store.chunks())
     return {
@@ -34,5 +34,7 @@ def ingest_qdrant(base_path: Path) -> dict:
         "sources": store.sources(),
         "vector_db": "qdrant",
         "collection": settings.qdrant_collection,
+        "embedding_provider": settings.embedding_provider,
+        "embedding_model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
         **result,
     }

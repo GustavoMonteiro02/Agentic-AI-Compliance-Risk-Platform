@@ -1,5 +1,5 @@
 from app.rag.chunker import DocumentChunk
-from app.rag.embeddings import LocalHashEmbeddingProvider
+from app.rag.embeddings import EmbeddingProvider, LocalHashEmbeddingProvider
 
 
 class LocalVectorStore:
@@ -28,7 +28,7 @@ class QdrantVectorStore:
         self,
         url: str,
         collection: str,
-        embedding_provider: LocalHashEmbeddingProvider | None = None,
+        embedding_provider: EmbeddingProvider | None = None,
     ) -> None:
         self.url = url.rstrip("/")
         self.collection = collection
@@ -119,6 +119,7 @@ class QdrantVectorStore:
             "effective_date": chunk.effective_date,
             "tags": list(chunk.tags),
             "metadata": chunk.metadata,
+            "embedding_provider": self.embedding_provider.provider_name,
             "citation": {
                 "label": f"{chunk.authority}: {chunk.title}",
                 "source_url": chunk.source_url,

@@ -1,5 +1,5 @@
 from app.rag.chunker import DocumentChunk
-from app.rag.embeddings import LocalHashEmbeddingProvider
+from app.rag.embeddings import LocalHashEmbeddingProvider, OpenAIEmbeddingProvider, build_embedding_provider
 from app.rag.vector_store import LocalVectorStore, QdrantVectorStore
 
 
@@ -43,3 +43,35 @@ def test_qdrant_payload_contains_metadata_and_citation():
     assert payload["metadata"]["jurisdiction"] == "EU"
     assert payload["citation"]["source_url"] == "https://example.test/source"
     assert payload["tags"] == ["privacy", "retention"]
+    assert payload["embedding_provider"] == "local_hash"
+
+
+def test_openai_embedding_provider_parses_embedding_response(monkeypatch):
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"data": [{"embedding": [0.1, 0.2, 0.3]}]}
+
+    monkeypatch.setattr("app.rag.embeddings.requests.post", lambda *args, **kwargs: FakeResponse())
+
+    provider = OpenAIEmbeddingProvider(api_key="test", dimensions=3)
+
+    assert provider.embed("human oversight") == [0.1, 0.2, 0.3]
+    assert provider.provider_name == "openai"
+
+
+def test_embedding_factory_requires_openai_key():
+    class Settings:
+        embedding_provider = "openai"
+        openai_api_key = None
+        openai_embedding_model = "text-embedding-3-small"
+        embedding_dimensions = 1536
+
+    try:
+        build_embedding_provider(Settings())
+    except ValueError as exc:
+        assert "OPENAI_API_KEY" in str(exc)
+    else:
+        raise AssertionError("Expected missing OpenAI API key to fail")

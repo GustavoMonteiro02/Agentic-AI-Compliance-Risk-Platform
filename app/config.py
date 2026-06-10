@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     vector_db: str = "local"
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "ai_governance_requirements"
+    embedding_provider: str = "local_hash"
+    openai_embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 128
     auth_mode: str = "disabled"
     platform_api_key: str | None = None

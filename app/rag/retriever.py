@@ -4,7 +4,7 @@ from typing import Any
 
 from app.config import get_settings
 from app.rag.chunker import DocumentChunk, parse_markdown_requirements
-from app.rag.embeddings import LocalHashEmbeddingProvider
+from app.rag.embeddings import build_embedding_provider
 from app.rag.vector_store import QdrantVectorStore
 
 
@@ -124,7 +124,7 @@ class LocalComplianceRetriever:
         qdrant = QdrantVectorStore(
             settings.qdrant_url,
             settings.qdrant_collection,
-            LocalHashEmbeddingProvider(settings.embedding_dimensions),
+            build_embedding_provider(settings),
         )
         try:
             health = qdrant.health()

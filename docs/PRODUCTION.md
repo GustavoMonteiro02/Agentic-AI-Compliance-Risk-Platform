@@ -24,6 +24,8 @@ LANGSMITH_PROJECT=ai-governance-compliance-platform
 VECTOR_DB=qdrant
 QDRANT_URL=http://qdrant:6333
 QDRANT_COLLECTION=ai_governance_requirements
+EMBEDDING_PROVIDER=openai
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 EMBEDDING_DIMENSIONS=128
 AUTH_MODE=api_key
 PLATFORM_API_KEY=change-me
@@ -95,7 +97,7 @@ The local fallback uses hybrid lexical, phrase, metadata, and citation-aware rer
 make ingest-qdrant
 ```
 
-The Qdrant payload stores requirement metadata, tags, source URLs, effective dates, and citation labels. The default embedding provider is deterministic and local for repeatable development; production can replace it with managed embeddings behind the same vector-store contract.
+The Qdrant payload stores requirement metadata, tags, source URLs, effective dates, and citation labels. The default embedding provider is deterministic and local for repeatable development. Production can set `EMBEDDING_PROVIDER=openai` to use managed OpenAI embeddings behind the same vector-store contract.
 
 ## Release Gate
 

@@ -144,6 +144,8 @@ Copy `.env.example` to `.env` and adjust values.
 - `VECTOR_DB`: `local` by default, or `qdrant`
 - `QDRANT_URL`: defaults to `http://localhost:6333`
 - `QDRANT_COLLECTION`: defaults to `ai_governance_requirements`
+- `EMBEDDING_PROVIDER`: `local_hash` by default, or `openai`
+- `OPENAI_EMBEDDING_MODEL`: defaults to `text-embedding-3-small`
 - `EMBEDDING_DIMENSIONS`: local deterministic embedding size for offline dev/test retrieval
 - `AUTH_MODE`: `disabled` for local demos, or `api_key` for API-key protected deployments
 - `PLATFORM_API_KEY`: shared API key used when `AUTH_MODE=api_key`

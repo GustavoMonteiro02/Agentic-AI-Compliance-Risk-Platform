@@ -22,6 +22,8 @@ def runtime_status() -> dict:
         "langsmith_project": settings.langsmith_project,
         "vector_db": settings.vector_db,
         "qdrant_url": settings.qdrant_url if settings.vector_db == "qdrant" else None,
+        "embedding_provider": settings.embedding_provider,
+        "embedding_model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
         "prompt_versions": {name: prompt.version for name, prompt in PROMPT_REGISTRY.items()},
         "auth_mode": settings.auth_mode,
         "default_user_role": settings.default_user_role,
@@ -57,6 +59,12 @@ def runtime_readiness() -> dict:
         "ok": settings.ai_generation_mode != "openai" or bool(settings.openai_api_key),
         "mode": settings.ai_generation_mode,
         "model": settings.openai_model,
+    }
+    checks["embeddings"] = {
+        "ok": settings.embedding_provider != "openai" or bool(settings.openai_api_key),
+        "provider": settings.embedding_provider,
+        "model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
+        "dimensions": settings.embedding_dimensions,
     }
 
     if settings.vector_db == "qdrant":
