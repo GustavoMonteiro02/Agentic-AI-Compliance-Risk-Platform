@@ -13,5 +13,5 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
+      - run: python scripts/security_check.py
       - run: pytest
-

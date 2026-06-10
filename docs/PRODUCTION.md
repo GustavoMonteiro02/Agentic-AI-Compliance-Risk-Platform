@@ -95,6 +95,16 @@ make ingest-qdrant
 
 The Qdrant payload stores requirement metadata, tags, source URLs, effective dates, and citation labels. The default embedding provider is deterministic and local for repeatable development; production can replace it with managed embeddings behind the same vector-store contract.
 
+## Release Gate
+
+Before pushing a production branch, run:
+
+```bash
+make ci
+```
+
+The CI gate runs a repository security/configuration scan and the pytest suite. GitHub Actions runs the same checks on push and pull request.
+
 ## Run
 
 ```bash
