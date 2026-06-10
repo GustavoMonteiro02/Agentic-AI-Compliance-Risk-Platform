@@ -1,6 +1,7 @@
 from app.schemas.controls import MappedControl
 from app.schemas.audit import AuditEventRead
 from app.schemas.report import GeneratedDocument
+from app.schemas.risk_register import PolicyExceptionCreate, RiskRegisterItemUpdate
 from app.schemas.risk import RiskClassification
 
 
@@ -22,3 +23,11 @@ def test_schema_layout_exports_expected_models():
     assert control.control_status == "unknown"
     assert document.status == "draft"
     assert AuditEventRead.model_fields["action"]
+    assert RiskRegisterItemUpdate(status="open").status == "open"
+    exception = PolicyExceptionCreate(
+        assessment_id="assessment-1",
+        title="Exception",
+        justification="Temporary business exception.",
+        requested_by="Reviewer",
+    )
+    assert exception.compensating_controls == []

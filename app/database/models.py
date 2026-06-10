@@ -107,6 +107,46 @@ class ComplianceGap(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class RiskRegisterItem(Base):
+    __tablename__ = "risk_register_items"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
+    assessment_id: Mapped[str] = mapped_column(String, index=True)
+    system_id: Mapped[str] = mapped_column(String, index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str] = mapped_column(Text)
+    severity: Mapped[str] = mapped_column(String(80))
+    likelihood: Mapped[str] = mapped_column(String(80), default="medium")
+    impact: Mapped[str] = mapped_column(String(80), default="medium")
+    owner: Mapped[str] = mapped_column(String(255), default="Compliance")
+    status: Mapped[str] = mapped_column(String(80), default="open")
+    mitigation_plan: Mapped[str] = mapped_column(Text, default="")
+    source_gap: Mapped[str | None] = mapped_column(Text)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PolicyException(Base):
+    __tablename__ = "policy_exceptions"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
+    assessment_id: Mapped[str] = mapped_column(String, index=True)
+    system_id: Mapped[str] = mapped_column(String, index=True)
+    requirement_id: Mapped[str | None] = mapped_column(String(255))
+    title: Mapped[str] = mapped_column(String(255))
+    justification: Mapped[str] = mapped_column(Text)
+    compensating_controls_json: Mapped[list[str]] = mapped_column(JSON, default=list)
+    requested_by: Mapped[str] = mapped_column(String(255))
+    approved_by: Mapped[str | None] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(80), default="requested")
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class EvidenceItemRecord(Base):
     __tablename__ = "evidence_items"
 

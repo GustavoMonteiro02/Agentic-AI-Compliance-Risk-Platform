@@ -17,6 +17,7 @@ This document maps the original project requirements to the current implementati
 - Requirement search API and Streamlit Requirements tab.
 - MCP tool, resource, and prompt catalog with tests.
 - Evidence checklist records, evidence status updates, owners, due dates, expiry, approval metadata, and compliance readiness score.
+- Risk register and policy exception workflows with mitigation plans and compensating controls.
 - AI system card and audit report Markdown generation/export.
 - Dedicated Pydantic schema modules for risk, controls, requirements, evidence, review, report, system, and assessment contracts.
 - Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, and review history.

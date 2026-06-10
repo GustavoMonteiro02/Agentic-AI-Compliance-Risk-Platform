@@ -146,6 +146,7 @@ page = st.sidebar.radio(
         "Assessment",
         "Requirements",
         "Evidence",
+        "Risk Register",
         "System Card",
         "Audit Report",
         "Human Review",
@@ -397,6 +398,88 @@ elif page == "Evidence":
                 },
             )
             st.success("Evidence updated.")
+
+elif page == "Risk Register":
+    page_header("Risk Register", "Track residual risks, mitigation plans and policy exceptions.")
+    if assessment and st.button("Sync risks from active assessment", use_container_width=True):
+        api_post(f"/risk-register/assessments/{assessment['id']}/sync")
+        st.success("Risk register synced.")
+    risks = api_get("/risk-register")
+    st.dataframe(
+        [
+            {
+                "Title": item["title"],
+                "Severity": item["severity"],
+                "Status": item["status"],
+                "Owner": item["owner"],
+                "Due": item.get("due_date"),
+                "Mitigation": item.get("mitigation_plan"),
+            }
+            for item in risks
+        ],
+        hide_index=True,
+        use_container_width=True,
+        height=300,
+    )
+    if risks:
+        selected_risk = st.selectbox("Risk item", risks, format_func=lambda item: f"{item['title']} - {item['status']}")
+        risk_cols = st.columns(3)
+        risk_status = risk_cols[0].selectbox("Risk status", ["open", "mitigating", "accepted", "closed"], index=["open", "mitigating", "accepted", "closed"].index(selected_risk["status"]))
+        risk_owner = risk_cols[1].text_input("Risk owner", value=selected_risk["owner"])
+        risk_due = risk_cols[2].date_input("Risk due date", value=parse_api_date(selected_risk.get("due_date")))
+        mitigation_plan = st.text_area("Mitigation plan", value=selected_risk.get("mitigation_plan") or "", height=90)
+        if st.button("Update risk", use_container_width=True):
+            api_patch(
+                f"/risk-register/{selected_risk['id']}",
+                {
+                    "status": risk_status,
+                    "owner": risk_owner,
+                    "due_date": date_to_api_datetime(risk_due),
+                    "mitigation_plan": mitigation_plan,
+                },
+            )
+            st.success("Risk updated.")
+
+    st.markdown("<div class='section-title'>Policy exceptions</div>", unsafe_allow_html=True)
+    exceptions = api_get("/risk-register/exceptions")
+    st.dataframe(
+        [
+            {
+                "Title": item["title"],
+                "Status": item["status"],
+                "Requested by": item["requested_by"],
+                "Approved by": item.get("approved_by"),
+                "Expires": item.get("expires_at"),
+            }
+            for item in exceptions
+        ],
+        hide_index=True,
+        use_container_width=True,
+        height=220,
+    )
+    with st.form("policy_exception_form"):
+        if not assessment:
+            st.info("Select an assessment before requesting an exception.")
+        exception_title = st.text_input("Exception title", value="Temporary compensating control exception")
+        requirement_id = st.text_input("Requirement ID", value="")
+        requested_by = st.text_input("Requested by", value=API_USER)
+        justification = st.text_area("Justification", value="Temporary exception while the control is implemented.", height=90)
+        compensating_controls = st.text_input("Compensating controls", value="Manual review, weekly monitoring")
+        expires_at = st.date_input("Exception expiry", value=None)
+        if st.form_submit_button("Request exception", use_container_width=True) and assessment:
+            api_post(
+                "/risk-register/exceptions",
+                {
+                    "assessment_id": assessment["id"],
+                    "requirement_id": requirement_id or None,
+                    "title": exception_title,
+                    "justification": justification,
+                    "compensating_controls": split_csv(compensating_controls),
+                    "requested_by": requested_by,
+                    "expires_at": date_to_api_datetime(expires_at),
+                },
+            )
+            st.success("Exception requested.")
 
 elif page == "System Card":
     page_header("AI System Card", "Generated system documentation for human review.")
