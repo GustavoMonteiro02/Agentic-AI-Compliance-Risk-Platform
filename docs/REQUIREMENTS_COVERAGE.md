@@ -12,7 +12,7 @@ This document maps the original project requirements to the current implementati
 - Structured intake agent with adaptive missing-information questions.
 - Follow-up answers accepted through `POST /systems/{system_id}/assess`.
 - LangGraph-compiled governance workflow with intake, missing-info check, risk classification, regulatory retrieval, control mapping, gap analysis, evidence generation, system card generation, audit report generation, and human review gate.
-- Local RAG knowledge base with policies, controls, regulation summaries, and sample AI systems.
+- Local RAG knowledge base with policies, controls, source-linked regulation summaries, section metadata, hybrid retrieval, and reranking.
 - Requirements seeding into the `requirements` database table from Markdown knowledge-base documents.
 - Requirement search API and Streamlit Requirements tab.
 - MCP tool, resource, and prompt catalog with tests.
@@ -24,20 +24,20 @@ This document maps the original project requirements to the current implementati
 - Evaluation suite covering risk classification consistency, retrieval grounding, system card coverage, evidence completeness, human approval bypass resistance, and legal-advice guardrails.
 - Guardrails preventing automatic approval or final legal compliance claims without human review.
 - Dockerfile, Docker Compose, Makefile, CI workflow, and pytest suite.
+- Optional OpenAI LLM refinement mode, LangSmith run metadata, Qdrant Docker service, and PDF report export.
 
 ## Intentionally Deferred External Integrations
 
 These are represented by stable interfaces and roadmap entries, but are not enabled by default because the local MVP is designed to run without cloud credentials:
 
-- Real LLM provider calls through LangChain.
-- LangSmith hosted tracing and experiment uploads.
-- Qdrant or Pinecone as a persistent vector database.
+- Full LangChain provider abstraction across multiple LLM vendors.
+- LangSmith hosted experiment upload workflows beyond local run metadata.
+- Pinecone as an alternative persistent vector database.
 - Production FastMCP deployment behind a process manager.
-- PDF export pipeline for audit reports.
 - Full official legal/regulatory corpora ingestion.
 
 ## Current Verification
 
-- Test suite: `24 passed`.
+- Test suite: run with `pytest`.
 - Local API: `http://127.0.0.1:8000`.
 - Local UI: `http://127.0.0.1:8501`.

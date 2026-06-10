@@ -66,6 +66,15 @@ class RetrievedRequirement(BaseModel):
     source: str
     summary: str
     relevance: str = "medium"
+    source_url: str | None = None
+    jurisdiction: str | None = None
+    document_type: str | None = None
+    authority: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    retriever: str | None = None
+    score: float | None = None
+    score_breakdown: dict[str, float] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class MappedControl(BaseModel):

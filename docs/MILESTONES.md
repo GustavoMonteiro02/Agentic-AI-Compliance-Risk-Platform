@@ -11,7 +11,7 @@
 ## v0.2 RAG Knowledge Base - Mostly Done
 
 - Add richer policy and regulatory summaries.
-- Add Qdrant integration behind the existing retriever interface.
+- Add Qdrant integration behind the existing metadata-aware hybrid retriever interface.
 - Add document ingestion CLI and chunk metadata.
 - Add retrieval quality evaluation dataset.
 

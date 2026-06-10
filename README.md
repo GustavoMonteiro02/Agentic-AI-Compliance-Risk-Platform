@@ -51,7 +51,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 
 - Python, FastAPI, Pydantic, SQLAlchemy
 - LangGraph-compatible workflow abstraction with optional LangGraph integration
-- RAG over local Markdown compliance knowledge base
+- RAG over a source-linked local Markdown compliance knowledge base with hybrid retrieval, metadata boosts, and reranking
 - MCP/FastMCP server exposing tools, resources, and prompts
 - PostgreSQL and Qdrant via Docker Compose, SQLite for fast local development and tests
 - Optional OpenAI advisory mode and LangSmith trace metadata
@@ -193,10 +193,10 @@ Prompts:
 
 ## Limitations
 
-- Regulatory documents are summarized internal demo documents, not full legal sources.
+- Regulatory documents are summarized, source-linked study notes for product demonstration, not a complete legal corpus.
 - The MVP uses deterministic policy logic by default for reproducible tests.
 - Risk results are preliminary and require human compliance/legal review.
-- Vector search uses local lexical retrieval by default with a Qdrant-ready adapter and Docker service.
+- Retrieval uses local hybrid lexical + metadata ranking with reranking by default. The Qdrant adapter and Docker service remain available as the persistent vector-store extension point.
 
 ## Portfolio Value
 

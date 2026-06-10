@@ -36,7 +36,6 @@ This guide describes the portfolio demo path for the AI Governance & Compliance 
 - Set `AI_GENERATION_MODE=openai` and `OPENAI_API_KEY` to enable optional OpenAI advisory text in the risk classifier.
 - Set `LANGSMITH_TRACING=true` to include LangSmith trace metadata in tool-call logs.
 - Run `docker compose up --build` to start PostgreSQL and Qdrant alongside the API.
-- Set `VECTOR_DB=qdrant` to use the Qdrant-ready retrieval path with local lexical fallback.
+- Set `VECTOR_DB=qdrant` to health-check the Qdrant-ready retrieval path while retaining local hybrid retrieval and reranking as the offline fallback.
 
 The default local mode remains deterministic and credential-free.
-

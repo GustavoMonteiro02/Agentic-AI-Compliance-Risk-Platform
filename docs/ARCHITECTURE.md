@@ -27,7 +27,7 @@ flowchart TD
 
 - `app/api`: HTTP API and route boundaries.
 - `app/agents`: workflow state, graph assembly, and deterministic node implementations.
-- `app/rag`: local document loading, chunking, and lexical retrieval.
+- `app/rag`: local document loading, metadata-aware chunking, hybrid retrieval, and reranking.
 - `app/mcp_server`: reusable compliance tools, resources, and prompts exposed for agents.
 - `app/database`: SQLAlchemy models, session lifecycle, and repositories.
 - `app/schemas`: Pydantic contracts for API, agents, and persistence.
@@ -56,7 +56,7 @@ The graph always ends in a human-review state. A generated assessment can be `dr
 
 ## RAG Principle
 
-Recommendations should reference retrieved internal policy or regulation summaries. The MVP uses local Markdown documents and lexical ranking. Later milestones can replace the retriever with Qdrant or Pinecone without changing the agent contract.
+Recommendations should reference retrieved internal policy or regulation summaries. The local RAG path uses Markdown documents enriched with jurisdiction, authority, source URL, document type, effective date, and tags. Retrieval combines lexical overlap, phrase matching, metadata boosts, and reranking with a score breakdown. Qdrant remains the persistent vector-store extension point without changing the agent contract.
 
 ## Observability
 

@@ -288,7 +288,18 @@ elif page == "Assessment":
         with st.expander("Risk factors", expanded=True):
             st.write(risk["risk_factors"])
         with st.expander("Relevant requirements", expanded=True):
-            st.dataframe(assessment["retrieved_requirements"], hide_index=True, use_container_width=True, height=300)
+            requirement_rows = [
+                {
+                    "Requirement": item["title"],
+                    "Source": item["source"],
+                    "Type": item.get("document_type"),
+                    "Jurisdiction": item.get("jurisdiction"),
+                    "Relevance": item.get("relevance"),
+                    "Score": item.get("score"),
+                }
+                for item in assessment["retrieved_requirements"]
+            ]
+            st.dataframe(requirement_rows, hide_index=True, use_container_width=True, height=300)
         with st.expander("Mapped controls", expanded=True):
             st.dataframe(assessment["mapped_controls"], hide_index=True, use_container_width=True, height=300)
         with st.expander("Gap analysis", expanded=True):
