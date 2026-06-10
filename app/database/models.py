@@ -115,6 +115,11 @@ class EvidenceItemRecord(Base):
     owner: Mapped[str] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(80))
     file_url: Mapped[str | None] = mapped_column(String(500))
+    due_date: Mapped[datetime | None] = mapped_column(DateTime)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+    approved_by: Mapped[str | None] = mapped_column(String(255))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    review_notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -190,4 +195,3 @@ class EvaluationResult(Base):
     score: Mapped[float] = mapped_column(Float)
     details_json: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-

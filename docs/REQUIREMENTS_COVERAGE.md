@@ -16,7 +16,7 @@ This document maps the original project requirements to the current implementati
 - Requirements seeding into the `requirements` database table from Markdown knowledge-base documents.
 - Requirement search API and Streamlit Requirements tab.
 - MCP tool, resource, and prompt catalog with tests.
-- Evidence checklist records, evidence status updates, and compliance readiness score.
+- Evidence checklist records, evidence status updates, owners, due dates, expiry, approval metadata, and compliance readiness score.
 - AI system card and audit report Markdown generation/export.
 - Dedicated Pydantic schema modules for risk, controls, requirements, evidence, review, report, system, and assessment contracts.
 - Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, and review history.

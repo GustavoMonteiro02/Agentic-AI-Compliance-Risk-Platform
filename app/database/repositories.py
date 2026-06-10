@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import models
 from app.schemas.assessment import GovernanceAssessment
 from app.schemas.system import AISystemCreate, AISystemUpdate
+
+
+def _evidence_due_date(priority: str) -> datetime:
+    days_by_priority = {"high": 14, "medium": 30, "low": 60}
+    return datetime.utcnow() + timedelta(days=days_by_priority.get(priority, 30))
 
 
 class SystemRepository:
@@ -118,6 +125,7 @@ class AssessmentRepository:
                     owner=item.owner,
                     status=item.status,
                     description="",
+                    due_date=_evidence_due_date(item.priority),
                 )
             )
         self.db.add(

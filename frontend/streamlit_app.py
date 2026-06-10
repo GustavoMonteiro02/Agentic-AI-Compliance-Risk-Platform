@@ -1,4 +1,5 @@
 import os
+from datetime import date, datetime, time
 from urllib.parse import quote
 
 import requests
@@ -71,6 +72,18 @@ def risk_label(level: str) -> str:
         "unknown": "Unknown",
         "unacceptable": "Unacceptable",
     }.get(level, level.title())
+
+
+def parse_api_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+
+
+def date_to_api_datetime(value: date | None) -> str | None:
+    if value is None:
+        return None
+    return datetime.combine(value, time(hour=12)).isoformat()
 
 
 def current_assessment():
@@ -318,26 +331,59 @@ elif page == "Evidence":
         st.info("Create or select an assessment first.")
     else:
         readiness = api_get(f"/evidence/assessments/{assessment['id']}/readiness-score")
-        cols = st.columns(4)
+        cols = st.columns(6)
         cols[0].metric("Readiness", f"{readiness['score']:.1f}%")
         cols[1].metric("Approved", readiness["approved"])
         cols[2].metric("Missing", readiness["missing"])
-        cols[3].metric("Total", readiness["total"])
+        cols[3].metric("Overdue", readiness.get("overdue", 0))
+        cols[4].metric("Expired", readiness.get("expired", 0))
+        cols[5].metric("Total", readiness["total"])
         evidence_records = api_get(f"/evidence/assessments/{assessment['id']}")
-        st.dataframe(evidence_records, hide_index=True, use_container_width=True, height=360)
+        st.dataframe(
+            [
+                {
+                    "Evidence": item["name"],
+                    "Status": item["status"],
+                    "Priority": item["priority"],
+                    "Owner": item["owner"],
+                    "Due": item.get("due_date"),
+                    "Expires": item.get("expires_at"),
+                    "Approved by": item.get("approved_by"),
+                }
+                for item in evidence_records
+            ],
+            hide_index=True,
+            use_container_width=True,
+            height=360,
+        )
         selected = st.selectbox("Evidence item", evidence_records, format_func=lambda item: f"{item['name']} - {item['status']}")
-        edit_cols = st.columns([1, 2])
+        edit_cols = st.columns(3)
         new_status = edit_cols[0].selectbox(
             "Status",
             ["missing", "partial", "generated", "uploaded", "approved", "rejected"],
             index=["missing", "partial", "generated", "uploaded", "approved", "rejected"].index(selected["status"]),
         )
-        file_url = edit_cols[1].text_input("Evidence URL", value=selected.get("file_url") or "")
+        owner = edit_cols[1].text_input("Owner", value=selected["owner"])
+        approved_by = edit_cols[2].text_input("Approved by", value=selected.get("approved_by") or "")
+        file_url = st.text_input("Evidence URL", value=selected.get("file_url") or "")
+        date_cols = st.columns(2)
+        due_date = date_cols[0].date_input("Due date", value=parse_api_date(selected.get("due_date")))
+        expires_at = date_cols[1].date_input("Expires at", value=parse_api_date(selected.get("expires_at")))
         description = st.text_area("Evidence notes", value=selected.get("description") or "", height=90)
+        review_notes = st.text_area("Review notes", value=selected.get("review_notes") or "", height=80)
         if st.button("Update evidence", use_container_width=True):
             api_patch(
                 f"/evidence/items/{selected['id']}",
-                {"status": new_status, "description": description, "file_url": file_url or None},
+                {
+                    "status": new_status,
+                    "owner": owner,
+                    "description": description,
+                    "file_url": file_url or None,
+                    "due_date": date_to_api_datetime(due_date),
+                    "expires_at": date_to_api_datetime(expires_at),
+                    "approved_by": approved_by or None,
+                    "review_notes": review_notes or None,
+                },
             )
             st.success("Evidence updated.")
 

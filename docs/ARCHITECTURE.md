@@ -36,6 +36,8 @@ flowchart TD
 - `data`: summarized regulations, policies, controls, and sample systems.
 - `tests`: unit, API, guardrail, and evaluation tests.
 
+Evidence records operate as lifecycle items, not just checklist text. Each item can track owner, status, due date, expiry date, approval metadata, review notes, and readiness impact.
+
 ## LangGraph State Management
 
 The workflow is compiled with `langgraph.graph.StateGraph` in [app/agents/graph.py](/Users/gdev/Documents/Codex/2026-06-08/files-mentioned-by-the-user-pasted-3/app/agents/graph.py). Each node receives and returns `GovernanceAssessmentState`, which keeps the complete assessment trace:

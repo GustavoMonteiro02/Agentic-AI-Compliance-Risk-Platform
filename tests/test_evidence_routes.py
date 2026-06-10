@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from fastapi.testclient import TestClient
 
 from app.api.main import app
@@ -34,6 +36,7 @@ def test_evidence_items_can_be_listed_and_updated():
     assert update_response.status_code == 200
     assert update_response.json()["status"] == "uploaded"
     assert update_response.json()["description"] == "Uploaded draft evidence."
+    assert update_response.json()["due_date"]
 
 
 def test_readiness_score_reflects_evidence_updates():
@@ -49,3 +52,25 @@ def test_readiness_score_reflects_evidence_updates():
     assert updated["score"] > initial["score"]
     assert updated["approved"] == 3
 
+
+def test_readiness_tracks_approval_and_expiry():
+    assessment = _create_assessment()
+    item = client.get(f"/evidence/assessments/{assessment['id']}").json()[0]
+    expired_at = (datetime.utcnow() - timedelta(days=1)).isoformat()
+
+    approved = client.patch(
+        f"/evidence/items/{item['id']}",
+        json={
+            "status": "approved",
+            "approved_by": "Compliance Lead",
+            "review_notes": "Reviewed against source evidence.",
+            "expires_at": expired_at,
+        },
+    ).json()
+
+    readiness = client.get(f"/evidence/assessments/{assessment['id']}/readiness-score").json()
+
+    assert approved["approved_by"] == "Compliance Lead"
+    assert approved["approved_at"]
+    assert approved["review_notes"] == "Reviewed against source evidence."
+    assert readiness["expired"] >= 1

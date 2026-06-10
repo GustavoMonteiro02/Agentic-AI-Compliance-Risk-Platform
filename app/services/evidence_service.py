@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,6 +32,18 @@ class EvidenceService:
             record.owner = payload.owner
         if payload.file_url is not None:
             record.file_url = payload.file_url
+        if payload.due_date is not None:
+            record.due_date = payload.due_date
+        if payload.expires_at is not None:
+            record.expires_at = payload.expires_at
+        if payload.review_notes is not None:
+            record.review_notes = payload.review_notes
+        if payload.approved_by is not None:
+            record.approved_by = payload.approved_by
+        if payload.status == "approved" and record.approved_at is None:
+            record.approved_at = datetime.utcnow()
+        if payload.status != "approved":
+            record.approved_at = None
         self.db.commit()
         self.db.refresh(record)
         return record
@@ -37,15 +51,24 @@ class EvidenceService:
     def readiness_score(self, assessment_id: str) -> dict:
         items = self.list_for_assessment(assessment_id)
         if not items:
-            return {"assessment_id": assessment_id, "score": 0.0, "approved": 0, "total": 0}
+            return {"assessment_id": assessment_id, "score": 0.0, "approved": 0, "total": 0, "overdue": 0, "expired": 0}
 
+        now = datetime.utcnow()
         weights = {"missing": 0.0, "rejected": 0.0, "partial": 0.35, "generated": 0.55, "uploaded": 0.75, "approved": 1.0}
-        score = round(sum(weights.get(item.status, 0.0) for item in items) / len(items) * 100, 1)
+        expired_items = {item.id for item in items if item.expires_at and item.expires_at < now}
+        weighted_sum = 0.0
+        for item in items:
+            item_score = weights.get(item.status, 0.0)
+            if item.id in expired_items:
+                item_score = min(item_score, 0.35)
+            weighted_sum += item_score
+        score = round(weighted_sum / len(items) * 100, 1)
         return {
             "assessment_id": assessment_id,
             "score": score,
             "approved": sum(1 for item in items if item.status == "approved"),
             "total": len(items),
             "missing": sum(1 for item in items if item.status == "missing"),
+            "overdue": sum(1 for item in items if item.status not in {"approved", "rejected"} and item.due_date and item.due_date < now),
+            "expired": len(expired_items),
         }
-

@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import get_settings
@@ -31,8 +31,31 @@ def init_db() -> None:
     from app.database.seed import seed_requirements
 
     Base.metadata.create_all(bind=engine)
+    _apply_lightweight_sqlite_migrations()
     db = SessionLocal()
     try:
         seed_requirements(db)
     finally:
         db.close()
+
+
+def _apply_lightweight_sqlite_migrations() -> None:
+    if not get_settings().database_url.startswith("sqlite"):
+        return
+
+    inspector = inspect(engine)
+    if "evidence_items" not in inspector.get_table_names():
+        return
+
+    existing = {column["name"] for column in inspector.get_columns("evidence_items")}
+    migrations = {
+        "due_date": "ALTER TABLE evidence_items ADD COLUMN due_date DATETIME",
+        "expires_at": "ALTER TABLE evidence_items ADD COLUMN expires_at DATETIME",
+        "approved_by": "ALTER TABLE evidence_items ADD COLUMN approved_by VARCHAR(255)",
+        "approved_at": "ALTER TABLE evidence_items ADD COLUMN approved_at DATETIME",
+        "review_notes": "ALTER TABLE evidence_items ADD COLUMN review_notes TEXT",
+    }
+    with engine.begin() as connection:
+        for column, statement in migrations.items():
+            if column not in existing:
+                connection.execute(text(statement))

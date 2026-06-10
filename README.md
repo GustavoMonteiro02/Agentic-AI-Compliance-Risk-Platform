@@ -66,7 +66,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Internal regulatory/policy retrieval with citations
 - Requirement-to-control mapping
 - Compliance gap analysis
-- Evidence checklist generation
+- Evidence checklist generation with owner, due-date, expiry, approval, and readiness lifecycle tracking
 - AI system card and audit report generation
 - Human review workflow: draft, approved, rejected, needs more evidence
 - Guardrails that prevent final compliance claims without human approval
@@ -91,7 +91,7 @@ The MVP includes a reproducible evaluation suite exposed at `GET /evaluation/res
 2. Run `POST /systems/{system_id}/assess`.
 3. Review risk level, retrieved requirements, mapped controls, gaps, evidence, system card, and audit report.
 4. Submit a human review decision.
-5. Search the requirements knowledge base and update evidence readiness.
+5. Search the requirements knowledge base and update evidence owners, due dates, expiry, approvals, and readiness.
 6. Export the system card or audit report as Markdown/PDF.
 
 Example input:

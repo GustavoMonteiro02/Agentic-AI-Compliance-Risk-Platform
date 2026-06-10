@@ -12,6 +12,11 @@ class EvidenceRecordRead(BaseModel):
     owner: str
     status: str
     file_url: str | None = None
+    due_date: datetime | None = None
+    expires_at: datetime | None = None
+    approved_by: str | None = None
+    approved_at: datetime | None = None
+    review_notes: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -23,4 +28,7 @@ class EvidenceUpdate(BaseModel):
     description: str | None = None
     owner: str | None = None
     file_url: str | None = None
-
+    due_date: datetime | None = None
+    expires_at: datetime | None = None
+    approved_by: str | None = None
+    review_notes: str | None = None
