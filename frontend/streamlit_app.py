@@ -7,6 +7,9 @@ import streamlit as st
 
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+API_KEY = os.getenv("PLATFORM_API_KEY")
+API_USER = os.getenv("PLATFORM_USER", "streamlit-user")
+API_USER_ROLE = os.getenv("PLATFORM_USER_ROLE", "admin")
 
 st.set_page_config(page_title="AI Governance Platform", layout="wide", initial_sidebar_state="expanded")
 
@@ -40,21 +43,28 @@ st.markdown(
 )
 
 
+def api_headers() -> dict[str, str]:
+    headers = {"X-User": API_USER, "X-User-Role": API_USER_ROLE}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    return headers
+
+
 def api_get(path: str):
-    response = requests.get(f"{API_BASE_URL}{path}", timeout=30)
+    response = requests.get(f"{API_BASE_URL}{path}", headers=api_headers(), timeout=30)
     response.raise_for_status()
     content_type = response.headers.get("content-type", "")
     return response.json() if content_type.startswith("application/json") else response.text
 
 
 def api_post(path: str, payload: dict | None = None):
-    response = requests.post(f"{API_BASE_URL}{path}", json=payload or {}, timeout=90)
+    response = requests.post(f"{API_BASE_URL}{path}", json=payload or {}, headers=api_headers(), timeout=90)
     response.raise_for_status()
     return response.json()
 
 
 def api_patch(path: str, payload: dict):
-    response = requests.patch(f"{API_BASE_URL}{path}", json=payload, timeout=30)
+    response = requests.patch(f"{API_BASE_URL}{path}", json=payload, headers=api_headers(), timeout=30)
     response.raise_for_status()
     return response.json()
 

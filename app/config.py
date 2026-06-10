@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "ai_governance_requirements"
     embedding_dimensions: int = 128
+    auth_mode: str = "disabled"
+    platform_api_key: str | None = None
+    default_user_role: str = "admin"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

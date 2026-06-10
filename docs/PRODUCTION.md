@@ -25,6 +25,9 @@ VECTOR_DB=qdrant
 QDRANT_URL=http://qdrant:6333
 QDRANT_COLLECTION=ai_governance_requirements
 EMBEDDING_DIMENSIONS=128
+AUTH_MODE=api_key
+PLATFORM_API_KEY=change-me
+DEFAULT_USER_ROLE=viewer
 ```
 
 ## LLM Behavior
@@ -45,6 +48,17 @@ Prompt templates are versioned in `app/prompts/registry.py`. Each LLM refinement
 ## Human Review Guardrail
 
 Even in LLM mode, assessments remain `needs_review` until a reviewer explicitly approves, rejects, or requests more evidence. The LLM is not allowed to produce final legal-compliance claims.
+
+## Access Control
+
+Local development can run with `AUTH_MODE=disabled`. Production should set `AUTH_MODE=api_key` and provide `PLATFORM_API_KEY`. Clients send either `X-API-Key` or `Authorization: Bearer <key>`, plus optional `X-User` and `X-User-Role` headers.
+
+Roles are hierarchical:
+
+- `viewer`: read systems, assessments, requirements, reports, and evidence.
+- `auditor`: viewer permissions plus evaluation results.
+- `compliance_reviewer`: auditor permissions plus assessments, evidence updates, demo assessments, and review decisions.
+- `admin`: full access, including system creation and updates.
 
 ## Runtime Check
 

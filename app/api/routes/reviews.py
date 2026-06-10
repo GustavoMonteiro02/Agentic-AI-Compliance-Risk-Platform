@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import DbSession
 from app.schemas.review import ReviewDecision, ReviewQueueItem, ReviewRead
+from app.security import require_roles
 from app.services.review_service import ReviewService
 
-router = APIRouter(prefix="/reviews", tags=["reviews"])
+router = APIRouter(prefix="/reviews", tags=["reviews"], dependencies=[Depends(require_roles("compliance_reviewer"))])
 
 
 @router.get("/queue")

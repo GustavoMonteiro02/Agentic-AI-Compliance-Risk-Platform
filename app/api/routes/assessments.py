@@ -1,9 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.api.deps import DbSession
+from app.security import require_roles
 from app.services.assessment_service import AssessmentService
 
-router = APIRouter(prefix="/assessments", tags=["assessments"])
+router = APIRouter(prefix="/assessments", tags=["assessments"], dependencies=[Depends(require_roles("viewer"))])
 
 
 @router.get("")
@@ -16,27 +17,27 @@ def get_assessment(assessment_id: str, db: DbSession) -> dict:
     return AssessmentService(db).get(assessment_id).model_dump(mode="json")
 
 
-@router.post("/{assessment_id}/risk-classification")
+@router.post("/{assessment_id}/risk-classification", dependencies=[Depends(require_roles("compliance_reviewer"))])
 def risk_classification(assessment_id: str, db: DbSession) -> dict:
     return AssessmentService(db).get(assessment_id).risk_classification.model_dump()
 
 
-@router.post("/{assessment_id}/gap-analysis")
+@router.post("/{assessment_id}/gap-analysis", dependencies=[Depends(require_roles("compliance_reviewer"))])
 def gap_analysis(assessment_id: str, db: DbSession) -> dict:
     return AssessmentService(db).get(assessment_id).gap_analysis.model_dump()
 
 
-@router.post("/{assessment_id}/evidence-checklist")
+@router.post("/{assessment_id}/evidence-checklist", dependencies=[Depends(require_roles("compliance_reviewer"))])
 def evidence_checklist(assessment_id: str, db: DbSession) -> list[dict]:
     return [item.model_dump() for item in AssessmentService(db).get(assessment_id).evidence_checklist]
 
 
-@router.post("/{assessment_id}/system-card")
+@router.post("/{assessment_id}/system-card", dependencies=[Depends(require_roles("compliance_reviewer"))])
 def system_card(assessment_id: str, db: DbSession) -> dict:
     return AssessmentService(db).get(assessment_id).ai_system_card.model_dump()
 
 
-@router.post("/{assessment_id}/audit-report")
+@router.post("/{assessment_id}/audit-report", dependencies=[Depends(require_roles("compliance_reviewer"))])
 def audit_report(assessment_id: str, db: DbSession) -> dict:
     return AssessmentService(db).get(assessment_id).audit_report.model_dump()
 
@@ -49,4 +50,3 @@ def tool_calls(assessment_id: str, db: DbSession) -> list[dict]:
 @router.get("/{assessment_id}/evidence")
 def evidence(assessment_id: str, db: DbSession) -> list[dict]:
     return [item.model_dump() for item in AssessmentService(db).get(assessment_id).evidence_checklist]
-

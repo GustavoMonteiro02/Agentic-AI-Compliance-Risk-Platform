@@ -1,12 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.api.deps import DbSession
 from app.schemas.assessment import AssessmentRunRequest
 from app.schemas.system import AISystemCreate, AISystemUpdate
+from app.security import require_roles
 from app.services.assessment_service import AssessmentService
 from app.services.system_service import SystemService
 
-router = APIRouter(prefix="/systems", tags=["systems"])
+router = APIRouter(prefix="/systems", tags=["systems"], dependencies=[Depends(require_roles("viewer"))])
 
 
 def serialize_system(system) -> dict:
@@ -37,7 +38,7 @@ def serialize_system(system) -> dict:
     }
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(require_roles("admin"))])
 def create_system(payload: AISystemCreate, db: DbSession) -> dict:
     return serialize_system(SystemService(db).create(payload))
 
@@ -52,17 +53,17 @@ def get_system(system_id: str, db: DbSession) -> dict:
     return serialize_system(SystemService(db).get(system_id))
 
 
-@router.put("/{system_id}")
+@router.put("/{system_id}", dependencies=[Depends(require_roles("admin"))])
 def update_system(system_id: str, payload: AISystemUpdate, db: DbSession) -> dict:
     return serialize_system(SystemService(db).update(system_id, payload))
 
 
-@router.post("/{system_id}/intake")
+@router.post("/{system_id}/intake", dependencies=[Depends(require_roles("compliance_reviewer"))])
 def intake_system(system_id: str, db: DbSession, payload: AssessmentRunRequest | None = None) -> dict:
     return AssessmentService(db).assess_system(system_id, payload).model_dump(mode="json")["profile"]
 
 
-@router.post("/{system_id}/assess")
+@router.post("/{system_id}/assess", dependencies=[Depends(require_roles("compliance_reviewer"))])
 def assess_system(system_id: str, db: DbSession, payload: AssessmentRunRequest | None = None) -> dict:
     return AssessmentService(db).assess_system(system_id, payload).model_dump(mode="json")
 

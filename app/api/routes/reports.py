@@ -1,11 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse, Response
 
 from app.api.deps import DbSession
+from app.security import require_roles
 from app.services.pdf_service import markdown_to_simple_pdf
 from app.services.report_service import ReportService
 
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter(prefix="/reports", tags=["reports"], dependencies=[Depends(require_roles("viewer"))])
 
 
 @router.get("/{assessment_id}.pdf")

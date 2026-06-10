@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import DbSession
 from app.schemas.requirements import RequirementRead
+from app.security import require_roles
 from app.services.requirement_service import RequirementService
 
-router = APIRouter(prefix="/requirements", tags=["requirements"])
+router = APIRouter(prefix="/requirements", tags=["requirements"], dependencies=[Depends(require_roles("viewer"))])
 
 
 @router.get("")

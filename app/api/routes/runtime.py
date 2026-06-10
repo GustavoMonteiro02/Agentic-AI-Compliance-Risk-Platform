@@ -19,4 +19,6 @@ def runtime_status() -> dict:
         "vector_db": settings.vector_db,
         "qdrant_url": settings.qdrant_url if settings.vector_db == "qdrant" else None,
         "prompt_versions": {name: prompt.version for name, prompt in PROMPT_REGISTRY.items()},
+        "auth_mode": settings.auth_mode,
+        "default_user_role": settings.default_user_role,
     }
