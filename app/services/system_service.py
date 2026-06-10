@@ -6,8 +6,8 @@ from app.schemas.system import AISystemCreate, AISystemUpdate
 
 
 class SystemService:
-    def __init__(self, db: Session) -> None:
-        self.repo = SystemRepository(db)
+    def __init__(self, db: Session, tenant_id: str = "default") -> None:
+        self.repo = SystemRepository(db, tenant_id)
 
     def create(self, payload: AISystemCreate):
         return self.repo.create(payload)
@@ -23,4 +23,3 @@ class SystemService:
 
     def update(self, system_id: str, payload: AISystemUpdate):
         return self.repo.update(self.get(system_id), payload)
-

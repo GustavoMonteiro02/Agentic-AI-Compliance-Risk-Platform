@@ -59,3 +59,17 @@ def _apply_lightweight_sqlite_migrations() -> None:
         for column, statement in migrations.items():
             if column not in existing:
                 connection.execute(text(statement))
+        table_columns = {
+            table_name: {column["name"] for column in inspector.get_columns(table_name)}
+            for table_name in ["ai_systems", "ai_system_profiles", "risk_assessments", "audit_events"]
+            if table_name in inspector.get_table_names()
+        }
+        tenant_migrations = {
+            "ai_systems": "ALTER TABLE ai_systems ADD COLUMN tenant_id VARCHAR(120) DEFAULT 'default'",
+            "ai_system_profiles": "ALTER TABLE ai_system_profiles ADD COLUMN tenant_id VARCHAR(120) DEFAULT 'default'",
+            "risk_assessments": "ALTER TABLE risk_assessments ADD COLUMN tenant_id VARCHAR(120) DEFAULT 'default'",
+            "audit_events": "ALTER TABLE audit_events ADD COLUMN tenant_id VARCHAR(120) DEFAULT 'default'",
+        }
+        for table_name, statement in tenant_migrations.items():
+            if table_name in table_columns and "tenant_id" not in table_columns[table_name]:
+                connection.execute(text(statement))

@@ -16,8 +16,9 @@ def _evidence_due_date(priority: str) -> datetime:
 
 
 class SystemRepository:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, tenant_id: str = "default") -> None:
         self.db = db
+        self.tenant_id = tenant_id
 
     def create(self, payload: AISystemCreate) -> models.AISystem:
         system_metadata = {
@@ -29,6 +30,7 @@ class SystemRepository:
             "security_testing_status": payload.security_testing_status,
         }
         system = models.AISystem(
+            tenant_id=self.tenant_id,
             name=payload.name,
             description=payload.description,
             business_unit=payload.business_unit,
@@ -50,10 +52,20 @@ class SystemRepository:
         return system
 
     def list(self) -> list[models.AISystem]:
-        return list(self.db.scalars(select(models.AISystem).order_by(models.AISystem.created_at.desc())))
+        return list(
+            self.db.scalars(
+                select(models.AISystem)
+                .where(models.AISystem.tenant_id == self.tenant_id)
+                .order_by(models.AISystem.created_at.desc())
+            )
+        )
 
     def get(self, system_id: str) -> models.AISystem | None:
-        return self.db.get(models.AISystem, system_id)
+        return self.db.scalar(
+            select(models.AISystem)
+            .where(models.AISystem.id == system_id, models.AISystem.tenant_id == self.tenant_id)
+            .limit(1)
+        )
 
     def update(self, system: models.AISystem, payload: AISystemUpdate) -> models.AISystem:
         values = payload.model_dump(exclude_unset=True)
@@ -79,12 +91,14 @@ class SystemRepository:
 
 
 class AssessmentRepository:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, tenant_id: str = "default") -> None:
         self.db = db
+        self.tenant_id = tenant_id
 
     def save(self, assessment: GovernanceAssessment) -> models.RiskAssessment:
         record = models.RiskAssessment(
             id=assessment.id,
+            tenant_id=self.tenant_id,
             system_id=assessment.system_id,
             risk_level=assessment.risk_classification.risk_level,
             confidence=assessment.risk_classification.confidence,
@@ -94,7 +108,13 @@ class AssessmentRepository:
             status=assessment.status,
         )
         self.db.add(record)
-        self.db.add(models.AISystemProfile(system_id=assessment.system_id, profile_json=assessment.profile.model_dump()))
+        self.db.add(
+            models.AISystemProfile(
+                tenant_id=self.tenant_id,
+                system_id=assessment.system_id,
+                profile_json=assessment.profile.model_dump(),
+            )
+        )
         for control in assessment.mapped_controls:
             self.db.add(
                 models.MappedControlRecord(
@@ -159,24 +179,40 @@ class AssessmentRepository:
         return record
 
     def get(self, assessment_id: str) -> models.RiskAssessment | None:
-        return self.db.get(models.RiskAssessment, assessment_id)
+        return self.db.scalar(
+            select(models.RiskAssessment)
+            .where(models.RiskAssessment.id == assessment_id, models.RiskAssessment.tenant_id == self.tenant_id)
+            .limit(1)
+        )
 
     def latest_for_system(self, system_id: str) -> models.RiskAssessment | None:
         return self.db.scalar(
             select(models.RiskAssessment)
-            .where(models.RiskAssessment.system_id == system_id)
+            .where(
+                models.RiskAssessment.system_id == system_id,
+                models.RiskAssessment.tenant_id == self.tenant_id,
+            )
             .order_by(models.RiskAssessment.created_at.desc())
             .limit(1)
         )
 
     def list(self) -> list[models.RiskAssessment]:
-        return list(self.db.scalars(select(models.RiskAssessment).order_by(models.RiskAssessment.created_at.desc())))
+        return list(
+            self.db.scalars(
+                select(models.RiskAssessment)
+                .where(models.RiskAssessment.tenant_id == self.tenant_id)
+                .order_by(models.RiskAssessment.created_at.desc())
+            )
+        )
 
     def list_by_status(self, statuses: list[str]) -> list[models.RiskAssessment]:
         return list(
             self.db.scalars(
                 select(models.RiskAssessment)
-                .where(models.RiskAssessment.status.in_(statuses))
+                .where(
+                    models.RiskAssessment.status.in_(statuses),
+                    models.RiskAssessment.tenant_id == self.tenant_id,
+                )
                 .order_by(models.RiskAssessment.created_at.desc())
             )
         )

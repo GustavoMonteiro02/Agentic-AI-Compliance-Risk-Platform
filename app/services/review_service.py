@@ -10,9 +10,10 @@ from app.services.audit_service import AuditService
 
 
 class ReviewService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, tenant_id: str = "default") -> None:
         self.db = db
-        self.assessments = AssessmentRepository(db)
+        self.tenant_id = tenant_id
+        self.assessments = AssessmentRepository(db, tenant_id)
 
     def decide(
         self,
@@ -84,6 +85,8 @@ class ReviewService:
         return items
 
     def history(self, assessment_id: str) -> list[ReviewRead]:
+        if not self.assessments.get(assessment_id):
+            raise HTTPException(status_code=404, detail="Assessment not found")
         reviews = self.db.scalars(
             select(models.HumanReview)
             .where(models.HumanReview.assessment_id == assessment_id)

@@ -4,8 +4,8 @@ from app.services.assessment_service import AssessmentService
 
 
 class ReportService:
-    def __init__(self, db: Session) -> None:
-        self.assessments = AssessmentService(db)
+    def __init__(self, db: Session, tenant_id: str = "default") -> None:
+        self.assessments = AssessmentService(db, tenant_id)
 
     def audit_report_markdown(self, assessment_id: str) -> str:
         return self.assessments.get(assessment_id).audit_report.content_markdown

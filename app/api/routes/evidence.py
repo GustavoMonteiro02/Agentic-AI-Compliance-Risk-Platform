@@ -11,10 +11,14 @@ router = APIRouter(prefix="/evidence", tags=["evidence"], dependencies=[Depends(
 
 
 @router.get("/assessments/{assessment_id}")
-def list_evidence(assessment_id: str, db: DbSession) -> list[EvidenceRecordRead]:
+def list_evidence(
+    assessment_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+) -> list[EvidenceRecordRead]:
     return [
         EvidenceRecordRead.model_validate(item)
-        for item in EvidenceService(db).list_for_assessment(assessment_id)
+        for item in EvidenceService(db, user.tenant_id).list_for_assessment(assessment_id)
     ]
 
 
@@ -25,9 +29,13 @@ def update_evidence(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
 ) -> EvidenceRecordRead:
-    return EvidenceRecordRead.model_validate(EvidenceService(db).update(evidence_id, payload, user))
+    return EvidenceRecordRead.model_validate(EvidenceService(db, user.tenant_id).update(evidence_id, payload, user))
 
 
 @router.get("/assessments/{assessment_id}/readiness-score")
-def readiness_score(assessment_id: str, db: DbSession) -> dict:
-    return EvidenceService(db).readiness_score(assessment_id)
+def readiness_score(
+    assessment_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+) -> dict:
+    return EvidenceService(db, user.tenant_id).readiness_score(assessment_id)

@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class AuditEventRead(BaseModel):
     id: str
+    tenant_id: str
     assessment_id: str | None = None
     actor: str
     actor_role: str

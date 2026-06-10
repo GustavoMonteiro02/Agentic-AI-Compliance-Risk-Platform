@@ -21,4 +21,5 @@ def runtime_status() -> dict:
         "prompt_versions": {name: prompt.version for name, prompt in PROMPT_REGISTRY.items()},
         "auth_mode": settings.auth_mode,
         "default_user_role": settings.default_user_role,
+        "default_tenant_id": settings.default_tenant_id,
     }

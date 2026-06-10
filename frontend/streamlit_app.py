@@ -10,6 +10,7 @@ API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 API_KEY = os.getenv("PLATFORM_API_KEY")
 API_USER = os.getenv("PLATFORM_USER", "streamlit-user")
 API_USER_ROLE = os.getenv("PLATFORM_USER_ROLE", "admin")
+API_TENANT_ID = os.getenv("PLATFORM_TENANT_ID", "default")
 
 st.set_page_config(page_title="AI Governance Platform", layout="wide", initial_sidebar_state="expanded")
 
@@ -44,7 +45,7 @@ st.markdown(
 
 
 def api_headers() -> dict[str, str]:
-    headers = {"X-User": API_USER, "X-User-Role": API_USER_ROLE}
+    headers = {"X-User": API_USER, "X-User-Role": API_USER_ROLE, "X-Tenant-ID": API_TENANT_ID}
     if API_KEY:
         headers["X-API-Key"] = API_KEY
     return headers

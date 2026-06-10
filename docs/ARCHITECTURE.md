@@ -39,6 +39,7 @@ flowchart TD
 Evidence records operate as lifecycle items, not just checklist text. Each item can track owner, status, due date, expiry date, approval metadata, review notes, and readiness impact.
 
 API access control is handled by lightweight RBAC dependencies. Local demos use disabled auth, while production deployments can require API-key authentication and role headers for viewer, auditor, compliance reviewer, and admin access.
+Tenant context is carried through the same auth dependency. Core workflow data is scoped by tenant so users only list or retrieve systems, assessments, evidence, reports, reviews, and audit events from their own workspace.
 
 Human review and evidence changes emit structured audit events. Audit events include actor, actor role, action, resource type, resource id, assessment id, details, and timestamp so governance actions can be reconstructed later.
 

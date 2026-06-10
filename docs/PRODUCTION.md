@@ -28,6 +28,7 @@ EMBEDDING_DIMENSIONS=128
 AUTH_MODE=api_key
 PLATFORM_API_KEY=change-me
 DEFAULT_USER_ROLE=viewer
+DEFAULT_TENANT_ID=default
 ```
 
 ## LLM Behavior
@@ -51,7 +52,7 @@ Even in LLM mode, assessments remain `needs_review` until a reviewer explicitly 
 
 ## Access Control
 
-Local development can run with `AUTH_MODE=disabled`. Production should set `AUTH_MODE=api_key` and provide `PLATFORM_API_KEY`. Clients send either `X-API-Key` or `Authorization: Bearer <key>`, plus optional `X-User` and `X-User-Role` headers.
+Local development can run with `AUTH_MODE=disabled`. Production should set `AUTH_MODE=api_key` and provide `PLATFORM_API_KEY`. Clients send either `X-API-Key` or `Authorization: Bearer <key>`, plus optional `X-User`, `X-User-Role`, and `X-Tenant-ID` headers.
 
 Roles are hierarchical:
 
@@ -59,6 +60,10 @@ Roles are hierarchical:
 - `auditor`: viewer permissions plus evaluation results.
 - `compliance_reviewer`: auditor permissions plus assessments, evidence updates, demo assessments, and review decisions.
 - `admin`: full access, including system creation and updates.
+
+## Multi-Tenancy
+
+Systems, assessments, evidence, reports, review queues, and audit events are scoped by tenant. The tenant comes from `X-Tenant-ID`, falling back to `DEFAULT_TENANT_ID`. This keeps workspaces isolated while preserving a simple local development mode.
 
 ## Audit Trail
 

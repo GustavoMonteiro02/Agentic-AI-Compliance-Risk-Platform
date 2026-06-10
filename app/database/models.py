@@ -16,6 +16,7 @@ class AISystem(Base):
     __tablename__ = "ai_systems"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     business_unit: Mapped[str | None] = mapped_column(String(255))
@@ -40,6 +41,7 @@ class AISystemProfile(Base):
     __tablename__ = "ai_system_profiles"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
     system_id: Mapped[str] = mapped_column(ForeignKey("ai_systems.id"))
     profile_json: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -50,6 +52,7 @@ class RiskAssessment(Base):
     __tablename__ = "risk_assessments"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
     system_id: Mapped[str] = mapped_column(ForeignKey("ai_systems.id"))
     risk_level: Mapped[str] = mapped_column(String(80))
     confidence: Mapped[float] = mapped_column(Float)
@@ -190,6 +193,7 @@ class AuditEvent(Base):
     __tablename__ = "audit_events"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
     assessment_id: Mapped[str | None] = mapped_column(String, index=True)
     actor: Mapped[str] = mapped_column(String(255))
     actor_role: Mapped[str] = mapped_column(String(80))

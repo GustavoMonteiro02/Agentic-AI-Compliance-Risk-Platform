@@ -11,10 +11,25 @@ from app.services.audit_service import AuditService
 
 
 class EvidenceService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, tenant_id: str = "default") -> None:
         self.db = db
+        self.tenant_id = tenant_id
+
+    def _assessment_exists(self, assessment_id: str) -> bool:
+        return bool(
+            self.db.scalar(
+                select(models.RiskAssessment.id)
+                .where(
+                    models.RiskAssessment.id == assessment_id,
+                    models.RiskAssessment.tenant_id == self.tenant_id,
+                )
+                .limit(1)
+            )
+        )
 
     def list_for_assessment(self, assessment_id: str) -> list[models.EvidenceItemRecord]:
+        if not self._assessment_exists(assessment_id):
+            raise HTTPException(status_code=404, detail="Assessment not found")
         return list(
             self.db.scalars(
                 select(models.EvidenceItemRecord)
@@ -31,6 +46,8 @@ class EvidenceService:
     ) -> models.EvidenceItemRecord:
         record = self.db.get(models.EvidenceItemRecord, evidence_id)
         if not record:
+            raise HTTPException(status_code=404, detail="Evidence item not found")
+        if not self._assessment_exists(record.assessment_id):
             raise HTTPException(status_code=404, detail="Evidence item not found")
         previous_status = record.status
         record.status = payload.status

@@ -1,9 +1,11 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.api.deps import DbSession
 from app.schemas.assessment import AssessmentRunRequest
 from app.schemas.system import AISystemCreate, AISystemUpdate
-from app.security import require_roles
+from app.security import AuthenticatedUser, require_roles
 from app.services.assessment_service import AssessmentService
 from app.services.system_service import SystemService
 
@@ -14,6 +16,7 @@ def serialize_system(system) -> dict:
     metadata = system.system_metadata or {}
     return {
         "id": system.id,
+        "tenant_id": system.tenant_id,
         "name": system.name,
         "description": system.description,
         "business_unit": system.business_unit,
@@ -39,35 +42,65 @@ def serialize_system(system) -> dict:
 
 
 @router.post("", dependencies=[Depends(require_roles("admin"))])
-def create_system(payload: AISystemCreate, db: DbSession) -> dict:
-    return serialize_system(SystemService(db).create(payload))
+def create_system(
+    payload: AISystemCreate,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("admin"))],
+) -> dict:
+    return serialize_system(SystemService(db, user.tenant_id).create(payload))
 
 
 @router.get("")
-def list_systems(db: DbSession) -> list[dict]:
-    return [serialize_system(system) for system in SystemService(db).list()]
+def list_systems(
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+) -> list[dict]:
+    return [serialize_system(system) for system in SystemService(db, user.tenant_id).list()]
 
 
 @router.get("/{system_id}")
-def get_system(system_id: str, db: DbSession) -> dict:
-    return serialize_system(SystemService(db).get(system_id))
+def get_system(
+    system_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+) -> dict:
+    return serialize_system(SystemService(db, user.tenant_id).get(system_id))
 
 
 @router.put("/{system_id}", dependencies=[Depends(require_roles("admin"))])
-def update_system(system_id: str, payload: AISystemUpdate, db: DbSession) -> dict:
-    return serialize_system(SystemService(db).update(system_id, payload))
+def update_system(
+    system_id: str,
+    payload: AISystemUpdate,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("admin"))],
+) -> dict:
+    return serialize_system(SystemService(db, user.tenant_id).update(system_id, payload))
 
 
 @router.post("/{system_id}/intake", dependencies=[Depends(require_roles("compliance_reviewer"))])
-def intake_system(system_id: str, db: DbSession, payload: AssessmentRunRequest | None = None) -> dict:
-    return AssessmentService(db).assess_system(system_id, payload).model_dump(mode="json")["profile"]
+def intake_system(
+    system_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+    payload: AssessmentRunRequest | None = None,
+) -> dict:
+    return AssessmentService(db, user.tenant_id).assess_system(system_id, payload).model_dump(mode="json")["profile"]
 
 
 @router.post("/{system_id}/assess", dependencies=[Depends(require_roles("compliance_reviewer"))])
-def assess_system(system_id: str, db: DbSession, payload: AssessmentRunRequest | None = None) -> dict:
-    return AssessmentService(db).assess_system(system_id, payload).model_dump(mode="json")
+def assess_system(
+    system_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+    payload: AssessmentRunRequest | None = None,
+) -> dict:
+    return AssessmentService(db, user.tenant_id).assess_system(system_id, payload).model_dump(mode="json")
 
 
 @router.get("/{system_id}/assessment")
-def latest_assessment(system_id: str, db: DbSession) -> dict:
-    return AssessmentService(db).latest_for_system(system_id).model_dump(mode="json")
+def latest_assessment(
+    system_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+) -> dict:
+    return AssessmentService(db, user.tenant_id).latest_for_system(system_id).model_dump(mode="json")

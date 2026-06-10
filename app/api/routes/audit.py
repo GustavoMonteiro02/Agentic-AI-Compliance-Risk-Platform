@@ -16,4 +16,7 @@ def assessment_events(
     db: DbSession,
     _user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
 ) -> list[AuditEventRead]:
-    return [AuditEventRead.model_validate(event) for event in AuditService(db).list_for_assessment(assessment_id)]
+    return [
+        AuditEventRead.model_validate(event)
+        for event in AuditService(db).list_for_assessment(assessment_id, _user.tenant_id)
+    ]

@@ -19,6 +19,7 @@ class AuthenticatedUser:
     subject: str
     role: str
     auth_mode: str
+    tenant_id: str
 
 
 def _extract_bearer_token(authorization: str | None) -> str | None:
@@ -42,13 +43,16 @@ def get_current_user(
     x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
     x_user: Annotated[str | None, Header(alias="X-User")] = None,
     x_user_role: Annotated[str | None, Header(alias="X-User-Role")] = None,
+    x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
 ) -> AuthenticatedUser:
     settings = get_settings()
+    tenant_id = (x_tenant_id or settings.default_tenant_id).strip() or "default"
     if settings.auth_mode == "disabled":
         return AuthenticatedUser(
             subject=x_user or "local-dev",
             role=_validate_role(x_user_role or settings.default_user_role),
             auth_mode="disabled",
+            tenant_id=tenant_id,
         )
 
     if settings.auth_mode != "api_key":
@@ -64,6 +68,7 @@ def get_current_user(
         subject=x_user or "api-key-user",
         role=_validate_role(x_user_role or settings.default_user_role),
         auth_mode="api_key",
+        tenant_id=tenant_id,
     )
 
 

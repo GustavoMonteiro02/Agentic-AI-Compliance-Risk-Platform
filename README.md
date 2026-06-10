@@ -145,6 +145,7 @@ Copy `.env.example` to `.env` and adjust values.
 - `AUTH_MODE`: `disabled` for local demos, or `api_key` for API-key protected deployments
 - `PLATFORM_API_KEY`: shared API key used when `AUTH_MODE=api_key`
 - `DEFAULT_USER_ROLE`: fallback role, one of `viewer`, `auditor`, `compliance_reviewer`, `admin`
+- `DEFAULT_TENANT_ID`: fallback workspace/tenant id for local or single-tenant deployments
 
 LLM prompt templates are versioned in `app/prompts/registry.py`; LLM tool calls include prompt version, model, latency, and token metadata where available.
 

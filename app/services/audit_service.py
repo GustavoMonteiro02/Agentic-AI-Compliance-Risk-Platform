@@ -22,6 +22,7 @@ class AuditService:
         details: dict[str, Any] | None = None,
     ) -> models.AuditEvent:
         event = models.AuditEvent(
+            tenant_id=user.tenant_id,
             assessment_id=assessment_id,
             actor=user.subject,
             actor_role=user.role,
@@ -35,11 +36,14 @@ class AuditService:
         self.db.refresh(event)
         return event
 
-    def list_for_assessment(self, assessment_id: str) -> list[models.AuditEvent]:
+    def list_for_assessment(self, assessment_id: str, tenant_id: str = "default") -> list[models.AuditEvent]:
         return list(
             self.db.scalars(
                 select(models.AuditEvent)
-                .where(models.AuditEvent.assessment_id == assessment_id)
+                .where(
+                    models.AuditEvent.assessment_id == assessment_id,
+                    models.AuditEvent.tenant_id == tenant_id,
+                )
                 .order_by(models.AuditEvent.created_at.desc())
             )
         )

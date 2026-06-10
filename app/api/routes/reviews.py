@@ -11,13 +11,21 @@ router = APIRouter(prefix="/reviews", tags=["reviews"], dependencies=[Depends(re
 
 
 @router.get("/queue")
-def review_queue(db: DbSession, status: list[str] | None = Query(default=None)) -> list[ReviewQueueItem]:
-    return ReviewService(db).queue(status)
+def review_queue(
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+    status: list[str] | None = Query(default=None),
+) -> list[ReviewQueueItem]:
+    return ReviewService(db, user.tenant_id).queue(status)
 
 
 @router.get("/{assessment_id}/history")
-def review_history(assessment_id: str, db: DbSession) -> list[ReviewRead]:
-    return ReviewService(db).history(assessment_id)
+def review_history(
+    assessment_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+) -> list[ReviewRead]:
+    return ReviewService(db, user.tenant_id).history(assessment_id)
 
 
 @router.post("/{assessment_id}/approve")
@@ -27,7 +35,7 @@ def approve(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
 ) -> dict:
-    return ReviewService(db).decide(assessment_id, "approved", payload, user).model_dump()
+    return ReviewService(db, user.tenant_id).decide(assessment_id, "approved", payload, user).model_dump()
 
 
 @router.post("/{assessment_id}/reject")
@@ -37,7 +45,7 @@ def reject(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
 ) -> dict:
-    return ReviewService(db).decide(assessment_id, "rejected", payload, user).model_dump()
+    return ReviewService(db, user.tenant_id).decide(assessment_id, "rejected", payload, user).model_dump()
 
 
 @router.post("/{assessment_id}/request-more-evidence")
@@ -47,4 +55,4 @@ def request_more_evidence(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
 ) -> dict:
-    return ReviewService(db).decide(assessment_id, "needs_more_evidence", payload, user).model_dump()
+    return ReviewService(db, user.tenant_id).decide(assessment_id, "needs_more_evidence", payload, user).model_dump()

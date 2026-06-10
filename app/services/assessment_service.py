@@ -7,10 +7,11 @@ from app.schemas.assessment import AssessmentRunRequest, GovernanceAssessment
 
 
 class AssessmentService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, tenant_id: str = "default") -> None:
         self.db = db
-        self.systems = SystemRepository(db)
-        self.assessments = AssessmentRepository(db)
+        self.tenant_id = tenant_id
+        self.systems = SystemRepository(db, tenant_id)
+        self.assessments = AssessmentRepository(db, tenant_id)
 
     def assess_system(self, system_id: str, payload: AssessmentRunRequest | None = None) -> GovernanceAssessment:
         system = self.systems.get(system_id)
