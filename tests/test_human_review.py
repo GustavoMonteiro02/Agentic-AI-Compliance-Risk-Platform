@@ -41,6 +41,9 @@ def test_human_review_can_approve_with_notes():
 
     assert response.status_code == 200
     assert response.json()["status"] == "approved"
+    audit_events = client.get(f"/audit/assessments/{assessment['id']}/events").json()
+    assert audit_events[0]["action"] == "review.approved"
+    assert audit_events[0]["actor"] == "local-dev"
 
 
 def test_review_queue_and_history_are_available():

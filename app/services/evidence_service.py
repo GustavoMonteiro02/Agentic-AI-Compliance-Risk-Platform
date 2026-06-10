@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.database import models
 from app.schemas.evidence import EvidenceUpdate
+from app.security import AuthenticatedUser
+from app.services.audit_service import AuditService
 
 
 class EvidenceService:
@@ -21,10 +23,16 @@ class EvidenceService:
             )
         )
 
-    def update(self, evidence_id: str, payload: EvidenceUpdate) -> models.EvidenceItemRecord:
+    def update(
+        self,
+        evidence_id: str,
+        payload: EvidenceUpdate,
+        user: AuthenticatedUser | None = None,
+    ) -> models.EvidenceItemRecord:
         record = self.db.get(models.EvidenceItemRecord, evidence_id)
         if not record:
             raise HTTPException(status_code=404, detail="Evidence item not found")
+        previous_status = record.status
         record.status = payload.status
         if payload.description is not None:
             record.description = payload.description
@@ -46,6 +54,21 @@ class EvidenceService:
             record.approved_at = None
         self.db.commit()
         self.db.refresh(record)
+        if user:
+            AuditService(self.db).record(
+                user=user,
+                action="evidence.updated",
+                resource_type="evidence_item",
+                resource_id=record.id,
+                assessment_id=record.assessment_id,
+                details={
+                    "name": record.name,
+                    "previous_status": previous_status,
+                    "status": record.status,
+                    "owner": record.owner,
+                    "file_url_present": bool(record.file_url),
+                },
+            )
         return record
 
     def readiness_score(self, assessment_id: str) -> dict:

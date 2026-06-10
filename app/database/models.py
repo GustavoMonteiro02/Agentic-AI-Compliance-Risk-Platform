@@ -186,6 +186,20 @@ class ToolCall(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    assessment_id: Mapped[str | None] = mapped_column(String, index=True)
+    actor: Mapped[str] = mapped_column(String(255))
+    actor_role: Mapped[str] = mapped_column(String(80))
+    action: Mapped[str] = mapped_column(String(255))
+    resource_type: Mapped[str] = mapped_column(String(120))
+    resource_id: Mapped[str | None] = mapped_column(String(255))
+    details_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class EvaluationResult(Base):
     __tablename__ = "evaluation_results"
 

@@ -20,6 +20,7 @@ This document maps the original project requirements to the current implementati
 - AI system card and audit report Markdown generation/export.
 - Dedicated Pydantic schema modules for risk, controls, requirements, evidence, review, report, system, and assessment contracts.
 - Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, and review history.
+- Structured audit events for evidence updates and human review decisions.
 - Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.
 - Evaluation suite covering risk classification consistency, retrieval grounding, system card coverage, evidence completeness, human approval bypass resistance, and legal-advice guardrails.
 - Guardrails preventing automatic approval or final legal compliance claims without human review.

@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from app.database import models
 from app.database.repositories import AssessmentRepository
 from app.schemas.review import ReviewDecision, ReviewQueueItem, ReviewRead
+from app.security import AuthenticatedUser
+from app.services.audit_service import AuditService
 
 
 class ReviewService:
@@ -12,7 +14,13 @@ class ReviewService:
         self.db = db
         self.assessments = AssessmentRepository(db)
 
-    def decide(self, assessment_id: str, status: str, payload: ReviewDecision) -> ReviewRead:
+    def decide(
+        self,
+        assessment_id: str,
+        status: str,
+        payload: ReviewDecision,
+        user: AuthenticatedUser | None = None,
+    ) -> ReviewRead:
         assessment = self.assessments.get(assessment_id)
         if not assessment:
             raise HTTPException(status_code=404, detail="Assessment not found")
@@ -38,6 +46,20 @@ class ReviewService:
         )
         self.db.add(review)
         self.db.commit()
+        if user:
+            AuditService(self.db).record(
+                user=user,
+                action=f"review.{status}",
+                resource_type="human_review",
+                resource_id=review.id,
+                assessment_id=assessment_id,
+                details={
+                    "reviewer": payload.reviewer,
+                    "status": status,
+                    "override_risk_level": payload.override_risk_level,
+                    "notes_present": bool(notes.strip()),
+                },
+            )
         return ReviewRead(assessment_id=assessment_id, reviewer=payload.reviewer, status=status, notes=notes)
 
     def queue(self, statuses: list[str] | None = None) -> list[ReviewQueueItem]:

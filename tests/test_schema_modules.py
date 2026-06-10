@@ -1,4 +1,5 @@
 from app.schemas.controls import MappedControl
+from app.schemas.audit import AuditEventRead
 from app.schemas.report import GeneratedDocument
 from app.schemas.risk import RiskClassification
 
@@ -20,4 +21,4 @@ def test_schema_layout_exports_expected_models():
     assert risk.requires_human_review is True
     assert control.control_status == "unknown"
     assert document.status == "draft"
-
+    assert AuditEventRead.model_fields["action"]

@@ -40,6 +40,8 @@ Evidence records operate as lifecycle items, not just checklist text. Each item 
 
 API access control is handled by lightweight RBAC dependencies. Local demos use disabled auth, while production deployments can require API-key authentication and role headers for viewer, auditor, compliance reviewer, and admin access.
 
+Human review and evidence changes emit structured audit events. Audit events include actor, actor role, action, resource type, resource id, assessment id, details, and timestamp so governance actions can be reconstructed later.
+
 ## LangGraph State Management
 
 The workflow is compiled with `langgraph.graph.StateGraph` in [app/agents/graph.py](/Users/gdev/Documents/Codex/2026-06-08/files-mentioned-by-the-user-pasted-3/app/agents/graph.py). Each node receives and returns `GovernanceAssessmentState`, which keeps the complete assessment trace:

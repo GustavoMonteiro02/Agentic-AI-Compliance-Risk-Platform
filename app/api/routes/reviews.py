@@ -1,8 +1,10 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import DbSession
 from app.schemas.review import ReviewDecision, ReviewQueueItem, ReviewRead
-from app.security import require_roles
+from app.security import AuthenticatedUser, require_roles
 from app.services.review_service import ReviewService
 
 router = APIRouter(prefix="/reviews", tags=["reviews"], dependencies=[Depends(require_roles("compliance_reviewer"))])
@@ -19,15 +21,30 @@ def review_history(assessment_id: str, db: DbSession) -> list[ReviewRead]:
 
 
 @router.post("/{assessment_id}/approve")
-def approve(assessment_id: str, payload: ReviewDecision, db: DbSession) -> dict:
-    return ReviewService(db).decide(assessment_id, "approved", payload).model_dump()
+def approve(
+    assessment_id: str,
+    payload: ReviewDecision,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+) -> dict:
+    return ReviewService(db).decide(assessment_id, "approved", payload, user).model_dump()
 
 
 @router.post("/{assessment_id}/reject")
-def reject(assessment_id: str, payload: ReviewDecision, db: DbSession) -> dict:
-    return ReviewService(db).decide(assessment_id, "rejected", payload).model_dump()
+def reject(
+    assessment_id: str,
+    payload: ReviewDecision,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+) -> dict:
+    return ReviewService(db).decide(assessment_id, "rejected", payload, user).model_dump()
 
 
 @router.post("/{assessment_id}/request-more-evidence")
-def request_more_evidence(assessment_id: str, payload: ReviewDecision, db: DbSession) -> dict:
-    return ReviewService(db).decide(assessment_id, "needs_more_evidence", payload).model_dump()
+def request_more_evidence(
+    assessment_id: str,
+    payload: ReviewDecision,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+) -> dict:
+    return ReviewService(db).decide(assessment_id, "needs_more_evidence", payload, user).model_dump()

@@ -60,6 +60,15 @@ Roles are hierarchical:
 - `compliance_reviewer`: auditor permissions plus assessments, evidence updates, demo assessments, and review decisions.
 - `admin`: full access, including system creation and updates.
 
+## Audit Trail
+
+Evidence updates and human review decisions write immutable-style audit events to `audit_events`. Auditors can retrieve them through:
+
+```bash
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  http://127.0.0.1:8000/audit/assessments/{assessment_id}/events
+```
+
 ## Runtime Check
 
 Use:

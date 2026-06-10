@@ -37,6 +37,9 @@ def test_evidence_items_can_be_listed_and_updated():
     assert update_response.json()["status"] == "uploaded"
     assert update_response.json()["description"] == "Uploaded draft evidence."
     assert update_response.json()["due_date"]
+    audit_events = client.get(f"/audit/assessments/{assessment['id']}/events").json()
+    assert audit_events[0]["action"] == "evidence.updated"
+    assert audit_events[0]["details_json"]["previous_status"] == item["status"]
 
 
 def test_readiness_score_reflects_evidence_updates():
