@@ -31,6 +31,11 @@ AUTH_MODE=api_key
 PLATFORM_API_KEY=change-me
 DEFAULT_USER_ROLE=viewer
 DEFAULT_TENANT_ID=default
+CORS_ALLOWED_ORIGINS=https://governance.example.com
+SECURITY_HEADERS_ENABLED=true
+SECURITY_HSTS_ENABLED=true
+MAX_REQUEST_BODY_BYTES=1048576
+API_RATE_LIMIT_PER_MINUTE=120
 ```
 
 ## LLM Behavior
@@ -61,6 +66,12 @@ Even in LLM mode, assessments remain `needs_review` until a reviewer explicitly 
 Local development can run with `AUTH_MODE=disabled`. Production should set `AUTH_MODE=api_key` and provide `PLATFORM_API_KEY`. Clients send either `X-API-Key` or `Authorization: Bearer <key>`, plus optional `X-User`, `X-User-Role`, and `X-Tenant-ID` headers.
 Browser deployments should set `CORS_ALLOWED_ORIGINS` to a comma-separated allowlist such as `https://governance.example.com`; CORS is closed by default when unset.
 
+## API Hardening
+
+Security headers are enabled by default with `SECURITY_HEADERS_ENABLED=true`, adding frame, MIME sniffing, referrer, permissions, cache, and cross-origin opener protections to API responses. Enable `SECURITY_HSTS_ENABLED=true` only when the public API is served exclusively through HTTPS.
+
+`MAX_REQUEST_BODY_BYTES` rejects oversized request bodies before route handlers run. `API_RATE_LIMIT_PER_MINUTE` enables an in-memory tenant/caller rate limit using `X-Tenant-ID` plus API key, user, or client IP; keep it at `0` behind a dedicated gateway rate limiter, or set a positive value for standalone deployments.
+
 Roles are hierarchical:
 
 - `viewer`: read systems, assessments, requirements, reports, and evidence.
@@ -90,9 +101,9 @@ curl http://127.0.0.1:8000/runtime/status
 curl http://127.0.0.1:8000/runtime/readiness
 ```
 
-This reports whether LLM mode, LangSmith metadata, and vector DB settings are active.
+This reports whether LLM mode, LangSmith metadata, API hardening, and vector DB settings are active.
 It also reports active prompt versions so operators can tie generated outputs to the prompt registry.
-Readiness validates database connectivity, knowledge-base loading, auth configuration, LLM configuration, and vector DB availability when Qdrant or Pinecone is enabled.
+Readiness validates database connectivity, knowledge-base loading, auth configuration, API hardening, LLM configuration, and vector DB availability when Qdrant or Pinecone is enabled.
 
 ## MCP Runtime
 

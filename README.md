@@ -73,6 +73,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - AI incident reporting, triage, resolution tracking, and audit events
 - Structured audit trail for evidence updates and human review decisions
 - Runtime readiness checks and Docker healthchecks for production operations
+- Configurable API hardening with security headers, request body limits, CORS allowlists, and tenant-aware rate limiting
 - AI system card and audit report generation
 - Human review workflow: draft, approved, rejected, needs more evidence
 - Review queue escalation signals for SLA breaches, high-risk gaps, and missing evidence
@@ -177,6 +178,10 @@ Copy `.env.example` to `.env` and adjust values.
 - `DEFAULT_USER_ROLE`: fallback role, one of `viewer`, `auditor`, `compliance_reviewer`, `admin`
 - `DEFAULT_TENANT_ID`: fallback workspace/tenant id for local or single-tenant deployments
 - `CORS_ALLOWED_ORIGINS`: comma-separated browser origins allowed to call the API
+- `SECURITY_HEADERS_ENABLED`: enables defensive HTTP headers, on by default
+- `SECURITY_HSTS_ENABLED`: enables HSTS when the API is served only over HTTPS
+- `MAX_REQUEST_BODY_BYTES`: rejects oversized API requests before route handling
+- `API_RATE_LIMIT_PER_MINUTE`: optional in-memory per-tenant/caller limit; `0` disables it
 - `MCP_TRANSPORT`: `stdio` locally, or an HTTP transport such as `streamable-http` for deployment
 - `MCP_HOST` / `MCP_PORT`: MCP runtime bind settings
 

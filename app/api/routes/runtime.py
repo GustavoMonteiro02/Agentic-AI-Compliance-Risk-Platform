@@ -37,6 +37,10 @@ def runtime_status() -> dict:
         "prompt_versions": {name: prompt.version for name, prompt in PROMPT_REGISTRY.items()},
         "auth_mode": settings.auth_mode,
         "cors_allowed_origins": settings.cors_origins,
+        "security_headers_enabled": settings.security_headers_enabled,
+        "security_hsts_enabled": settings.security_hsts_enabled,
+        "max_request_body_bytes": settings.max_request_body_bytes,
+        "api_rate_limit_per_minute": settings.api_rate_limit_per_minute,
         "default_user_role": settings.default_user_role,
         "default_tenant_id": settings.default_tenant_id,
     }
@@ -82,6 +86,13 @@ def runtime_readiness() -> dict:
         "ok": settings.auth_mode == "disabled" or bool(settings.platform_api_key),
         "mode": settings.auth_mode,
         "tenant": settings.default_tenant_id,
+    }
+    checks["api_hardening"] = {
+        "ok": settings.max_request_body_bytes > 0 and settings.security_headers_enabled,
+        "security_headers_enabled": settings.security_headers_enabled,
+        "hsts_enabled": settings.security_hsts_enabled,
+        "max_request_body_bytes": settings.max_request_body_bytes,
+        "rate_limit_per_minute": settings.api_rate_limit_per_minute,
     }
     checks["llm"] = {
         "ok": settings.ai_generation_mode not in {"openai", "llm"}

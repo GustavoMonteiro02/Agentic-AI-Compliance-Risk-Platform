@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,16 +19,30 @@ from app.api.routes import (
 )
 from app.config import get_settings
 from app.database.session import init_db
+from app.security.middleware import InMemoryRateLimitMiddleware, RequestSizeLimitMiddleware, SecurityHeadersMiddleware
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
     init_db()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        init_db()
+        yield
+
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
         description="Agentic AI governance, compliance, risk, and audit-readiness platform.",
+        lifespan=lifespan,
     )
+    if settings.api_rate_limit_per_minute > 0:
+        app.add_middleware(InMemoryRateLimitMiddleware, requests_per_minute=settings.api_rate_limit_per_minute)
+    if settings.max_request_body_bytes > 0:
+        app.add_middleware(RequestSizeLimitMiddleware, max_body_bytes=settings.max_request_body_bytes)
+    if settings.security_headers_enabled:
+        app.add_middleware(SecurityHeadersMiddleware, hsts_enabled=settings.security_hsts_enabled)
     if settings.cors_origins:
         app.add_middleware(
             CORSMiddleware,
@@ -35,10 +51,6 @@ def create_app() -> FastAPI:
             allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
             allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-User", "X-User-Role", "X-Tenant-ID"],
         )
-
-    @app.on_event("startup")
-    def on_startup() -> None:
-        init_db()
 
     @app.get("/health")
     def health() -> dict[str, str]:

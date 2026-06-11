@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     default_user_role: str = "admin"
     default_tenant_id: str = "default"
     cors_allowed_origins: str = ""
+    security_headers_enabled: bool = True
+    security_hsts_enabled: bool = False
+    max_request_body_bytes: int = 1_048_576
+    api_rate_limit_per_minute: int = 0
     mcp_server_name: str = "ai-governance-compliance"
     mcp_transport: str = "stdio"
     mcp_host: str = "0.0.0.0"
