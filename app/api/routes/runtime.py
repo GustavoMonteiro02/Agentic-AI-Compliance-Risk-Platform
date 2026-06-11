@@ -18,6 +18,9 @@ def runtime_status() -> dict:
         "ai_generation_mode": settings.ai_generation_mode,
         "llm_enabled": OptionalLLMProvider().enabled(),
         "openai_model": settings.openai_model,
+        "openai_base_url": settings.openai_base_url if settings.ai_generation_mode == "openai" else None,
+        "openai_timeout_seconds": settings.openai_timeout_seconds,
+        "openai_max_retries": settings.openai_max_retries,
         "langsmith_tracing": settings.langsmith_tracing,
         "langsmith_project": settings.langsmith_project,
         "vector_db": settings.vector_db,
@@ -59,6 +62,8 @@ def runtime_readiness() -> dict:
         "ok": settings.ai_generation_mode != "openai" or bool(settings.openai_api_key),
         "mode": settings.ai_generation_mode,
         "model": settings.openai_model,
+        "timeout_seconds": settings.openai_timeout_seconds,
+        "max_retries": settings.openai_max_retries,
     }
     checks["embeddings"] = {
         "ok": settings.embedding_provider != "openai" or bool(settings.openai_api_key),

@@ -1,3 +1,5 @@
+import requests
+
 from app.llm.provider import OptionalLLMProvider
 from app.observability.langsmith import langsmith_trace_metadata
 from app.services.pdf_service import markdown_to_simple_pdf
@@ -28,8 +30,41 @@ def test_optional_llm_provider_parses_structured_metadata(monkeypatch):
     payload, metadata = result
     assert payload == {"ok": True}
     assert metadata["provider"] == "openai"
+    assert metadata["attempts"] == 1
     assert metadata["total_tokens"] == 14
     assert metadata["latency_ms"] >= 0
+
+
+def test_optional_llm_provider_retries_transient_failures(monkeypatch):
+    calls = {"count": 0}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "choices": [{"message": {"content": '{"ok": true}'}}],
+                "usage": {"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5},
+            }
+
+    def flaky_post(*args, **kwargs):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise requests.Timeout("temporary timeout")
+        return FakeResponse()
+
+    provider = OptionalLLMProvider()
+    provider.settings.openai_max_retries = 1
+    monkeypatch.setattr(provider, "enabled", lambda: True)
+    monkeypatch.setattr("app.llm.provider.requests.post", flaky_post)
+
+    result = provider.structured_json_result("system", "user")
+
+    assert result is not None
+    payload, metadata = result
+    assert payload == {"ok": True}
+    assert metadata["attempts"] == 2
 
 
 def test_langsmith_trace_metadata_is_disabled_by_default():

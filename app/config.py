@@ -10,7 +10,11 @@ class Settings(BaseSettings):
     knowledge_base_path: Path = Path("data")
     ai_generation_mode: str = "deterministic"
     openai_api_key: str | None = None
+    openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4.1-mini"
+    openai_timeout_seconds: int = 60
+    openai_max_retries: int = 2
+    openai_max_tokens: int = 2000
     langsmith_tracing: bool = False
     langsmith_api_key: str | None = None
     langsmith_project: str = "ai-governance-compliance-platform"
