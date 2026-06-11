@@ -127,6 +127,14 @@ In another terminal:
 API_BASE_URL=http://127.0.0.1:8000 streamlit run frontend/streamlit_app.py
 ```
 
+React SaaS UI:
+
+```bash
+cd frontend/react_app
+npm install
+VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev
+```
+
 Docker:
 
 ```bash

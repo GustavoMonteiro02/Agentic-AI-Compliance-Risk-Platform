@@ -1,0 +1,314 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172033;
+  background: #f4f6f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.sidebar {
+  background: #121826;
+  color: #f8fafc;
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand strong,
+.brand span,
+.runtime span,
+.runtime strong {
+  display: block;
+}
+
+.brand span,
+.runtime span {
+  color: #aab3c2;
+  font-size: 13px;
+}
+
+nav {
+  display: grid;
+  gap: 8px;
+}
+
+nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #dce3ed;
+  text-decoration: none;
+}
+
+nav a.active,
+nav a:hover {
+  background: #22314a;
+  color: #ffffff;
+}
+
+.runtime {
+  margin-top: auto;
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid #2d3d59;
+  border-radius: 8px;
+  background: #172235;
+}
+
+.content {
+  min-width: 0;
+  padding: 28px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #526071;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 30px;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+.status,
+.metric,
+.panel,
+.error {
+  border: 1px solid #dce3ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  color: #176b4d;
+  font-weight: 700;
+}
+
+.error {
+  padding: 12px 14px;
+  color: #9f1239;
+  margin-bottom: 16px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.metric {
+  min-height: 118px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.metric-icon {
+  color: #2563eb;
+  background: #eff6ff;
+  border-radius: 8px;
+  padding: 8px;
+  height: 36px;
+}
+
+.metric span,
+.panel-title span,
+.metric small {
+  color: #667085;
+  font-size: 13px;
+}
+
+.metric strong {
+  display: block;
+  margin: 4px 0;
+  font-size: 28px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr);
+  gap: 16px;
+}
+
+.panel {
+  min-width: 0;
+  padding: 18px;
+}
+
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.table {
+  display: grid;
+  gap: 6px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.6fr) 110px 150px 100px;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #eef2f5;
+}
+
+.row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row.head {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-width: 74px;
+  min-height: 26px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.risk-high,
+.risk-unacceptable {
+  color: #9f1239;
+  background: #fff1f2;
+}
+
+.risk-medium {
+  color: #92400e;
+  background: #fffbeb;
+}
+
+.risk-limited,
+.risk-minimal,
+.risk-low {
+  color: #176b4d;
+  background: #ecfdf3;
+}
+
+.risk-list {
+  display: grid;
+  gap: 10px;
+}
+
+.risk-list article {
+  border: 1px solid #eef2f5;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.risk-list strong {
+  display: block;
+  margin-bottom: 10px;
+  line-height: 1.35;
+}
+
+.risk-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  color: #667085;
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
