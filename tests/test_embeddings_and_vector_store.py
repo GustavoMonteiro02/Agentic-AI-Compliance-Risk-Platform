@@ -1,6 +1,6 @@
 from app.rag.chunker import DocumentChunk
 from app.rag.embeddings import LocalHashEmbeddingProvider, OpenAIEmbeddingProvider, build_embedding_provider
-from app.rag.vector_store import LocalVectorStore, QdrantVectorStore
+from app.rag.vector_store import LocalVectorStore, PineconeVectorStore, QdrantVectorStore
 
 
 def test_local_hash_embeddings_are_deterministic_and_normalized():
@@ -44,6 +44,27 @@ def test_qdrant_payload_contains_metadata_and_citation():
     assert payload["citation"]["source_url"] == "https://example.test/source"
     assert payload["tags"] == ["privacy", "retention"]
     assert payload["embedding_provider"] == "local_hash"
+
+
+def test_pinecone_payload_contains_metadata_namespace_and_citation():
+    chunk = DocumentChunk(
+        requirement_id="REQ_1",
+        title="Requirement",
+        source="regulations/example.md",
+        category="data protection",
+        text="Requirement text",
+        jurisdiction="EU",
+        document_type="regulation",
+        authority="European Union",
+        source_url="https://example.test/source",
+        tags=("privacy",),
+    )
+    payload = PineconeVectorStore("key", "https://index.example.test", "compliance")._payload(chunk)
+
+    assert payload["metadata"]["jurisdiction"] == "EU"
+    assert payload["citation"]["source_url"] == "https://example.test/source"
+    assert payload["vector_db"] == "pinecone"
+    assert payload["namespace"] == "compliance"
 
 
 def test_openai_embedding_provider_parses_embedding_response(monkeypatch):

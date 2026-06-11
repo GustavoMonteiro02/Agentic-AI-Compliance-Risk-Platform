@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.rag.ingest import ingest_summary
+from app.rag.ingest import ingest_pinecone, ingest_summary
 from app.rag.chunker import parse_markdown_requirements
 
 
@@ -26,3 +26,18 @@ def test_article_level_legal_source_chunks_include_locator_and_hash():
     assert "human oversight" in article_14.category
     assert article_14.source_url == "https://eur-lex.europa.eu/eli/reg/2024/1689/oj"
     assert article_14.content_hash
+
+
+def test_pinecone_ingest_requires_credentials(monkeypatch):
+    class Settings:
+        pinecone_api_key = None
+        pinecone_index_host = None
+
+    monkeypatch.setattr("app.rag.ingest.get_settings", lambda: Settings())
+
+    try:
+        ingest_pinecone(Path("data"))
+    except ValueError as exc:
+        assert "PINECONE_API_KEY" in str(exc)
+    else:
+        raise AssertionError("Expected Pinecone ingestion to require credentials")

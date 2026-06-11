@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app.config import get_settings
 from app.api.main import app
 
 
@@ -31,3 +32,21 @@ def test_runtime_readiness_reports_operational_checks():
     assert payload["checks"]["langsmith"]["ok"] is True
     assert payload["checks"]["embeddings"]["provider"] == "local_hash"
     assert payload["checks"]["vector_db"]["ok"] is True
+
+
+def test_runtime_readiness_reports_missing_pinecone_credentials(monkeypatch):
+    monkeypatch.setenv("VECTOR_DB", "pinecone")
+    monkeypatch.delenv("PINECONE_API_KEY", raising=False)
+    monkeypatch.delenv("PINECONE_INDEX_HOST", raising=False)
+    get_settings.cache_clear()
+    try:
+        response = client.get("/runtime/readiness")
+    finally:
+        monkeypatch.delenv("VECTOR_DB", raising=False)
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["ready"] is False
+    assert payload["checks"]["vector_db"]["mode"] == "pinecone"
+    assert "PINECONE_API_KEY" in payload["checks"]["vector_db"]["error"]

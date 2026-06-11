@@ -51,3 +51,30 @@ def test_retriever_filters_by_metadata_before_reranking():
     assert results
     assert all(item["jurisdiction"] == "EU" for item in results)
     assert all(item["document_type"] == "regulation" for item in results)
+
+
+def test_retriever_can_use_pinecone_vector_scores(monkeypatch):
+    class Settings:
+        from pathlib import Path
+
+        knowledge_base_path = Path("data")
+        vector_db = "pinecone"
+        pinecone_api_key = "test-key"
+        pinecone_index_host = "https://index.example.test"
+        pinecone_namespace = "compliance"
+        embedding_provider = "local_hash"
+        embedding_dimensions = 128
+
+    monkeypatch.setattr("app.rag.retriever.get_settings", lambda: Settings())
+    monkeypatch.setattr("app.rag.vector_store.PineconeVectorStore.health", lambda self: {"available": True})
+    monkeypatch.setattr(
+        "app.rag.vector_store.PineconeVectorStore.search",
+        lambda self, query, limit=12: [
+            {"metadata": {"requirement_id": "EU_AI_ACT_ARTICLE_14_HUMAN_OVERSIGHT"}, "score": 0.99}
+        ],
+    )
+
+    results = LocalComplianceRetriever().search("Article 14", top_k=3)
+
+    assert results[0]["requirement_id"] == "EU_AI_ACT_ARTICLE_14_HUMAN_OVERSIGHT"
+    assert results[0]["retriever"] == "local-hybrid-rerank-pinecone-ready"

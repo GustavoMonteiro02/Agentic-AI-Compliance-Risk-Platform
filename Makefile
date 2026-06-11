@@ -1,4 +1,4 @@
-.PHONY: test security-check ci api ui mcp ingest-qdrant
+.PHONY: test security-check ci api ui mcp ingest-qdrant ingest-pinecone
 
 test:
 	pytest
@@ -19,3 +19,6 @@ mcp:
 
 ingest-qdrant:
 	python3 scripts/ingest_qdrant.py
+
+ingest-pinecone:
+	python3 scripts/ingest_pinecone.py

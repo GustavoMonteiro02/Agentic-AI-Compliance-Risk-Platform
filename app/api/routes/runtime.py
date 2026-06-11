@@ -6,7 +6,7 @@ from app.database.session import SessionLocal
 from app.llm.provider import OptionalLLMProvider
 from app.prompts.registry import PROMPT_REGISTRY
 from app.rag.retriever import LocalComplianceRetriever
-from app.rag.vector_store import QdrantVectorStore
+from app.rag.vector_store import PineconeVectorStore, QdrantVectorStore
 
 router = APIRouter(prefix="/runtime", tags=["runtime"])
 
@@ -26,6 +26,8 @@ def runtime_status() -> dict:
         "langsmith_api_url": settings.langsmith_api_url,
         "vector_db": settings.vector_db,
         "qdrant_url": settings.qdrant_url if settings.vector_db == "qdrant" else None,
+        "pinecone_index_host": settings.pinecone_index_host if settings.vector_db == "pinecone" else None,
+        "pinecone_namespace": settings.pinecone_namespace if settings.vector_db == "pinecone" else None,
         "embedding_provider": settings.embedding_provider,
         "embedding_model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
         "prompt_versions": {name: prompt.version for name, prompt in PROMPT_REGISTRY.items()},
@@ -85,6 +87,23 @@ def runtime_readiness() -> dict:
             checks["vector_db"] = {"ok": bool(health.get("available")), **health}
         except Exception as exc:
             checks["vector_db"] = {"ok": False, "error": str(exc)}
+    elif settings.vector_db == "pinecone":
+        if not settings.pinecone_api_key or not settings.pinecone_index_host:
+            checks["vector_db"] = {
+                "ok": False,
+                "mode": "pinecone",
+                "error": "PINECONE_API_KEY and PINECONE_INDEX_HOST are required",
+            }
+        else:
+            try:
+                health = PineconeVectorStore(
+                    settings.pinecone_api_key,
+                    settings.pinecone_index_host,
+                    settings.pinecone_namespace,
+                ).health()
+                checks["vector_db"] = {"ok": bool(health.get("available")), "mode": "pinecone", **health}
+            except Exception as exc:
+                checks["vector_db"] = {"ok": False, "mode": "pinecone", "error": str(exc)}
     else:
         checks["vector_db"] = {"ok": True, "mode": "local"}
 

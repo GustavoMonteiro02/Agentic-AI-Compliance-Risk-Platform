@@ -91,7 +91,7 @@ curl http://127.0.0.1:8000/runtime/readiness
 
 This reports whether LLM mode, LangSmith metadata, and vector DB settings are active.
 It also reports active prompt versions so operators can tie generated outputs to the prompt registry.
-Readiness validates database connectivity, knowledge-base loading, auth configuration, LLM configuration, and vector DB availability when Qdrant is enabled.
+Readiness validates database connectivity, knowledge-base loading, auth configuration, LLM configuration, and vector DB availability when Qdrant or Pinecone is enabled.
 
 ## MCP Runtime
 
@@ -105,13 +105,14 @@ Local development defaults to `MCP_TRANSPORT=stdio`. Container deployments can s
 
 ## RAG Ingestion
 
-The local fallback uses hybrid lexical, phrase, metadata, query-expansion, and citation-aware reranking. `GET /requirements/search` exposes the same retrieval path with metadata filters for jurisdiction, document type, category, tags, and authority. When Qdrant is available, ingest the same knowledge-base chunks into a persistent vector collection:
+The local fallback uses hybrid lexical, phrase, metadata, query-expansion, and citation-aware reranking. `GET /requirements/search` exposes the same retrieval path with metadata filters for jurisdiction, document type, category, tags, and authority. When Qdrant or Pinecone is available, ingest the same knowledge-base chunks into a persistent vector collection:
 
 ```bash
 make ingest-qdrant
+make ingest-pinecone
 ```
 
-The Qdrant payload stores requirement metadata, tags, source URLs, effective dates, and citation labels. The default embedding provider is deterministic and local for repeatable development. Production can set `EMBEDDING_PROVIDER=openai` to use managed OpenAI embeddings behind the same vector-store contract.
+The Qdrant and Pinecone payloads store requirement metadata, tags, source URLs, effective dates, and citation labels. Pinecone deployments set `VECTOR_DB=pinecone`, `PINECONE_API_KEY`, `PINECONE_INDEX_HOST`, and optionally `PINECONE_NAMESPACE`. The default embedding provider is deterministic and local for repeatable development. Production can set `EMBEDDING_PROVIDER=openai` to use managed OpenAI embeddings behind the same vector-store contract.
 
 For full legal corpora, add official article-level Markdown files under `data/legal_sources/` and register them in `data/legal_sources_manifest.json`. The manifest records source URL, jurisdiction, document type, ingestion status, and local path. Chunks include locator and content hash metadata for citation-grade retrieval.
 

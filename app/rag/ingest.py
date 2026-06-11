@@ -5,6 +5,7 @@ from app.config import get_settings
 from app.rag.chunker import parse_markdown_requirements
 from app.rag.embeddings import build_embedding_provider
 from app.rag.vector_store import LocalVectorStore
+from app.rag.vector_store import PineconeVectorStore
 from app.rag.vector_store import QdrantVectorStore
 
 
@@ -59,6 +60,29 @@ def ingest_qdrant(base_path: Path) -> dict:
         "sources": store.sources(),
         "vector_db": "qdrant",
         "collection": settings.qdrant_collection,
+        "embedding_provider": settings.embedding_provider,
+        "embedding_model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
+        **result,
+    }
+
+
+def ingest_pinecone(base_path: Path) -> dict:
+    settings = get_settings()
+    if not settings.pinecone_api_key or not settings.pinecone_index_host:
+        raise ValueError("PINECONE_API_KEY and PINECONE_INDEX_HOST are required for Pinecone ingestion")
+    store = ingest_markdown_directory(base_path)
+    pinecone = PineconeVectorStore(
+        settings.pinecone_api_key,
+        settings.pinecone_index_host,
+        settings.pinecone_namespace,
+        build_embedding_provider(settings),
+    )
+    result = pinecone.upsert(store.chunks())
+    return {
+        "chunk_count": store.count(),
+        "sources": store.sources(),
+        "vector_db": "pinecone",
+        "namespace": settings.pinecone_namespace,
         "embedding_provider": settings.embedding_provider,
         "embedding_model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
         **result,

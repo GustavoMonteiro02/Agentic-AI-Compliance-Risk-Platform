@@ -38,7 +38,6 @@ This document maps the original project requirements to the current implementati
 These are represented by stable interfaces and roadmap entries, but are not enabled by default because the local MVP is designed to run without cloud credentials:
 
 - Full LangChain provider abstraction across multiple LLM vendors.
-- Pinecone as an alternative persistent vector database.
 - Full official legal/regulatory corpora ingestion.
 
 ## Current Verification

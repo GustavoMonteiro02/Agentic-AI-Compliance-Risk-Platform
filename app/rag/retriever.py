@@ -6,7 +6,7 @@ from typing import Any
 from app.config import get_settings
 from app.rag.chunker import DocumentChunk, parse_markdown_requirements
 from app.rag.embeddings import build_embedding_provider
-from app.rag.vector_store import QdrantVectorStore
+from app.rag.vector_store import PineconeVectorStore, QdrantVectorStore
 
 
 TOKEN_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9_-]+")
@@ -210,29 +210,42 @@ class LocalComplianceRetriever:
                 break
         return selected
 
-    def _qdrant_scores(self, settings: Any, query: str, limit: int) -> tuple[dict[str, float], dict[str, Any]]:
-        if settings.vector_db != "qdrant":
+    def _vector_scores(self, settings: Any, query: str, limit: int) -> tuple[dict[str, float], dict[str, Any]]:
+        if settings.vector_db == "local":
             return {}, {"available": False}
-
-        qdrant = QdrantVectorStore(
-            settings.qdrant_url,
-            settings.qdrant_collection,
-            build_embedding_provider(settings),
-        )
+        store = None
         try:
-            health = qdrant.health()
+            if settings.vector_db == "qdrant":
+                store = QdrantVectorStore(
+                    settings.qdrant_url,
+                    settings.qdrant_collection,
+                    build_embedding_provider(settings),
+                )
+            elif settings.vector_db == "pinecone":
+                if not settings.pinecone_api_key or not settings.pinecone_index_host:
+                    return {}, {"available": False, "error": "PINECONE_API_KEY and PINECONE_INDEX_HOST are required"}
+                store = PineconeVectorStore(
+                    settings.pinecone_api_key,
+                    settings.pinecone_index_host,
+                    settings.pinecone_namespace,
+                    build_embedding_provider(settings),
+                )
+            else:
+                return {}, {"available": False, "error": f"Unsupported VECTOR_DB '{settings.vector_db}'"}
+
+            health = store.health()
             if not health.get("available"):
                 return {}, health
-            results = qdrant.search(query, limit=limit)
+            results = store.search(query, limit=limit)
         except Exception as exc:
             return {}, {"available": False, "error": str(exc)}
 
         scores = {
-            result.get("payload", {}).get("requirement_id"): float(result.get("score") or 0)
+            (result.get("payload") or result.get("metadata") or {}).get("requirement_id"): float(result.get("score") or 0)
             for result in results
-            if result.get("payload", {}).get("requirement_id")
+            if (result.get("payload") or result.get("metadata") or {}).get("requirement_id")
         }
-        return scores, {"available": True, "result_count": len(scores)}
+        return scores, {"available": True, "result_count": len(scores), "vector_db": settings.vector_db}
 
     def search(
         self,
@@ -241,7 +254,7 @@ class LocalComplianceRetriever:
         filters: RetrievalFilters | None = None,
     ) -> list[dict[str, Any]]:
         settings = get_settings()
-        vector_scores, health = self._qdrant_scores(settings, query, limit=max(top_k * 3, 12))
+        vector_scores, health = self._vector_scores(settings, query, limit=max(top_k * 3, 12))
         expanded_query = _expanded_query_text(query)
         query_tokens = _tokens(expanded_query)
         query_phrases = _phrases(expanded_query)
@@ -285,7 +298,7 @@ class LocalComplianceRetriever:
         reranked = self._diversified_top_k(scored, top_k)
         retriever_mode = "local-hybrid-rerank"
         if health.get("available"):
-            retriever_mode = "local-hybrid-rerank-qdrant-ready"
+            retriever_mode = f"local-hybrid-rerank-{health.get('vector_db', 'vector')}-ready"
         return [
             {
                 "requirement_id": chunk.requirement_id,

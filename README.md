@@ -159,9 +159,12 @@ Copy `.env.example` to `.env` and adjust values.
 - `OPENAI_MAX_TOKENS`: maximum completion tokens for LLM refinement calls
 - `LANGSMITH_TRACING`: optional trace metadata
 - `LANGSMITH_API_KEY`: optional for hosted LangSmith usage
-- `VECTOR_DB`: `local` by default, or `qdrant`
+- `VECTOR_DB`: `local` by default, or `qdrant` / `pinecone`
 - `QDRANT_URL`: defaults to `http://localhost:6333`
 - `QDRANT_COLLECTION`: defaults to `ai_governance_requirements`
+- `PINECONE_API_KEY`: optional for Pinecone vector search
+- `PINECONE_INDEX_HOST`: Pinecone index host URL for query/upsert requests
+- `PINECONE_NAMESPACE`: Pinecone namespace for compliance requirements
 - `EMBEDDING_PROVIDER`: `local_hash` by default, or `openai`
 - `OPENAI_EMBEDDING_MODEL`: defaults to `text-embedding-3-small`
 - `EMBEDDING_DIMENSIONS`: local deterministic embedding size for offline dev/test retrieval
@@ -174,10 +177,11 @@ Copy `.env.example` to `.env` and adjust values.
 
 LLM prompt templates are versioned in `app/prompts/registry.py`; LLM tool calls include prompt version, model, latency, and token metadata where available.
 
-When Qdrant is running, populate the persistent collection with:
+When Qdrant or Pinecone is configured, populate the persistent collection with:
 
 ```bash
 make ingest-qdrant
+make ingest-pinecone
 ```
 
 ## Agents
@@ -242,7 +246,7 @@ Prompts:
 - Regulatory documents are summarized, source-linked study notes for product demonstration, not a complete legal corpus.
 - The MVP uses deterministic policy logic by default for reproducible tests.
 - Risk results are preliminary and require human compliance/legal review.
-- Retrieval uses local hybrid lexical + metadata ranking with query expansion and reranking by default. The Qdrant adapter and Docker service remain available as the persistent vector-store extension point.
+- Retrieval uses local hybrid lexical + metadata ranking with query expansion and reranking by default. Qdrant and Pinecone adapters are available as persistent vector-store extension points.
 - Rich RAG search is exposed through `GET /requirements/search?q=...` with optional `jurisdiction`, `document_type`, `category`, `tags`, and `authority` filters.
 
 ## Portfolio Value
