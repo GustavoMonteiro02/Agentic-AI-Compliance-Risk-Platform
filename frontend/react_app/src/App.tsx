@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle2, Database, FileCheck2, Layers3, ShieldCheck, Siren, Users } from "lucide-react";
-import { api, Assessment, Incident, RiskItem, RuntimeStatus, SystemRecord } from "./api";
+import { api, Assessment, Incident, ReviewEscalation, RiskItem, RuntimeStatus, SystemRecord } from "./api";
 import "./styles.css";
 
 type LoadState = {
@@ -9,6 +9,7 @@ type LoadState = {
   assessments: Assessment[];
   risks: RiskItem[];
   incidents: Incident[];
+  escalations: ReviewEscalation[];
   error?: string;
 };
 
@@ -28,12 +29,12 @@ function metric(label: string, value: string | number, detail: string, icon: Rea
 }
 
 function App() {
-  const [state, setState] = useState<LoadState>({ systems: [], assessments: [], risks: [], incidents: [] });
+  const [state, setState] = useState<LoadState>({ systems: [], assessments: [], risks: [], incidents: [], escalations: [] });
 
   useEffect(() => {
-    Promise.all([api.runtime(), api.systems(), api.assessments(), api.riskRegister(), api.incidents()])
-      .then(([runtime, systems, assessments, risks, incidents]) =>
-        setState({ runtime, systems, assessments, risks, incidents })
+    Promise.all([api.runtime(), api.systems(), api.assessments(), api.riskRegister(), api.incidents(), api.reviewEscalations()])
+      .then(([runtime, systems, assessments, risks, incidents, escalations]) =>
+        setState({ runtime, systems, assessments, risks, incidents, escalations })
       )
       .catch((error: Error) => setState((current) => ({ ...current, error: error.message })));
   }, []);
@@ -99,6 +100,7 @@ function App() {
           {metric("Missing evidence", summary.missingEvidence.length, "Audit readiness gap", <FileCheck2 size={20} />)}
           {metric("Open risks", summary.openRisks.length, "Risk register", <Activity size={20} />)}
           {metric("Open incidents", summary.openIncidents.length, "Operational response", <Siren size={20} />)}
+          {metric("Escalated reviews", state.escalations.length, "SLA and critical gaps", <AlertTriangle size={20} />)}
         </section>
 
         <section className="workspace">
@@ -157,6 +159,25 @@ function App() {
                     <span>{incident.status}</span>
                   </div>
                   <small>{incident.regulatory_report_required ? "Report review required" : incident.owner}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>Review escalations</h2>
+              <span>SLA</span>
+            </div>
+            <div className="risk-list">
+              {state.escalations.slice(0, 5).map((item) => (
+                <article key={item.assessment_id}>
+                  <strong>{item.system_name}</strong>
+                  <div>
+                    <span className={`pill risk-${item.risk_level}`}>{item.risk_level}</span>
+                    <span>{item.escalation_level}</span>
+                  </div>
+                  <small>{item.escalation_reason || `${item.age_hours}h in queue`}</small>
                 </article>
               ))}
             </div>

@@ -23,3 +23,6 @@ class ReviewQueueItem(BaseModel):
     status: str
     critical_gap_count: int
     missing_evidence_count: int
+    age_hours: float = 0.0
+    escalation_level: str = "normal"
+    escalation_reason: str | None = None

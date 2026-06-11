@@ -46,6 +46,15 @@ export type Incident = {
   detected_at: string;
 };
 
+export type ReviewEscalation = {
+  assessment_id: string;
+  system_name: string;
+  risk_level: string;
+  escalation_level: string;
+  escalation_reason?: string;
+  age_hours: number;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 function headers() {
@@ -73,4 +82,5 @@ export const api = {
   assessments: () => getJson<Assessment[]>("/assessments"),
   riskRegister: () => getJson<RiskItem[]>("/risk-register"),
   incidents: () => getJson<Incident[]>("/incidents"),
+  reviewEscalations: () => getJson<ReviewEscalation[]>("/reviews/escalations"),
 };

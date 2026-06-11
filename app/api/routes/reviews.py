@@ -15,8 +15,18 @@ def review_queue(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
     status: list[str] | None = Query(default=None),
+    sla_hours: int = Query(default=48, ge=1, le=720),
 ) -> list[ReviewQueueItem]:
-    return ReviewService(db, user.tenant_id).queue(status)
+    return ReviewService(db, user.tenant_id).queue(status, sla_hours=sla_hours)
+
+
+@router.get("/escalations")
+def review_escalations(
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+    sla_hours: int = Query(default=48, ge=1, le=720),
+) -> list[ReviewQueueItem]:
+    return ReviewService(db, user.tenant_id).escalations(sla_hours=sla_hours)
 
 
 @router.get("/{assessment_id}/history")

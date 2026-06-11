@@ -68,3 +68,23 @@ def test_review_queue_and_history_are_available():
 
     assert history[0]["status"] == "needs_more_evidence"
     assert history[0]["reviewer"] == "Compliance Reviewer"
+
+
+def test_review_queue_surfaces_escalation_signals():
+    system = client.post(
+        "/systems",
+        json={
+            "name": "Escalation Workflow System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    ).json()
+    assessment = client.post(f"/systems/{system['id']}/assess").json()
+
+    queue = client.get("/reviews/queue").json()
+    escalations = client.get("/reviews/escalations").json()
+    item = next(item for item in queue if item["assessment_id"] == assessment["id"])
+
+    assert item["age_hours"] >= 0
+    assert item["escalation_level"] in {"urgent", "attention", "sla_breach"}
+    assert item["escalation_reason"]
+    assert any(escalation["assessment_id"] == assessment["id"] for escalation in escalations)
