@@ -253,6 +253,7 @@ Prompts:
 - Rich RAG search is exposed through `GET /requirements/search?q=...` with optional `jurisdiction`, `document_type`, `category`, `tags`, and `authority` filters.
 - Legal source readiness is exposed through `GET /requirements/legal-sources`; it shows which official-source files are locally available and whether the corpus is complete.
 - `make validate-legal-sources` validates manifest completeness and exits non-zero until official full-text sources are locally available.
+- `scripts/register_legal_source.py` registers a local official-source Markdown file in `data/legal_sources_manifest.json`.
 
 ## Portfolio Value
 

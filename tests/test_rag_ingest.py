@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from app.rag.ingest import ingest_pinecone, ingest_summary, legal_source_summary, validate_legal_sources
+from app.rag.legal_sources import load_legal_sources_manifest, register_legal_source
 from app.rag.chunker import parse_markdown_requirements
 
 
@@ -70,3 +71,32 @@ def test_legal_source_validation_passes_complete_local_sources():
     )
 
     assert validation == {"ready": True, "errors": [], "warnings": []}
+
+
+def test_register_legal_source_updates_manifest(tmp_path):
+    legal_dir = tmp_path / "legal_sources"
+    legal_dir.mkdir()
+    source_file = legal_dir / "official.md"
+    source_file.write_text(
+        "# Official\n\n## ARTICLE_1 Scope\nLocator: Article 1\nOfficial source text.",
+        encoding="utf-8",
+    )
+    (tmp_path / "legal_sources_manifest.json").write_text('{"version": "test", "sources": []}', encoding="utf-8")
+
+    registered = register_legal_source(
+        tmp_path,
+        {
+            "id": "official-test",
+            "title": "Official Test Source",
+            "jurisdiction": "EU",
+            "authority": "European Union",
+            "source_url": "https://example.test/official",
+            "document_type": "regulation",
+            "local_path": "legal_sources/official.md",
+        },
+    )
+    manifest = load_legal_sources_manifest(tmp_path)
+
+    assert registered["ingestion_status"] == "available"
+    assert manifest["sources"][0]["id"] == "official-test"
+    assert legal_source_summary(tmp_path)["validation"]["ready"] is True
