@@ -75,3 +75,24 @@ def test_report_exports_pdf():
     assert report_response.content.startswith(b"%PDF")
     assert card_response.status_code == 200
     assert card_response.content.startswith(b"%PDF")
+
+
+def test_assessment_remediation_plan_prioritizes_gaps_and_evidence():
+    system_response = client.post(
+        "/systems",
+        json={
+            "name": "Remediation Planning System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    )
+    assessment = client.post(f"/systems/{system_response.json()['id']}/assess").json()
+
+    response = client.get(f"/assessments/{assessment['id']}/remediation-plan")
+
+    assert response.status_code == 200
+    plan = response.json()
+    assert plan["assessment_id"] == assessment["id"]
+    assert plan["actions"]
+    assert plan["overall_priority"] in {"critical", "high", "medium", "low"}
+    assert any(action["source"] == "missing_evidence" for action in plan["actions"])
+    assert plan["critical_gap_count"] == len(assessment["gap_analysis"]["critical_gaps"])

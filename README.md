@@ -67,6 +67,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Legal-source manifest for article-level official corpus ingestion
 - Requirement-to-control mapping
 - Compliance gap analysis
+- Remediation plan generation from gaps and missing evidence
 - Evidence checklist generation with owner, due-date, expiry, approval, and readiness lifecycle tracking
 - Risk register and policy exception workflows with compensating controls
 - AI incident reporting, triage, resolution tracking, and audit events

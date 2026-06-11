@@ -18,6 +18,7 @@ This document maps the original project requirements to the current implementati
 - Requirement search API and Streamlit Requirements tab.
 - MCP tool, resource, and prompt catalog with tests.
 - Evidence checklist records, evidence status updates, owners, due dates, expiry, approval metadata, and compliance readiness score.
+- Remediation plan endpoint generated from critical gaps, medium gaps, missing evidence, owners, priorities, and due dates.
 - Risk register and policy exception workflows with mitigation plans and compensating controls.
 - AI incident lifecycle for reporting, triage, containment, resolution, corrective actions, regulatory report review, tenant scoping, and audit events.
 - AI system card and audit report Markdown generation/export.

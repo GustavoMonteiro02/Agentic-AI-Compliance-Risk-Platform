@@ -71,6 +71,15 @@ def audit_report(
     return AssessmentService(db, user.tenant_id).get(assessment_id).audit_report.model_dump()
 
 
+@router.get("/{assessment_id}/remediation-plan")
+def remediation_plan(
+    assessment_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+) -> dict:
+    return AssessmentService(db, user.tenant_id).remediation_plan(assessment_id).model_dump(mode="json")
+
+
 @router.get("/{assessment_id}/tool-calls")
 def tool_calls(
     assessment_id: str,

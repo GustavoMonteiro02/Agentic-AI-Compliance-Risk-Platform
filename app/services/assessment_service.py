@@ -1,9 +1,17 @@
+from datetime import datetime, timedelta
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.agents.graph import run_governance_assessment
 from app.database.repositories import AssessmentRepository, SystemRepository
 from app.schemas.assessment import AssessmentRunRequest, GovernanceAssessment
+from app.schemas.remediation import RemediationAction, RemediationPlan
+
+
+def _due_date(priority: str) -> datetime:
+    days = {"critical": 14, "high": 30, "medium": 60, "low": 90}.get(priority, 60)
+    return datetime.utcnow() + timedelta(days=days)
 
 
 class AssessmentService:
@@ -61,3 +69,57 @@ class AssessmentService:
 
     def list(self) -> list[GovernanceAssessment]:
         return [GovernanceAssessment.model_validate(item.assessment_json) for item in self.assessments.list()]
+
+    def remediation_plan(self, assessment_id: str) -> RemediationPlan:
+        assessment = self.get(assessment_id)
+        actions: list[RemediationAction] = []
+
+        for gap in assessment.gap_analysis.critical_gaps:
+            actions.append(
+                RemediationAction(
+                    title=gap.gap[:120],
+                    description=gap.recommended_action,
+                    priority="critical" if gap.risk.lower() == "high" else "high",
+                    owner="Compliance",
+                    due_date=_due_date("critical"),
+                    source="critical_gap",
+                )
+            )
+        for gap in assessment.gap_analysis.medium_gaps:
+            actions.append(
+                RemediationAction(
+                    title=gap.gap[:120],
+                    description=gap.recommended_action,
+                    priority="medium",
+                    owner="Compliance",
+                    due_date=_due_date("medium"),
+                    source="medium_gap",
+                )
+            )
+        for item in assessment.evidence_checklist:
+            if item.status != "missing":
+                continue
+            priority = "high" if item.priority == "high" else "medium"
+            actions.append(
+                RemediationAction(
+                    title=f"Provide evidence: {item.evidence}"[:120],
+                    description=f"Upload or approve evidence for {item.evidence}.",
+                    priority=priority,
+                    owner=item.owner,
+                    due_date=_due_date(priority),
+                    source="missing_evidence",
+                )
+            )
+
+        priority_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+        actions.sort(key=lambda action: (priority_order[action.priority], action.due_date), reverse=True)
+        overall_priority = actions[0].priority if actions else "low"
+        return RemediationPlan(
+            assessment_id=assessment.id,
+            system_id=assessment.system_id,
+            overall_priority=overall_priority,
+            actions=actions,
+            evidence_gaps=sum(1 for item in assessment.evidence_checklist if item.status == "missing"),
+            critical_gap_count=len(assessment.gap_analysis.critical_gaps),
+            medium_gap_count=len(assessment.gap_analysis.medium_gaps),
+        )
