@@ -28,7 +28,7 @@ This document maps the original project requirements to the current implementati
 - Structured audit events for evidence updates and human review decisions.
 - Tenant-scoped systems, assessments, evidence, reports, review queues, and audit events.
 - Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.
-- React SaaS UI scaffold for a production-style governance command center.
+- React SaaS command center for portfolio-grade governance operations metrics.
 - Evaluation suite covering risk classification consistency, retrieval grounding, retrieval quality top-k recall, system card coverage, evidence completeness, human approval bypass resistance, legal-advice guardrails, and LangSmith-compatible experiment payloads.
 - Guardrails preventing automatic approval or final legal compliance claims without human review.
 - Dockerfile, Docker Compose, Makefile, CI workflow, security/configuration scan, runtime readiness checks, Docker healthchecks, and pytest suite.

@@ -59,7 +59,7 @@ The workflow is compiled with `langgraph.graph.StateGraph` in [app/agents/graph.
 - generated system card and audit report
 - human-review status, tool calls, and errors
 
-The MVP graph is linear for auditability. Later milestones can add conditional edges for missing-information loops, reviewer escalation, and MCP-backed tool execution.
+The governance graph is linear for auditability. Missing-information checks, review escalation signals, and MCP-backed tool surfaces are exposed around the graph while preserving a deterministic review trail.
 
 ## Human Review Principle
 

@@ -8,14 +8,14 @@
 - Streamlit UI for dashboard, intake, assessment, evidence, report, and review queue.
 - pytest coverage for core guardrails and API.
 
-## v0.2 RAG Knowledge Base - Mostly Done
+## v0.2 RAG Knowledge Base - Done
 
 - Add richer policy and regulatory summaries.
 - Add Qdrant and Pinecone integrations behind the existing metadata-aware hybrid retriever interface.
 - Add document ingestion CLI and chunk metadata.
 - Retrieval quality evaluation dataset and top-k recall metric.
 
-## v0.3 Evidence and Audit Reports - Mostly Done
+## v0.3 Evidence and Audit Reports - Done
 
 - Markdown and PDF export.
 - Evidence upload metadata and approval statuses.
