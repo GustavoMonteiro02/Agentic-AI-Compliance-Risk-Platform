@@ -92,6 +92,19 @@ curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
   http://127.0.0.1:8000/audit/assessments/{assessment_id}/events
 ```
 
+For regulator or internal audit handoff, auditors can export a complete assessment package:
+
+```bash
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  http://127.0.0.1:8000/audit/assessments/{assessment_id}/package
+
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  -o audit_package.zip \
+  http://127.0.0.1:8000/audit/assessments/{assessment_id}/package.zip
+```
+
+The package includes the tenant-scoped system record, assessment snapshot, mapped controls, gaps, evidence, risks, policy exceptions, incidents, human reviews, tool calls, audit events, system card, audit report, and a summary manifest.
+
 ## Runtime Check
 
 Use:

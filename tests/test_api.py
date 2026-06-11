@@ -1,3 +1,6 @@
+from io import BytesIO
+from zipfile import ZipFile
+
 from fastapi.testclient import TestClient
 
 from app.api.main import app
@@ -75,6 +78,67 @@ def test_report_exports_pdf():
     assert report_response.content.startswith(b"%PDF")
     assert card_response.status_code == 200
     assert card_response.content.startswith(b"%PDF")
+
+
+def test_audit_package_exports_json_and_zip():
+    admin_headers = {"X-User-Role": "admin", "X-User": "system-owner"}
+    auditor_headers = {"X-User-Role": "auditor", "X-User": "audit-lead"}
+    system_response = client.post(
+        "/systems",
+        headers=admin_headers,
+        json={
+            "name": "Audit Package System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    )
+    assessment = client.post(f"/systems/{system_response.json()['id']}/assess", headers=admin_headers).json()
+
+    package_response = client.get(f"/audit/assessments/{assessment['id']}/package", headers=auditor_headers)
+    zip_response = client.get(f"/audit/assessments/{assessment['id']}/package.zip", headers=auditor_headers)
+
+    assert package_response.status_code == 200
+    package = package_response.json()
+    assert package["manifest"]["package_type"] == "ai_governance_audit_package"
+    assert package["manifest"]["assessment_id"] == assessment["id"]
+    assert package["system"]["id"] == assessment["system_id"]
+    assert package["assessment"]["id"] == assessment["id"]
+    assert package["mapped_controls"]
+    assert package["evidence_items"]
+    assert package["audit_report"]["content_markdown"].startswith("# Audit Readiness Report")
+    assert package["system_card"]["content_markdown"].startswith("# AI System Card")
+    assert package["summary"]["control_count"] == len(package["mapped_controls"])
+
+    assert zip_response.status_code == 200
+    assert zip_response.headers["content-type"] == "application/zip"
+    with ZipFile(BytesIO(zip_response.content)) as archive:
+        assert set(archive.namelist()) == {
+            "manifest.json",
+            "audit_package.json",
+            "reports/audit_report.md",
+            "reports/system_card.md",
+        }
+        assert b"ai_governance_audit_package" in archive.read("manifest.json")
+
+
+def test_audit_package_is_tenant_scoped():
+    tenant_a_admin_headers = {"X-Tenant-ID": "audit-tenant-a", "X-User-Role": "admin"}
+    tenant_b_auditor_headers = {"X-Tenant-ID": "audit-tenant-b", "X-User-Role": "auditor"}
+    system_response = client.post(
+        "/systems",
+        headers=tenant_a_admin_headers,
+        json={
+            "name": "Tenant Scoped Audit Package System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    )
+    assessment = client.post(
+        f"/systems/{system_response.json()['id']}/assess",
+        headers=tenant_a_admin_headers,
+    ).json()
+
+    response = client.get(f"/audit/assessments/{assessment['id']}/package", headers=tenant_b_auditor_headers)
+
+    assert response.status_code == 404
 
 
 def test_assessment_remediation_plan_prioritizes_gaps_and_evidence():

@@ -80,6 +80,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Guardrails that prevent final compliance claims without human approval
 - Evaluation tests for risk consistency, RAG relevance, structured outputs, and prompt-injection resistance
 - Markdown and PDF exports for system cards and audit reports
+- JSON and ZIP audit packages for regulator or internal audit handoff
 - Demo scenario pack for portfolio walkthroughs
 
 ## Evaluation Metrics
@@ -103,7 +104,7 @@ LangSmith-compatible experiment payloads are exposed at `GET /evaluation/langsmi
 3. Review risk level, retrieved requirements, mapped controls, gaps, evidence, system card, and audit report.
 4. Submit a human review decision.
 5. Search the requirements knowledge base and update evidence owners, due dates, expiry, approvals, and readiness.
-6. Export the system card or audit report as Markdown/PDF.
+6. Export the system card, audit report, or full audit package as Markdown/PDF/JSON/ZIP.
 
 Example input:
 
