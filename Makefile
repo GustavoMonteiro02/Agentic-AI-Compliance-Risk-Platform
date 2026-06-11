@@ -1,4 +1,4 @@
-.PHONY: test security-check ci api ui mcp ingest-qdrant ingest-pinecone
+.PHONY: test security-check ci api ui mcp ingest-qdrant ingest-pinecone validate-legal-sources
 
 test:
 	pytest
@@ -22,3 +22,6 @@ ingest-qdrant:
 
 ingest-pinecone:
 	python3 scripts/ingest_pinecone.py
+
+validate-legal-sources:
+	python3 scripts/validate_legal_sources.py

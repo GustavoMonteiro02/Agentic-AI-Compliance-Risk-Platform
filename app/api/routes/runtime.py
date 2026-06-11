@@ -71,7 +71,8 @@ def runtime_readiness() -> dict:
             "source_count": len(sources),
             "available_count": len(available),
             "complete_count": len(complete),
-            "ready_for_full_legal_corpus": bool(sources) and len(complete) == len(sources),
+            "ready_for_full_legal_corpus": bool(legal_sources.get("validation", {}).get("ready")),
+            "validation": legal_sources.get("validation", {}),
         }
     except Exception as exc:
         checks["legal_sources"] = {"ok": False, "error": str(exc)}

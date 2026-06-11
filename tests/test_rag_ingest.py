@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.rag.ingest import ingest_pinecone, ingest_summary
+from app.rag.ingest import ingest_pinecone, ingest_summary, legal_source_summary, validate_legal_sources
 from app.rag.chunker import parse_markdown_requirements
 
 
@@ -41,3 +41,32 @@ def test_pinecone_ingest_requires_credentials(monkeypatch):
         assert "PINECONE_API_KEY" in str(exc)
     else:
         raise AssertionError("Expected Pinecone ingestion to require credentials")
+
+
+def test_legal_source_summary_includes_validation_gate():
+    summary = legal_source_summary(Path("data"))
+
+    assert summary["validation"]["ready"] is False
+    assert any("sample extract" in warning for warning in summary["validation"]["warnings"])
+    assert any("gdpr" in error for error in summary["validation"]["errors"])
+
+
+def test_legal_source_validation_passes_complete_local_sources():
+    validation = validate_legal_sources(
+        [
+            {
+                "id": "source-1",
+                "title": "Official source",
+                "jurisdiction": "EU",
+                "authority": "Authority",
+                "source_url": "https://example.test/source",
+                "document_type": "regulation",
+                "local_path": "legal/source.md",
+                "ingestion_status": "available",
+                "available": True,
+                "chunk_count": 3,
+            }
+        ]
+    )
+
+    assert validation == {"ready": True, "errors": [], "warnings": []}

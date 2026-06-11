@@ -29,7 +29,7 @@ def ingest_summary(base_path: Path) -> dict:
 def legal_source_summary(base_path: Path) -> dict:
     manifest_path = base_path / "legal_sources_manifest.json"
     if not manifest_path.exists():
-        return {"manifest": None, "sources": []}
+        return {"manifest": None, "sources": [], "validation": {"ready": False, "errors": ["manifest_missing"], "warnings": []}}
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     sources = []
     for source in manifest.get("sources", []):
@@ -43,7 +43,31 @@ def legal_source_summary(base_path: Path) -> dict:
                 else 0,
             }
         )
-    return {"manifest": manifest.get("version"), "sources": sources}
+    return {"manifest": manifest.get("version"), "sources": sources, "validation": validate_legal_sources(sources)}
+
+
+def validate_legal_sources(sources: list[dict]) -> dict:
+    errors: list[str] = []
+    warnings: list[str] = []
+    required_fields = {"id", "title", "jurisdiction", "authority", "source_url", "document_type", "local_path"}
+
+    for source in sources:
+        source_id = source.get("id", "unknown")
+        missing = sorted(field for field in required_fields if not source.get(field))
+        if missing:
+            errors.append(f"{source_id}: missing required fields {', '.join(missing)}")
+        if not source.get("available"):
+            errors.append(f"{source_id}: local_path not found")
+            continue
+        if source.get("chunk_count", 0) == 0:
+            errors.append(f"{source_id}: no article-level chunks parsed")
+        status = source.get("ingestion_status")
+        if status != "available":
+            warnings.append(f"{source_id}: ingestion_status is {status}")
+        if status == "sample_extract":
+            warnings.append(f"{source_id}: sample extract is not production full-text corpus")
+
+    return {"ready": not errors and not warnings, "errors": errors, "warnings": warnings}
 
 
 def ingest_qdrant(base_path: Path) -> dict:

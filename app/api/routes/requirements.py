@@ -50,5 +50,5 @@ def legal_sources() -> dict:
         "source_count": len(sources),
         "available_count": len(available),
         "complete_count": len(complete),
-        "ready_for_full_legal_corpus": bool(sources) and len(complete) == len(sources),
+        "ready_for_full_legal_corpus": bool(summary.get("validation", {}).get("ready")),
     }

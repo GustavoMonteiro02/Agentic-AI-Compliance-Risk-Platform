@@ -252,6 +252,7 @@ Prompts:
 - Retrieval uses local hybrid lexical + metadata ranking with query expansion and reranking by default. Qdrant and Pinecone adapters are available as persistent vector-store extension points.
 - Rich RAG search is exposed through `GET /requirements/search?q=...` with optional `jurisdiction`, `document_type`, `category`, `tags`, and `authority` filters.
 - Legal source readiness is exposed through `GET /requirements/legal-sources`; it shows which official-source files are locally available and whether the corpus is complete.
+- `make validate-legal-sources` validates manifest completeness and exits non-zero until official full-text sources are locally available.
 
 ## Portfolio Value
 

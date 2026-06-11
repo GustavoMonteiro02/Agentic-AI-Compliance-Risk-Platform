@@ -51,4 +51,6 @@ def test_requirements_legal_sources_report_manifest_readiness():
     assert payload["source_count"] >= 1
     assert payload["available_count"] >= 1
     assert payload["ready_for_full_legal_corpus"] is False
+    assert payload["validation"]["ready"] is False
+    assert payload["validation"]["errors"]
     assert any(source["chunk_count"] > 0 for source in payload["sources"])
