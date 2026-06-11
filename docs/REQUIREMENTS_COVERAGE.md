@@ -33,12 +33,12 @@ This document maps the original project requirements to the current implementati
 - Guardrails preventing automatic approval or final legal compliance claims without human review.
 - Dockerfile, Docker Compose, Makefile, CI workflow, security/configuration scan, runtime readiness checks, Docker healthchecks, and pytest suite.
 - Optional OpenAI LLM refinement mode, LangSmith run metadata, Qdrant Docker service, and PDF report export.
+- Multi-provider LLM refinement adapter supporting OpenAI, OpenAI-compatible endpoints, and Anthropic behind the same workflow interface.
 
 ## Intentionally Deferred External Integrations
 
 These are represented by stable interfaces and roadmap entries, but are not enabled by default because the local MVP is designed to run without cloud credentials:
 
-- Full LangChain provider abstraction across multiple LLM vendors.
 - Full official legal/regulatory corpora ingestion.
 
 ## Current Verification

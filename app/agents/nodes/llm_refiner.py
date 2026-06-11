@@ -22,6 +22,7 @@ def _run_structured_refinement(provider: Any, system_prompt: str, user_prompt: s
 def llm_refiner_node(state: GovernanceAssessmentState) -> GovernanceAssessmentState:
     provider = OptionalLLMProvider()
     prompt = get_prompt("llm_refiner")
+    provider_mode = getattr(provider, "provider_name", "openai")
     if not provider.enabled():
         state.setdefault("tool_calls", []).append(
             {
@@ -50,7 +51,7 @@ def llm_refiner_node(state: GovernanceAssessmentState) -> GovernanceAssessmentSt
                 {
                     "tool_name": "llm_refiner",
                     "status": "skipped",
-                    "mode": "openai",
+                    "mode": provider_mode,
                     "reason": "empty_response",
                     "prompt_name": prompt.name,
                     "prompt_version": prompt.version,
@@ -85,7 +86,7 @@ def llm_refiner_node(state: GovernanceAssessmentState) -> GovernanceAssessmentSt
             {
                 "tool_name": "llm_refiner",
                 "status": "success",
-                "mode": "openai",
+                "mode": provider_mode,
                 "prompt_name": prompt.name,
                 "prompt_version": prompt.version,
                 **metadata,
@@ -97,7 +98,7 @@ def llm_refiner_node(state: GovernanceAssessmentState) -> GovernanceAssessmentSt
             {
                 "tool_name": "llm_refiner",
                 "status": "failed",
-                "mode": "openai",
+                "mode": provider_mode,
                 "prompt_name": prompt.name,
                 "prompt_version": prompt.version,
             }

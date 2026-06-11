@@ -152,11 +152,14 @@ Copy `.env.example` to `.env` and adjust values.
 
 - `DATABASE_URL`: defaults to local SQLite if not provided
 - `AI_GENERATION_MODE`: `deterministic` by default, or `openai`
+- `LLM_PROVIDER`: `openai`, `openai_compatible`, or `anthropic` when LLM mode is enabled
 - `OPENAI_API_KEY`: optional for OpenAI advisory mode
 - `OPENAI_BASE_URL`: defaults to `https://api.openai.com/v1`
 - `OPENAI_TIMEOUT_SECONDS`: request timeout for LLM calls
 - `OPENAI_MAX_RETRIES`: retry count for transient LLM request failures
 - `OPENAI_MAX_TOKENS`: maximum completion tokens for LLM refinement calls
+- `ANTHROPIC_API_KEY`: optional for Anthropic LLM refinement
+- `ANTHROPIC_MODEL`: defaults to `claude-3-5-sonnet-latest`
 - `LANGSMITH_TRACING`: optional trace metadata
 - `LANGSMITH_API_KEY`: optional for hosted LangSmith usage
 - `VECTOR_DB`: `local` by default, or `qdrant` / `pinecone`

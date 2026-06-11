@@ -9,12 +9,16 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./ai_governance.db"
     knowledge_base_path: Path = Path("data")
     ai_generation_mode: str = "deterministic"
+    llm_provider: str = "openai"
     openai_api_key: str | None = None
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4.1-mini"
     openai_timeout_seconds: int = 60
     openai_max_retries: int = 2
     openai_max_tokens: int = 2000
+    anthropic_api_key: str | None = None
+    anthropic_base_url: str = "https://api.anthropic.com/v1"
+    anthropic_model: str = "claude-3-5-sonnet-latest"
     langsmith_tracing: bool = False
     langsmith_api_key: str | None = None
     langsmith_api_url: str = "https://api.smith.langchain.com"

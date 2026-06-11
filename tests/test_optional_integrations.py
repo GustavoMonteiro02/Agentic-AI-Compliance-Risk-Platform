@@ -39,6 +39,37 @@ def test_optional_llm_provider_parses_structured_metadata(monkeypatch):
     assert metadata["latency_ms"] >= 0
 
 
+def test_optional_llm_provider_parses_anthropic_structured_response(monkeypatch):
+    class FakeResponse:
+        content = b"{}"
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "content": [{"type": "text", "text": '{"ok": true}'}],
+                "usage": {"input_tokens": 8, "output_tokens": 5},
+            }
+
+    provider = OptionalLLMProvider()
+    monkeypatch.setattr(provider.settings, "ai_generation_mode", "llm")
+    monkeypatch.setattr(provider.settings, "llm_provider", "anthropic")
+    monkeypatch.setattr(provider.settings, "anthropic_api_key", "test")
+    monkeypatch.setattr("app.llm.provider.requests.post", lambda *args, **kwargs: FakeResponse())
+
+    result = provider.structured_json_result("system", "user")
+
+    assert result is not None
+    payload, metadata = result
+    assert payload == {"ok": True}
+    assert metadata["provider"] == "anthropic"
+    assert metadata["model"] == provider.settings.anthropic_model
+    assert metadata["prompt_tokens"] == 8
+    assert metadata["completion_tokens"] == 5
+    assert metadata["total_tokens"] == 13
+
+
 def test_optional_llm_provider_retries_transient_failures(monkeypatch):
     calls = {"count": 0}
 

@@ -14,6 +14,7 @@ def test_runtime_status_reports_production_toggles():
     payload = response.json()
     assert payload["ai_generation_mode"] == "deterministic"
     assert payload["llm_enabled"] is False
+    assert payload["llm_provider"] == "openai"
     assert payload["vector_db"] == "local"
     assert payload["embedding_provider"] == "local_hash"
     assert payload["langsmith_api_url"] == "https://api.smith.langchain.com"

@@ -48,3 +48,4 @@
 - Architecture diagrams.
 - Deployment guide.
 - CV and interview talking points.
+- Multi-provider LLM refinement configuration for OpenAI, OpenAI-compatible endpoints, and Anthropic.
