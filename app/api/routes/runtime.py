@@ -5,6 +5,7 @@ from app.config import get_settings
 from app.database.session import SessionLocal
 from app.llm.provider import OptionalLLMProvider
 from app.prompts.registry import PROMPT_REGISTRY
+from app.rag.ingest import legal_source_summary
 from app.rag.retriever import LocalComplianceRetriever
 from app.rag.vector_store import PineconeVectorStore, QdrantVectorStore
 
@@ -55,6 +56,22 @@ def runtime_readiness() -> dict:
         checks["knowledge_base"] = {"ok": chunk_count > 0, "chunk_count": chunk_count}
     except Exception as exc:
         checks["knowledge_base"] = {"ok": False, "error": str(exc)}
+
+    try:
+        legal_sources = legal_source_summary(settings.knowledge_base_path)
+        sources = legal_sources.get("sources", [])
+        available = [source for source in sources if source.get("available")]
+        complete = [source for source in sources if source.get("ingestion_status") == "available" and source.get("available")]
+        checks["legal_sources"] = {
+            "ok": bool(available),
+            "manifest": legal_sources.get("manifest"),
+            "source_count": len(sources),
+            "available_count": len(available),
+            "complete_count": len(complete),
+            "ready_for_full_legal_corpus": bool(sources) and len(complete) == len(sources),
+        }
+    except Exception as exc:
+        checks["legal_sources"] = {"ok": False, "error": str(exc)}
 
     checks["auth"] = {
         "ok": settings.auth_mode == "disabled" or bool(settings.platform_api_key),

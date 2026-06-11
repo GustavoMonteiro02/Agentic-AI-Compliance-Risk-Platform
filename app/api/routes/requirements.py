@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import DbSession
+from app.config import get_settings
+from app.rag.ingest import legal_source_summary
 from app.rag.retriever import LocalComplianceRetriever, RetrievalFilters
 from app.schemas.requirements import RequirementRead, RequirementSearchResult
 from app.security import require_roles
@@ -35,3 +37,18 @@ def search_requirements(
     )
     results = LocalComplianceRetriever().search(q, top_k=top_k, filters=filters)
     return [RequirementSearchResult.model_validate(result) for result in results]
+
+
+@router.get("/legal-sources")
+def legal_sources() -> dict:
+    summary = legal_source_summary(get_settings().knowledge_base_path)
+    sources = summary.get("sources", [])
+    available = [source for source in sources if source.get("available")]
+    complete = [source for source in sources if source.get("ingestion_status") == "available" and source.get("available")]
+    return {
+        **summary,
+        "source_count": len(sources),
+        "available_count": len(available),
+        "complete_count": len(complete),
+        "ready_for_full_legal_corpus": bool(sources) and len(complete) == len(sources),
+    }

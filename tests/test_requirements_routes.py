@@ -40,3 +40,15 @@ def test_requirements_rag_search_exposes_metadata_filters_and_scores():
     assert {"lexical", "phrase", "metadata", "source_quality", "vector", "final"} <= set(
         results[0]["score_breakdown"]
     )
+
+
+def test_requirements_legal_sources_report_manifest_readiness():
+    response = client.get("/requirements/legal-sources")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["manifest"] == "2026-06-10"
+    assert payload["source_count"] >= 1
+    assert payload["available_count"] >= 1
+    assert payload["ready_for_full_legal_corpus"] is False
+    assert any(source["chunk_count"] > 0 for source in payload["sources"])

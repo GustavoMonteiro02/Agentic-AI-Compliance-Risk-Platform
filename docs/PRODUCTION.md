@@ -115,6 +115,7 @@ make ingest-pinecone
 The Qdrant and Pinecone payloads store requirement metadata, tags, source URLs, effective dates, and citation labels. Pinecone deployments set `VECTOR_DB=pinecone`, `PINECONE_API_KEY`, `PINECONE_INDEX_HOST`, and optionally `PINECONE_NAMESPACE`. The default embedding provider is deterministic and local for repeatable development. Production can set `EMBEDDING_PROVIDER=openai` to use managed OpenAI embeddings behind the same vector-store contract.
 
 For full legal corpora, add official article-level Markdown files under `data/legal_sources/` and register them in `data/legal_sources_manifest.json`. The manifest records source URL, jurisdiction, document type, ingestion status, and local path. Chunks include locator and content hash metadata for citation-grade retrieval.
+Operators can inspect corpus readiness through `GET /requirements/legal-sources` and `/runtime/readiness`; both expose source counts, local availability, chunk counts, and whether every manifest source is locally available.
 
 ## Release Gate
 

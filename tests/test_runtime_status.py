@@ -29,6 +29,8 @@ def test_runtime_readiness_reports_operational_checks():
     assert payload["ready"] is True
     assert payload["checks"]["database"]["ok"] is True
     assert payload["checks"]["knowledge_base"]["chunk_count"] > 0
+    assert payload["checks"]["legal_sources"]["available_count"] >= 1
+    assert payload["checks"]["legal_sources"]["ready_for_full_legal_corpus"] is False
     assert payload["checks"]["langsmith"]["ok"] is True
     assert payload["checks"]["embeddings"]["provider"] == "local_hash"
     assert payload["checks"]["vector_db"]["ok"] is True
