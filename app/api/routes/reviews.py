@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
 from app.api.deps import DbSession
+from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.schemas.review import ReviewDecision, ReviewQueueItem, ReviewRead
 from app.security import AuthenticatedUser, require_roles
 from app.services.review_service import ReviewService
@@ -12,30 +13,39 @@ router = APIRouter(prefix="/reviews", tags=["reviews"], dependencies=[Depends(re
 
 @router.get("/queue")
 def review_queue(
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
     status: list[str] | None = Query(default=None),
     sla_hours: int = Query(default=48, ge=1, le=720),
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[ReviewQueueItem]:
-    return ReviewService(db, user.tenant_id).queue(status, sla_hours=sla_hours)
+    queue = ReviewService(db, user.tenant_id).queue(status, sla_hours=sla_hours)
+    return paginate(queue, pagination, response)
 
 
 @router.get("/escalations")
 def review_escalations(
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
     sla_hours: int = Query(default=48, ge=1, le=720),
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[ReviewQueueItem]:
-    return ReviewService(db, user.tenant_id).escalations(sla_hours=sla_hours)
+    escalations = ReviewService(db, user.tenant_id).escalations(sla_hours=sla_hours)
+    return paginate(escalations, pagination, response)
 
 
 @router.get("/{assessment_id}/history")
 def review_history(
     assessment_id: str,
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[ReviewRead]:
-    return ReviewService(db, user.tenant_id).history(assessment_id)
+    history = ReviewService(db, user.tenant_id).history(assessment_id)
+    return paginate(history, pagination, response)
 
 
 @router.post("/{assessment_id}/approve")

@@ -74,6 +74,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Structured audit trail for evidence updates and human review decisions
 - Runtime readiness checks and Docker healthchecks for production operations
 - Configurable API hardening with security headers, request body limits, CORS allowlists, and tenant-aware rate limiting
+- Bounded list endpoints with `limit` / `offset` pagination headers for production data volumes
 - AI system card and audit report generation
 - Human review workflow: draft, approved, rejected, needs more evidence
 - Review queue escalation signals for SLA breaches, high-risk gaps, and missing evidence

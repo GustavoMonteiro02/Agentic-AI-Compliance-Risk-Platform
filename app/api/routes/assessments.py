@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import DbSession
+from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.security import AuthenticatedUser, require_roles
 from app.services.assessment_service import AssessmentService
 
@@ -11,10 +12,13 @@ router = APIRouter(prefix="/assessments", tags=["assessments"], dependencies=[De
 
 @router.get("")
 def list_assessments(
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[dict]:
-    return [item.model_dump(mode="json") for item in AssessmentService(db, user.tenant_id).list()]
+    assessments = [item.model_dump(mode="json") for item in AssessmentService(db, user.tenant_id).list()]
+    return paginate(assessments, pagination, response)
 
 
 @router.get("/{assessment_id}")

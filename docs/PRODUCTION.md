@@ -118,6 +118,10 @@ This reports whether LLM mode, LangSmith metadata, API hardening, and vector DB 
 It also reports active prompt versions so operators can tie generated outputs to the prompt registry.
 Readiness validates database connectivity, knowledge-base loading, auth configuration, API hardening, LLM configuration, and vector DB availability when Qdrant or Pinecone is enabled.
 
+## Pagination
+
+List endpoints accept `limit` and `offset` query parameters with a maximum `limit` of `250`. Responses remain plain JSON arrays for compatibility and include `X-Total-Count`, `X-Limit`, and `X-Offset` headers so operational clients can page through larger tenants safely.
+
 ## MCP Runtime
 
 The MCP surface can run as its own process:

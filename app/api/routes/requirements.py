@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
 from app.api.deps import DbSession
+from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.config import get_settings
 from app.rag.ingest import legal_source_summary
 from app.rag.retriever import LocalComplianceRetriever, RetrievalFilters
@@ -12,10 +13,16 @@ router = APIRouter(prefix="/requirements", tags=["requirements"], dependencies=[
 
 
 @router.get("")
-def list_requirements(db: DbSession, q: str | None = Query(default=None)) -> list[RequirementRead]:
+def list_requirements(
+    response: Response,
+    db: DbSession,
+    q: str | None = Query(default=None),
+    pagination: PaginationParams = Depends(get_pagination),
+) -> list[RequirementRead]:
     service = RequirementService(db)
     records = service.search(q) if q else service.list()
-    return [RequirementRead.model_validate(record) for record in records]
+    requirements = [RequirementRead.model_validate(record) for record in records]
+    return paginate(requirements, pagination, response)
 
 
 @router.get("/search")

@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import DbSession
+from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.schemas.evidence import EvidenceRecordRead, EvidenceUpdate
 from app.security import AuthenticatedUser, require_roles
 from app.services.evidence_service import EvidenceService
@@ -13,13 +14,16 @@ router = APIRouter(prefix="/evidence", tags=["evidence"], dependencies=[Depends(
 @router.get("/assessments/{assessment_id}")
 def list_evidence(
     assessment_id: str,
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[EvidenceRecordRead]:
-    return [
+    records = [
         EvidenceRecordRead.model_validate(item)
         for item in EvidenceService(db, user.tenant_id).list_for_assessment(assessment_id)
     ]
+    return paginate(records, pagination, response)
 
 
 @router.patch("/items/{evidence_id}", dependencies=[Depends(require_roles("compliance_reviewer"))])

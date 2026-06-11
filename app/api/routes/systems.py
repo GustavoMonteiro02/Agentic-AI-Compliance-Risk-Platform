@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import DbSession
+from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.schemas.assessment import AssessmentRunRequest
 from app.schemas.system import AISystemCreate, AISystemUpdate
 from app.security import AuthenticatedUser, require_roles
@@ -52,10 +53,13 @@ def create_system(
 
 @router.get("")
 def list_systems(
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[dict]:
-    return [serialize_system(system) for system in SystemService(db, user.tenant_id).list()]
+    systems = [serialize_system(system) for system in SystemService(db, user.tenant_id).list()]
+    return paginate(systems, pagination, response)
 
 
 @router.get("/{system_id}")

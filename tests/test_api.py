@@ -60,6 +60,34 @@ def test_report_exports_markdown():
     assert "# AI System Card" in card_response.text
 
 
+def test_list_endpoints_support_pagination_headers():
+    headers = {"X-User-Role": "admin"}
+    for index in range(3):
+        response = client.post(
+            "/systems",
+            headers=headers,
+            json={
+                "name": f"Paginated System {index}",
+                "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+            },
+        )
+        assert response.status_code == 200
+
+    response = client.get("/systems?limit=2&offset=1")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    assert int(response.headers["x-total-count"]) >= 3
+    assert response.headers["x-limit"] == "2"
+    assert response.headers["x-offset"] == "1"
+
+
+def test_pagination_rejects_unbounded_limits():
+    response = client.get("/systems?limit=251")
+
+    assert response.status_code == 422
+
+
 def test_report_exports_pdf():
     system_response = client.post(
         "/systems",

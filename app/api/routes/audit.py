@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, Response
+from fastapi.responses import Response as FastAPIResponse
 
 from app.api.deps import DbSession
+from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.schemas.audit import AuditEventRead
 from app.security import AuthenticatedUser, require_roles
 from app.services.audit_package_service import AuditPackageService
@@ -15,13 +16,16 @@ router = APIRouter(prefix="/audit", tags=["audit"], dependencies=[Depends(requir
 @router.get("/assessments/{assessment_id}/events")
 def assessment_events(
     assessment_id: str,
+    response: Response,
     db: DbSession,
     _user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[AuditEventRead]:
-    return [
+    events = [
         AuditEventRead.model_validate(event)
         for event in AuditService(db).list_for_assessment(assessment_id, _user.tenant_id)
     ]
+    return paginate(events, pagination, response)
 
 
 @router.get("/assessments/{assessment_id}/package")
@@ -38,9 +42,9 @@ def assessment_audit_package_zip(
     assessment_id: str,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
-) -> Response:
+) -> FastAPIResponse:
     content = AuditPackageService(db, user.tenant_id).build_zip(assessment_id)
-    return Response(
+    return FastAPIResponse(
         content=content,
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{assessment_id}_audit_package.zip"'},

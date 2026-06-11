@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import DbSession
+from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.schemas.risk_register import (
     PolicyExceptionCreate,
     PolicyExceptionRead,
@@ -18,10 +19,13 @@ router = APIRouter(prefix="/risk-register", tags=["risk-register"], dependencies
 
 @router.get("")
 def list_risks(
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[RiskRegisterItemRead]:
-    return [RiskRegisterItemRead.model_validate(item) for item in RiskRegisterService(db, user.tenant_id).list()]
+    risks = [RiskRegisterItemRead.model_validate(item) for item in RiskRegisterService(db, user.tenant_id).list()]
+    return paginate(risks, pagination, response)
 
 
 @router.post("/assessments/{assessment_id}/sync")
@@ -48,13 +52,16 @@ def update_risk(
 
 @router.get("/exceptions")
 def list_exceptions(
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[PolicyExceptionRead]:
-    return [
+    exceptions = [
         PolicyExceptionRead.model_validate(item)
         for item in PolicyExceptionService(db, user.tenant_id).list()
     ]
+    return paginate(exceptions, pagination, response)
 
 
 @router.post("/exceptions")

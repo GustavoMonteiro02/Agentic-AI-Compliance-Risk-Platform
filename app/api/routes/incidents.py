@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
 from app.api.deps import DbSession
+from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.schemas.incidents import IncidentCreate, IncidentRead, IncidentUpdate
 from app.security import AuthenticatedUser, require_roles
 from app.services.incident_service import IncidentService
@@ -12,13 +13,16 @@ router = APIRouter(prefix="/incidents", tags=["incidents"], dependencies=[Depend
 
 @router.get("")
 def list_incidents(
+    response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
     status: str | None = Query(default=None),
     severity: str | None = Query(default=None),
+    pagination: PaginationParams = Depends(get_pagination),
 ) -> list[IncidentRead]:
     service = IncidentService(db, user.tenant_id)
-    return [IncidentRead.model_validate(item) for item in service.list(status=status, severity=severity)]
+    incidents = [IncidentRead.model_validate(item) for item in service.list(status=status, severity=severity)]
+    return paginate(incidents, pagination, response)
 
 
 @router.post("")
