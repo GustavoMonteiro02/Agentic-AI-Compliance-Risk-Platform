@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -143,6 +143,29 @@ class PolicyException(Base):
     approved_by: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(80), default="requested")
     expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AIIncident(Base):
+    __tablename__ = "ai_incidents"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
+    system_id: Mapped[str] = mapped_column(String, index=True)
+    assessment_id: Mapped[str | None] = mapped_column(String, index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str] = mapped_column(Text)
+    severity: Mapped[str] = mapped_column(String(80), default="medium")
+    status: Mapped[str] = mapped_column(String(80), default="reported")
+    owner: Mapped[str] = mapped_column(String(255), default="AI Operations")
+    detected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    impact_summary: Mapped[str] = mapped_column(Text, default="")
+    containment_actions_json: Mapped[list[str]] = mapped_column(JSON, default=list)
+    root_cause: Mapped[str | None] = mapped_column(Text)
+    corrective_actions_json: Mapped[list[str]] = mapped_column(JSON, default=list)
+    regulatory_report_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

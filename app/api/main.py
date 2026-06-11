@@ -6,6 +6,7 @@ from app.api.routes import (
     demo,
     evaluation,
     evidence,
+    incidents,
     reports,
     requirements,
     reviews,
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(evidence.router)
     app.include_router(reviews.router)
     app.include_router(audit.router)
+    app.include_router(incidents.router)
     app.include_router(risk_register.router)
     app.include_router(reports.router)
     app.include_router(requirements.router)

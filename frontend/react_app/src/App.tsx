@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, CheckCircle2, Database, FileCheck2, Layers3, ShieldCheck, Users } from "lucide-react";
-import { api, Assessment, RiskItem, RuntimeStatus, SystemRecord } from "./api";
+import { Activity, AlertTriangle, CheckCircle2, Database, FileCheck2, Layers3, ShieldCheck, Siren, Users } from "lucide-react";
+import { api, Assessment, Incident, RiskItem, RuntimeStatus, SystemRecord } from "./api";
 import "./styles.css";
 
 type LoadState = {
@@ -8,6 +8,7 @@ type LoadState = {
   systems: SystemRecord[];
   assessments: Assessment[];
   risks: RiskItem[];
+  incidents: Incident[];
   error?: string;
 };
 
@@ -27,11 +28,13 @@ function metric(label: string, value: string | number, detail: string, icon: Rea
 }
 
 function App() {
-  const [state, setState] = useState<LoadState>({ systems: [], assessments: [], risks: [] });
+  const [state, setState] = useState<LoadState>({ systems: [], assessments: [], risks: [], incidents: [] });
 
   useEffect(() => {
-    Promise.all([api.runtime(), api.systems(), api.assessments(), api.riskRegister()])
-      .then(([runtime, systems, assessments, risks]) => setState({ runtime, systems, assessments, risks }))
+    Promise.all([api.runtime(), api.systems(), api.assessments(), api.riskRegister(), api.incidents()])
+      .then(([runtime, systems, assessments, risks, incidents]) =>
+        setState({ runtime, systems, assessments, risks, incidents })
+      )
       .catch((error: Error) => setState((current) => ({ ...current, error: error.message })));
   }, []);
 
@@ -40,8 +43,9 @@ function App() {
     const pending = state.assessments.filter((item) => item.human_review_status !== "approved");
     const missingEvidence = state.assessments.flatMap((item) => item.evidence_checklist).filter((item) => item.status === "missing");
     const openRisks = state.risks.filter((item) => item.status !== "closed");
-    return { highRisk, pending, missingEvidence, openRisks };
-  }, [state.assessments, state.risks]);
+    const openIncidents = state.incidents.filter((item) => !["resolved", "closed"].includes(item.status));
+    return { highRisk, pending, missingEvidence, openRisks, openIncidents };
+  }, [state.assessments, state.risks, state.incidents]);
 
   const recentAssessments = [...state.assessments]
     .sort((a, b) => riskOrder[b.risk_classification.risk_level] - riskOrder[a.risk_classification.risk_level])
@@ -62,6 +66,7 @@ function App() {
           <a><Layers3 size={18} /> Systems</a>
           <a><FileCheck2 size={18} /> Evidence</a>
           <a><AlertTriangle size={18} /> Risk register</a>
+          <a><Siren size={18} /> Incidents</a>
         </nav>
         <div className="runtime">
           <span>Tenant</span>
@@ -93,6 +98,7 @@ function App() {
           {metric("Pending reviews", summary.pending.length, "Human approval gate", <Users size={20} />)}
           {metric("Missing evidence", summary.missingEvidence.length, "Audit readiness gap", <FileCheck2 size={20} />)}
           {metric("Open risks", summary.openRisks.length, "Risk register", <Activity size={20} />)}
+          {metric("Open incidents", summary.openIncidents.length, "Operational response", <Siren size={20} />)}
         </section>
 
         <section className="workspace">
@@ -132,6 +138,25 @@ function App() {
                     <span className={`pill risk-${risk.severity}`}>{risk.severity}</span>
                     <span>{risk.owner}</span>
                   </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>AI incidents</h2>
+              <span>Response</span>
+            </div>
+            <div className="risk-list">
+              {summary.openIncidents.slice(0, 5).map((incident) => (
+                <article key={incident.id}>
+                  <strong>{incident.title}</strong>
+                  <div>
+                    <span className={`pill risk-${incident.severity}`}>{incident.severity}</span>
+                    <span>{incident.status}</span>
+                  </div>
+                  <small>{incident.regulatory_report_required ? "Report review required" : incident.owner}</small>
                 </article>
               ))}
             </div>

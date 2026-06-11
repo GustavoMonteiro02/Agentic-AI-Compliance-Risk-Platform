@@ -15,4 +15,6 @@ def test_react_saas_ui_scaffold_is_present():
     assert package["scripts"]["dev"].startswith("vite")
     assert "lucide-react" in package["dependencies"]
     assert "Governance command center" in app
+    assert "Open incidents" in app
+    assert 'getJson<Incident[]>("/incidents")' in Path("frontend/react_app/src/api.ts").read_text(encoding="utf-8")
     assert "grid-template-columns: 280px minmax(0, 1fr)" in styles

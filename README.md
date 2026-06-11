@@ -69,6 +69,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Compliance gap analysis
 - Evidence checklist generation with owner, due-date, expiry, approval, and readiness lifecycle tracking
 - Risk register and policy exception workflows with compensating controls
+- AI incident reporting, triage, resolution tracking, and audit events
 - Structured audit trail for evidence updates and human review decisions
 - Runtime readiness checks and Docker healthchecks for production operations
 - AI system card and audit report generation

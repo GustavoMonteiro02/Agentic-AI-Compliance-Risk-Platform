@@ -36,6 +36,16 @@ export type RiskItem = {
   due_date?: string;
 };
 
+export type Incident = {
+  id: string;
+  title: string;
+  severity: string;
+  status: string;
+  owner: string;
+  regulatory_report_required: boolean;
+  detected_at: string;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 function headers() {
@@ -62,4 +72,5 @@ export const api = {
   systems: () => getJson<SystemRecord[]>("/systems"),
   assessments: () => getJson<Assessment[]>("/assessments"),
   riskRegister: () => getJson<RiskItem[]>("/risk-register"),
+  incidents: () => getJson<Incident[]>("/incidents"),
 };

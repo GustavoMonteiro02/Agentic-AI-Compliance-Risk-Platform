@@ -6,7 +6,7 @@ This document maps the original project requirements to the current implementati
 
 - Local Git repository with milestone commits.
 - Professional README, architecture, roadmap, and portfolio positioning.
-- FastAPI backend with health, systems, assessments, reports, evidence, requirements, reviews, and evaluation routes.
+- FastAPI backend with health, systems, assessments, reports, evidence, requirements, reviews, incidents, and evaluation routes.
 - SQLAlchemy persistence compatible with SQLite for local development and PostgreSQL through Docker Compose.
 - AI system inventory fields for owner, technical owner, business unit, deployment status, affected users, external users, data types, model provider, model type, decision impact, autonomy, human oversight, integrations/tools, monitoring status, evaluation status, and security testing status.
 - Structured intake agent with adaptive missing-information questions.
@@ -19,6 +19,7 @@ This document maps the original project requirements to the current implementati
 - MCP tool, resource, and prompt catalog with tests.
 - Evidence checklist records, evidence status updates, owners, due dates, expiry, approval metadata, and compliance readiness score.
 - Risk register and policy exception workflows with mitigation plans and compensating controls.
+- AI incident lifecycle for reporting, triage, containment, resolution, corrective actions, regulatory report review, tenant scoping, and audit events.
 - AI system card and audit report Markdown generation/export.
 - Dedicated Pydantic schema modules for risk, controls, requirements, evidence, review, report, system, and assessment contracts.
 - Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, and review history.

@@ -45,6 +45,8 @@ Human review and evidence changes emit structured audit events. Audit events inc
 
 Risk register items can be synchronized from assessment gaps and tracked through mitigation or acceptance. Policy exceptions capture justification, compensating controls, requester, approver, expiry, and audit events.
 
+AI incidents are tenant-scoped operational records linked to systems and optionally assessments. They track severity, status, owner, containment actions, root cause, corrective actions, regulatory report review, resolution time, and audit events.
+
 ## LangGraph State Management
 
 The workflow is compiled with `langgraph.graph.StateGraph` in [app/agents/graph.py](/Users/gdev/Documents/Codex/2026-06-08/files-mentioned-by-the-user-pasted-3/app/agents/graph.py). Each node receives and returns `GovernanceAssessmentState`, which keeps the complete assessment trace:
