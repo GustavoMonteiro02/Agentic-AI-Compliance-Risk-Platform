@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
     audit,
@@ -26,6 +27,14 @@ def create_app() -> FastAPI:
         version="0.1.0",
         description="Agentic AI governance, compliance, risk, and audit-readiness platform.",
     )
+    if settings.cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.cors_origins,
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+            allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-User", "X-User-Role", "X-Tenant-ID"],
+        )
 
     @app.on_event("startup")
     def on_startup() -> None:

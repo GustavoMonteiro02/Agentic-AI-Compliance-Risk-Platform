@@ -176,6 +176,7 @@ Copy `.env.example` to `.env` and adjust values.
 - `PLATFORM_API_KEY`: shared API key used when `AUTH_MODE=api_key`
 - `DEFAULT_USER_ROLE`: fallback role, one of `viewer`, `auditor`, `compliance_reviewer`, `admin`
 - `DEFAULT_TENANT_ID`: fallback workspace/tenant id for local or single-tenant deployments
+- `CORS_ALLOWED_ORIGINS`: comma-separated browser origins allowed to call the API
 - `MCP_TRANSPORT`: `stdio` locally, or an HTTP transport such as `streamable-http` for deployment
 - `MCP_HOST` / `MCP_PORT`: MCP runtime bind settings
 

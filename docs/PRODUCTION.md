@@ -59,6 +59,7 @@ Even in LLM mode, assessments remain `needs_review` until a reviewer explicitly 
 ## Access Control
 
 Local development can run with `AUTH_MODE=disabled`. Production should set `AUTH_MODE=api_key` and provide `PLATFORM_API_KEY`. Clients send either `X-API-Key` or `Authorization: Bearer <key>`, plus optional `X-User`, `X-User-Role`, and `X-Tenant-ID` headers.
+Browser deployments should set `CORS_ALLOWED_ORIGINS` to a comma-separated allowlist such as `https://governance.example.com`; CORS is closed by default when unset.
 
 Roles are hierarchical:
 

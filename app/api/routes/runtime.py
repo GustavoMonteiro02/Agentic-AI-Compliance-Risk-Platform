@@ -36,6 +36,7 @@ def runtime_status() -> dict:
         "embedding_model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
         "prompt_versions": {name: prompt.version for name, prompt in PROMPT_REGISTRY.items()},
         "auth_mode": settings.auth_mode,
+        "cors_allowed_origins": settings.cors_origins,
         "default_user_role": settings.default_user_role,
         "default_tenant_id": settings.default_tenant_id,
     }

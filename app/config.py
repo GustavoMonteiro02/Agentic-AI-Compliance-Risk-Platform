@@ -36,12 +36,17 @@ class Settings(BaseSettings):
     platform_api_key: str | None = None
     default_user_role: str = "admin"
     default_tenant_id: str = "default"
+    cors_allowed_origins: str = ""
     mcp_server_name: str = "ai-governance-compliance"
     mcp_transport: str = "stdio"
     mcp_host: str = "0.0.0.0"
     mcp_port: int = 9000
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
 
 @lru_cache
