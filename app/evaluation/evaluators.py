@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from app.agents.graph import run_governance_assessment
 from app.evaluation.metrics import contains_required_sections, exact_match_score, non_empty_ratio
+from app.rag.retriever import LocalComplianceRetriever
 
 
 DATASET_DIR = Path(__file__).parent / "datasets"
@@ -62,6 +63,34 @@ def evaluate_retrieval_grounding() -> dict:
             "retrieved": len(requirements),
             "sources": [item.source for item in requirements],
         },
+    }
+
+
+def evaluate_retrieval_quality() -> dict:
+    cases = json.loads((DATASET_DIR / "retrieval_quality_cases.json").read_text(encoding="utf-8"))
+    retriever = LocalComplianceRetriever()
+    details = []
+    scores = []
+    for case in cases:
+        expected = set(case["expected_requirement_ids"])
+        results = retriever.search(case["query"], top_k=case.get("top_k", 6))
+        actual = [item["requirement_id"] for item in results]
+        matched = sorted(expected & set(actual))
+        score = len(matched) / len(expected)
+        scores.append(score)
+        details.append(
+            {
+                "case": case["name"],
+                "score": round(score, 3),
+                "expected": sorted(expected),
+                "matched": matched,
+                "top_results": actual,
+            }
+        )
+    return {
+        "metric_name": "retrieval_quality_top_k_recall",
+        "score": round(sum(scores) / len(scores), 3),
+        "details": details,
     }
 
 

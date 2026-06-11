@@ -85,6 +85,7 @@ The MVP includes a reproducible evaluation suite exposed at `GET /evaluation/res
 - risk classification consistency
 - human approval bypass resistance
 - retrieval grounding and source availability
+- retrieval quality top-k recall over curated RAG cases
 - AI system card section coverage
 - evidence checklist completeness
 - legal-advice guardrail behavior

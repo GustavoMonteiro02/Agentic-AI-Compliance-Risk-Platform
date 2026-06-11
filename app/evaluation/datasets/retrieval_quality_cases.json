@@ -1,0 +1,32 @@
+[
+  {
+    "name": "AI Act human oversight",
+    "query": "AI Act Article 14 human oversight intervention for high-risk employment AI",
+    "expected_requirement_ids": [
+      "EU_AI_ACT_ARTICLE_14_HUMAN_OVERSIGHT",
+      "HUMAN_OVERSIGHT_EUAI_EMPLOYMENT_AND_HUMAN_OVERSIGHT"
+    ],
+    "top_k": 6
+  },
+  {
+    "name": "GDPR personal data retention",
+    "query": "GDPR personal data lawful basis retention embeddings logs",
+    "expected_requirement_ids": [
+      "DATA_PROTECTION_GDPR_PERSONAL_DATA_GOVERNANCE",
+      "DATA_PROTECTION_001_RETENTION_FOR_PROMPTS,_EMBEDDINGS,_AND_OUTPUTS"
+    ],
+    "top_k": 10
+  },
+  {
+    "name": "Prompt injection testing",
+    "query": "RAG agent prompt injection tool-use data leakage red team controls",
+    "expected_requirement_ids": ["SECURITY_TESTING_001_PROMPT_INJECTION_AND_DATA_LEAKAGE_TESTING"],
+    "top_k": 6
+  },
+  {
+    "name": "Financial resilience incident reporting",
+    "query": "financial sector AI agent ICT resilience incident reporting third party risk",
+    "expected_requirement_ids": ["SECURITY_TESTING_DORA_ICT_RISK_AND_RESILIENCE"],
+    "top_k": 6
+  }
+]

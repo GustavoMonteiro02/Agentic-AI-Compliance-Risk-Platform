@@ -13,7 +13,7 @@
 - Add richer policy and regulatory summaries.
 - Add Qdrant integration behind the existing metadata-aware hybrid retriever interface.
 - Add document ingestion CLI and chunk metadata.
-- Add retrieval quality evaluation dataset.
+- Retrieval quality evaluation dataset and top-k recall metric.
 
 ## v0.3 Evidence and Audit Reports - Mostly Done
 

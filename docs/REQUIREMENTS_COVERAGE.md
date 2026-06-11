@@ -26,7 +26,7 @@ This document maps the original project requirements to the current implementati
 - Tenant-scoped systems, assessments, evidence, reports, review queues, and audit events.
 - Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.
 - React SaaS UI scaffold for a production-style governance command center.
-- Evaluation suite covering risk classification consistency, retrieval grounding, system card coverage, evidence completeness, human approval bypass resistance, and legal-advice guardrails.
+- Evaluation suite covering risk classification consistency, retrieval grounding, retrieval quality top-k recall, system card coverage, evidence completeness, human approval bypass resistance, and legal-advice guardrails.
 - Guardrails preventing automatic approval or final legal compliance claims without human review.
 - Dockerfile, Docker Compose, Makefile, CI workflow, security/configuration scan, runtime readiness checks, Docker healthchecks, and pytest suite.
 - Optional OpenAI LLM refinement mode, LangSmith run metadata, Qdrant Docker service, and PDF report export.

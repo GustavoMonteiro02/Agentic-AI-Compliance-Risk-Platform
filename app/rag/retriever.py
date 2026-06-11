@@ -117,6 +117,7 @@ def _metadata_score(query_tokens: set[str], query: str, chunk: DocumentChunk) ->
             chunk.document_type,
             chunk.jurisdiction,
             chunk.authority,
+            chunk.locator or "",
             " ".join(chunk.tags),
             chunk.title,
         ]
@@ -255,11 +256,12 @@ class LocalComplianceRetriever:
                 + _weighted_overlap(query_tokens, " ".join(chunk.tags), 2.0)
                 + _weighted_overlap(query_tokens, chunk.source, 1.2)
                 + _weighted_overlap(query_tokens, chunk.authority, 1.2)
+                + _weighted_overlap(query_tokens, chunk.locator or "", 2.5)
                 + _weighted_overlap(query_tokens, chunk.text, 1.0)
             )
             phrase_score = _phrase_score(
                 query_phrases,
-                f"{chunk.title} {chunk.category} {' '.join(chunk.tags)} {chunk.text}",
+                f"{chunk.title} {chunk.category} {chunk.locator or ''} {' '.join(chunk.tags)} {chunk.text}",
             )
             metadata_score = _metadata_score(query_tokens, expanded_query, chunk)
             source_quality = _source_quality(chunk)
