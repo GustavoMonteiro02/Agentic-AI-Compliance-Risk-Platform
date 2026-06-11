@@ -93,6 +93,16 @@ This reports whether LLM mode, LangSmith metadata, and vector DB settings are ac
 It also reports active prompt versions so operators can tie generated outputs to the prompt registry.
 Readiness validates database connectivity, knowledge-base loading, auth configuration, LLM configuration, and vector DB availability when Qdrant is enabled.
 
+## MCP Runtime
+
+The MCP surface can run as its own process:
+
+```bash
+make mcp
+```
+
+Local development defaults to `MCP_TRANSPORT=stdio`. Container deployments can set `MCP_TRANSPORT=streamable-http`, `MCP_HOST=0.0.0.0`, and `MCP_PORT=9000`; Docker Compose includes an `mcp` service using `scripts/run_mcp_server.py`.
+
 ## RAG Ingestion
 
 The local fallback uses hybrid lexical, phrase, metadata, query-expansion, and citation-aware reranking. `GET /requirements/search` exposes the same retrieval path with metadata filters for jurisdiction, document type, category, tags, and authority. When Qdrant is available, ingest the same knowledge-base chunks into a persistent vector collection:

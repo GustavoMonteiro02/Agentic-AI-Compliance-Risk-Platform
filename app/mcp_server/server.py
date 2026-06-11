@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from app.config import get_settings
 from app.mcp_server.prompts.gap_prompt import GAP_ANALYSIS_PROMPT
 from app.mcp_server.prompts.report_prompt import AUDIT_REPORT_PROMPT
 from app.mcp_server.prompts.risk_prompt import RISK_CLASSIFICATION_PROMPT
@@ -49,7 +50,8 @@ def create_fastmcp_server():
     """
     from fastmcp import FastMCP
 
-    mcp = FastMCP("ai-governance-compliance")
+    settings = get_settings()
+    mcp = FastMCP(settings.mcp_server_name)
     for name, tool in TOOLS.items():
         mcp.tool(name=name)(tool)
 
@@ -62,5 +64,6 @@ def create_fastmcp_server():
 
 
 if __name__ == "__main__":
-    create_fastmcp_server().run()
+    from app.mcp_server.runtime import run_mcp_server
 
+    run_mcp_server()

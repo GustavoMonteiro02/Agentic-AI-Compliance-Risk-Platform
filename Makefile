@@ -1,4 +1,4 @@
-.PHONY: test security-check ci api ui ingest-qdrant
+.PHONY: test security-check ci api ui mcp ingest-qdrant
 
 test:
 	pytest
@@ -13,6 +13,9 @@ api:
 
 ui:
 	streamlit run frontend/streamlit_app.py
+
+mcp:
+	python3 scripts/run_mcp_server.py
 
 ingest-qdrant:
 	python3 scripts/ingest_qdrant.py

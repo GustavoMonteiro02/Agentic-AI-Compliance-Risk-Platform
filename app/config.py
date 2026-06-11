@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     platform_api_key: str | None = None
     default_user_role: str = "admin"
     default_tenant_id: str = "default"
+    mcp_server_name: str = "ai-governance-compliance"
+    mcp_transport: str = "stdio"
+    mcp_host: str = "0.0.0.0"
+    mcp_port: int = 9000
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

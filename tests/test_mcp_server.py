@@ -1,4 +1,5 @@
 from app.mcp_server.server import PROMPTS, RESOURCES, TOOLS, read_resource
+from app.mcp_server.runtime import runtime_config
 
 
 def test_mcp_surface_exposes_required_tools_resources_and_prompts():
@@ -24,3 +25,13 @@ def test_mcp_resource_reader_loads_policy_text():
     text = read_resource("compliance://policies/internal-ai-policy")
 
     assert "Human oversight" in text
+
+
+def test_mcp_runtime_config_exposes_deployment_surface():
+    config = runtime_config()
+
+    assert config["server_name"] == "ai-governance-compliance"
+    assert config["transport"] == "stdio"
+    assert config["tool_count"] == len(TOOLS)
+    assert config["resource_count"] == len(RESOURCES)
+    assert config["prompt_count"] == len(PROMPTS)

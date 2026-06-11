@@ -169,6 +169,8 @@ Copy `.env.example` to `.env` and adjust values.
 - `PLATFORM_API_KEY`: shared API key used when `AUTH_MODE=api_key`
 - `DEFAULT_USER_ROLE`: fallback role, one of `viewer`, `auditor`, `compliance_reviewer`, `admin`
 - `DEFAULT_TENANT_ID`: fallback workspace/tenant id for local or single-tenant deployments
+- `MCP_TRANSPORT`: `stdio` locally, or an HTTP transport such as `streamable-http` for deployment
+- `MCP_HOST` / `MCP_PORT`: MCP runtime bind settings
 
 LLM prompt templates are versioned in `app/prompts/registry.py`; LLM tool calls include prompt version, model, latency, and token metadata where available.
 
@@ -192,6 +194,12 @@ make ingest-qdrant
 - Human Review Node
 
 ## MCP Surface
+
+Run the MCP server locally with:
+
+```bash
+make mcp
+```
 
 Tools:
 

@@ -28,9 +28,10 @@
 - Approval history and audit log.
 - Stronger status transition rules.
 
-## v0.5 MCP Server - Surface Done, Runtime Deployment Deferred
+## v0.5 MCP Server - Runtime Ready
 
 - FastMCP runtime server.
+- Configurable MCP runtime entrypoint, Make target, and Docker Compose service.
 - Agent calls via MCP client.
 - Full resource and prompt catalog.
 

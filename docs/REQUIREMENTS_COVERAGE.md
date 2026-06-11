@@ -39,7 +39,6 @@ These are represented by stable interfaces and roadmap entries, but are not enab
 
 - Full LangChain provider abstraction across multiple LLM vendors.
 - Pinecone as an alternative persistent vector database.
-- Production FastMCP deployment behind a process manager.
 - Full official legal/regulatory corpora ingestion.
 
 ## Current Verification
