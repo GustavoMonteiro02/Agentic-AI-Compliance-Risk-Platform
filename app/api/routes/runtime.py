@@ -23,6 +23,7 @@ def runtime_status() -> dict:
         "openai_max_retries": settings.openai_max_retries,
         "langsmith_tracing": settings.langsmith_tracing,
         "langsmith_project": settings.langsmith_project,
+        "langsmith_api_url": settings.langsmith_api_url,
         "vector_db": settings.vector_db,
         "qdrant_url": settings.qdrant_url if settings.vector_db == "qdrant" else None,
         "embedding_provider": settings.embedding_provider,
@@ -70,6 +71,12 @@ def runtime_readiness() -> dict:
         "provider": settings.embedding_provider,
         "model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
         "dimensions": settings.embedding_dimensions,
+    }
+    checks["langsmith"] = {
+        "ok": not settings.langsmith_tracing or bool(settings.langsmith_api_key),
+        "tracing": settings.langsmith_tracing,
+        "project": settings.langsmith_project,
+        "api_url": settings.langsmith_api_url,
     }
 
     if settings.vector_db == "qdrant":

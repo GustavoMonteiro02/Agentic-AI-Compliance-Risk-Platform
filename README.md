@@ -92,6 +92,8 @@ The MVP includes a reproducible evaluation suite exposed at `GET /evaluation/res
 - evidence checklist completeness
 - legal-advice guardrail behavior
 
+LangSmith-compatible experiment payloads are exposed at `GET /evaluation/langsmith-experiment`; `POST /evaluation/langsmith-experiment/upload` uploads when `LANGSMITH_API_KEY` is configured.
+
 ## Demo Flow
 
 1. Create an AI system using the UI or `POST /systems`.

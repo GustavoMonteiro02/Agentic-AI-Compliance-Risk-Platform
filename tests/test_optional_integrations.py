@@ -1,7 +1,11 @@
 import requests
 
 from app.llm.provider import OptionalLLMProvider
-from app.observability.langsmith import langsmith_trace_metadata
+from app.observability.langsmith import (
+    build_langsmith_experiment_payload,
+    langsmith_trace_metadata,
+    upload_langsmith_experiment,
+)
 from app.services.pdf_service import markdown_to_simple_pdf
 
 
@@ -71,6 +75,20 @@ def test_langsmith_trace_metadata_is_disabled_by_default():
     metadata = langsmith_trace_metadata("assessment-1", "workflow")
 
     assert metadata == {"enabled": False}
+
+
+def test_langsmith_experiment_payload_is_upload_ready_without_credentials():
+    payload = build_langsmith_experiment_payload(
+        [{"metric_name": "retrieval_quality", "score": 1.0, "details": {"cases": 4}}],
+        "local-test",
+    )
+    upload_result = upload_langsmith_experiment(payload)
+
+    assert payload["experiment_name"] == "local-test"
+    assert payload["summary"]["average_score"] == 1.0
+    assert payload["runs"][0]["outputs"]["details"] == {"cases": 4}
+    assert upload_result["uploaded"] is False
+    assert upload_result["reason"] == "missing_langsmith_api_key"
 
 
 def test_simple_pdf_renderer_returns_pdf_bytes():

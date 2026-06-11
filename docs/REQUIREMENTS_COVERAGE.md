@@ -28,7 +28,7 @@ This document maps the original project requirements to the current implementati
 - Tenant-scoped systems, assessments, evidence, reports, review queues, and audit events.
 - Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.
 - React SaaS UI scaffold for a production-style governance command center.
-- Evaluation suite covering risk classification consistency, retrieval grounding, retrieval quality top-k recall, system card coverage, evidence completeness, human approval bypass resistance, and legal-advice guardrails.
+- Evaluation suite covering risk classification consistency, retrieval grounding, retrieval quality top-k recall, system card coverage, evidence completeness, human approval bypass resistance, legal-advice guardrails, and LangSmith-compatible experiment payloads.
 - Guardrails preventing automatic approval or final legal compliance claims without human review.
 - Dockerfile, Docker Compose, Makefile, CI workflow, security/configuration scan, runtime readiness checks, Docker healthchecks, and pytest suite.
 - Optional OpenAI LLM refinement mode, LangSmith run metadata, Qdrant Docker service, and PDF report export.
@@ -38,7 +38,6 @@ This document maps the original project requirements to the current implementati
 These are represented by stable interfaces and roadmap entries, but are not enabled by default because the local MVP is designed to run without cloud credentials:
 
 - Full LangChain provider abstraction across multiple LLM vendors.
-- LangSmith hosted experiment upload workflows beyond local run metadata.
 - Pinecone as an alternative persistent vector database.
 - Production FastMCP deployment behind a process manager.
 - Full official legal/regulatory corpora ingestion.

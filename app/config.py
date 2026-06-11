@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     openai_max_tokens: int = 2000
     langsmith_tracing: bool = False
     langsmith_api_key: str | None = None
+    langsmith_api_url: str = "https://api.smith.langchain.com"
     langsmith_project: str = "ai-governance-compliance-platform"
     vector_db: str = "local"
     qdrant_url: str = "http://localhost:6333"

@@ -48,6 +48,10 @@ The LLM output is validated with Pydantic before it can replace deterministic ou
 
 Prompt templates are versioned in `app/prompts/registry.py`. Each LLM refinement tool call records the prompt name, prompt version, provider, model, latency, retry attempts, and token usage when the provider returns usage metadata. This keeps generated assessments auditable and makes prompt changes reviewable like code changes.
 
+## Evaluation Experiments
+
+`GET /evaluation/langsmith-experiment` returns a LangSmith-compatible offline regression payload for the evaluation suite. `POST /evaluation/langsmith-experiment/upload` sends the runs to the configured LangSmith API when `LANGSMITH_API_KEY` is available; without credentials, the payload remains locally inspectable and CI-safe.
+
 ## Human Review Guardrail
 
 Even in LLM mode, assessments remain `needs_review` until a reviewer explicitly approves, rejects, or requests more evidence. The LLM is not allowed to produce final legal-compliance claims.

@@ -15,6 +15,7 @@ def test_runtime_status_reports_production_toggles():
     assert payload["llm_enabled"] is False
     assert payload["vector_db"] == "local"
     assert payload["embedding_provider"] == "local_hash"
+    assert payload["langsmith_api_url"] == "https://api.smith.langchain.com"
     assert payload["prompt_versions"]["llm_refiner"] == "2026-06-10.v1"
     assert payload["auth_mode"] == "disabled"
 
@@ -27,5 +28,6 @@ def test_runtime_readiness_reports_operational_checks():
     assert payload["ready"] is True
     assert payload["checks"]["database"]["ok"] is True
     assert payload["checks"]["knowledge_base"]["chunk_count"] > 0
+    assert payload["checks"]["langsmith"]["ok"] is True
     assert payload["checks"]["embeddings"]["provider"] == "local_hash"
     assert payload["checks"]["vector_db"]["ok"] is True
