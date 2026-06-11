@@ -22,3 +22,12 @@ def test_react_saas_ui_scaffold_is_present():
         "frontend/react_app/src/api.ts"
     ).read_text(encoding="utf-8")
     assert "grid-template-columns: 280px minmax(0, 1fr)" in styles
+
+
+def test_github_actions_builds_react_command_center():
+    workflow = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
+
+    assert "actions/setup-node@v4" in workflow
+    assert "working-directory: frontend/react_app" in workflow
+    assert "npm install" in workflow
+    assert "npm run build" in workflow

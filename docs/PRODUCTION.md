@@ -142,3 +142,4 @@ Then open:
 - UI: `http://127.0.0.1:8501`
 
 The React SaaS UI is available in `frontend/react_app` and can be run with `npm run dev` after installing its dependencies. It uses the same API key, role, and tenant headers as the Streamlit UI through `VITE_*` environment variables.
+GitHub Actions installs Node.js and runs `npm install && npm run build` for the React command center on push and pull request.
