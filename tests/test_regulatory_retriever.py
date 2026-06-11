@@ -1,4 +1,4 @@
-from app.rag.retriever import LocalComplianceRetriever
+from app.rag.retriever import LocalComplianceRetriever, RetrievalFilters
 
 
 def test_rag_retrieves_relevant_human_oversight_policy():
@@ -34,3 +34,20 @@ def test_retriever_can_return_article_level_locator():
     results = LocalComplianceRetriever().search("AI Act Article 14 human oversight intervention")
 
     assert any(item.get("locator") == "Article 14" for item in results)
+
+
+def test_retriever_expands_domain_terms_for_hybrid_search():
+    results = LocalComplianceRetriever().search("cv screening")
+
+    assert results
+    assert any("HUMAN_OVERSIGHT" in item["requirement_id"] for item in results)
+    assert any("personal data" in item["summary"].lower() or "gdpr" in item["summary"].lower() for item in results)
+
+
+def test_retriever_filters_by_metadata_before_reranking():
+    filters = RetrievalFilters.from_values(jurisdiction="EU", document_type="regulation")
+    results = LocalComplianceRetriever().search("human oversight intervention", filters=filters)
+
+    assert results
+    assert all(item["jurisdiction"] == "EU" for item in results)
+    assert all(item["document_type"] == "regulation" for item in results)

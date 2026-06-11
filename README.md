@@ -225,7 +225,8 @@ Prompts:
 - Regulatory documents are summarized, source-linked study notes for product demonstration, not a complete legal corpus.
 - The MVP uses deterministic policy logic by default for reproducible tests.
 - Risk results are preliminary and require human compliance/legal review.
-- Retrieval uses local hybrid lexical + metadata ranking with reranking by default. The Qdrant adapter and Docker service remain available as the persistent vector-store extension point.
+- Retrieval uses local hybrid lexical + metadata ranking with query expansion and reranking by default. The Qdrant adapter and Docker service remain available as the persistent vector-store extension point.
+- Rich RAG search is exposed through `GET /requirements/search?q=...` with optional `jurisdiction`, `document_type`, `category`, `tags`, and `authority` filters.
 
 ## Portfolio Value
 

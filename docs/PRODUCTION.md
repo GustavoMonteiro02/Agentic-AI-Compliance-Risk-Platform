@@ -91,7 +91,7 @@ Readiness validates database connectivity, knowledge-base loading, auth configur
 
 ## RAG Ingestion
 
-The local fallback uses hybrid lexical, phrase, metadata, and citation-aware reranking. When Qdrant is available, ingest the same knowledge-base chunks into a persistent vector collection:
+The local fallback uses hybrid lexical, phrase, metadata, query-expansion, and citation-aware reranking. `GET /requirements/search` exposes the same retrieval path with metadata filters for jurisdiction, document type, category, tags, and authority. When Qdrant is available, ingest the same knowledge-base chunks into a persistent vector collection:
 
 ```bash
 make ingest-qdrant

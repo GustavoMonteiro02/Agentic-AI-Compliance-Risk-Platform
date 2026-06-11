@@ -1,4 +1,5 @@
 from pathlib import Path
+from dataclasses import dataclass, field
 import re
 from typing import Any
 
@@ -9,10 +10,85 @@ from app.rag.vector_store import QdrantVectorStore
 
 
 TOKEN_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9_-]+")
+STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "for",
+    "in",
+    "is",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with",
+}
+QUERY_EXPANSIONS = {
+    "hr": {"employment", "candidate", "recruitment", "human oversight", "bias"},
+    "candidate": {"employment", "recruitment", "human oversight", "bias"},
+    "cv": {"employment", "candidate", "recruitment", "personal data"},
+    "privacy": {"gdpr", "personal data", "data protection", "lawful basis"},
+    "pii": {"personal data", "data protection", "gdpr"},
+    "incident": {"security", "resilience", "dora", "nis2", "audit logging"},
+    "cyber": {"security", "resilience", "incident", "nis2"},
+    "agent": {"tool use", "prompt injection", "security testing", "audit logging"},
+    "rag": {"retrieval", "prompt injection", "data leakage", "security testing"},
+    "oversight": {"human review", "intervention", "monitoring"},
+    "article": {"regulation", "legal source", "locator"},
+}
+
+
+@dataclass(frozen=True)
+class RetrievalFilters:
+    jurisdictions: set[str] = field(default_factory=set)
+    document_types: set[str] = field(default_factory=set)
+    categories: set[str] = field(default_factory=set)
+    tags: set[str] = field(default_factory=set)
+    authorities: set[str] = field(default_factory=set)
+
+    @classmethod
+    def from_values(
+        cls,
+        *,
+        jurisdiction: str | None = None,
+        document_type: str | None = None,
+        category: str | None = None,
+        tags: list[str] | None = None,
+        authority: str | None = None,
+    ) -> "RetrievalFilters":
+        return cls(
+            jurisdictions=_normalize_filter_values(jurisdiction),
+            document_types=_normalize_filter_values(document_type),
+            categories=_normalize_filter_values(category),
+            tags=_normalize_filter_values(tags or []),
+            authorities=_normalize_filter_values(authority),
+        )
+
+    @property
+    def active(self) -> bool:
+        return any([self.jurisdictions, self.document_types, self.categories, self.tags, self.authorities])
+
+
+def _normalize_filter_values(value: str | list[str] | None) -> set[str]:
+    if value is None:
+        return set()
+    values = value if isinstance(value, list) else value.split(",")
+    return {item.strip().lower() for item in values if item and item.strip()}
 
 
 def _tokens(text: str) -> set[str]:
-    return {token.lower() for token in TOKEN_RE.findall(text)}
+    return {token.lower() for token in TOKEN_RE.findall(text) if token.lower() not in STOPWORDS}
+
+
+def _expanded_query_text(query: str) -> str:
+    tokens = _tokens(query)
+    expansions = set()
+    for token in tokens:
+        expansions.update(QUERY_EXPANSIONS.get(token, set()))
+    return " ".join([query, *sorted(expansions)])
 
 
 def _phrases(query: str) -> set[str]:
@@ -75,6 +151,22 @@ def _source_quality(chunk: DocumentChunk) -> float:
     if chunk.source_url:
         score += 0.2
     return score
+
+
+def _matches_filters(chunk: DocumentChunk, filters: RetrievalFilters | None) -> bool:
+    if not filters or not filters.active:
+        return True
+    if filters.jurisdictions and chunk.jurisdiction.lower() not in filters.jurisdictions:
+        return False
+    if filters.document_types and chunk.document_type.lower() not in filters.document_types:
+        return False
+    if filters.categories and chunk.category.lower() not in filters.categories:
+        return False
+    if filters.authorities and chunk.authority.lower() not in filters.authorities:
+        return False
+    if filters.tags and not filters.tags.intersection({tag.lower() for tag in chunk.tags}):
+        return False
+    return True
 
 
 class LocalComplianceRetriever:
@@ -141,13 +233,21 @@ class LocalComplianceRetriever:
         }
         return scores, {"available": True, "result_count": len(scores)}
 
-    def search(self, query: str, top_k: int = 6) -> list[dict[str, Any]]:
+    def search(
+        self,
+        query: str,
+        top_k: int = 6,
+        filters: RetrievalFilters | None = None,
+    ) -> list[dict[str, Any]]:
         settings = get_settings()
         vector_scores, health = self._qdrant_scores(settings, query, limit=max(top_k * 3, 12))
-        query_tokens = _tokens(query)
-        query_phrases = _phrases(query)
+        expanded_query = _expanded_query_text(query)
+        query_tokens = _tokens(expanded_query)
+        query_phrases = _phrases(expanded_query)
         scored = []
         for chunk in self.load():
+            if not _matches_filters(chunk, filters):
+                continue
             vector_score = vector_scores.get(chunk.requirement_id, 0.0)
             lexical_score = (
                 _weighted_overlap(query_tokens, chunk.title, 3.0)
@@ -161,7 +261,7 @@ class LocalComplianceRetriever:
                 query_phrases,
                 f"{chunk.title} {chunk.category} {' '.join(chunk.tags)} {chunk.text}",
             )
-            metadata_score = _metadata_score(query_tokens, query, chunk)
+            metadata_score = _metadata_score(query_tokens, expanded_query, chunk)
             source_quality = _source_quality(chunk)
             final_score = lexical_score + (phrase_score * 1.4) + metadata_score + source_quality + (vector_score * 8)
             if final_score:

@@ -23,3 +23,20 @@ def test_requirements_search_filters_seeded_requirements():
     results = response.json()
     assert results
     assert any("PROMPT" in item["requirement_code"] or "prompt" in item["description"].lower() for item in results)
+
+
+def test_requirements_rag_search_exposes_metadata_filters_and_scores():
+    response = client.get(
+        "/requirements/search",
+        params={"q": "AI Act human oversight intervention", "jurisdiction": "EU", "document_type": "regulation"},
+    )
+
+    assert response.status_code == 200
+    results = response.json()
+    assert results
+    assert all(item["jurisdiction"] == "EU" for item in results)
+    assert all(item["document_type"] == "regulation" for item in results)
+    assert any(item["locator"] == "Article 14" for item in results)
+    assert {"lexical", "phrase", "metadata", "source_quality", "vector", "final"} <= set(
+        results[0]["score_breakdown"]
+    )
