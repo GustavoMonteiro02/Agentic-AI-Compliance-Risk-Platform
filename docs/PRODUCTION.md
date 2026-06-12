@@ -114,11 +114,14 @@ Use:
 ```bash
 curl http://127.0.0.1:8000/runtime/status
 curl http://127.0.0.1:8000/runtime/readiness
+curl http://127.0.0.1:8000/runtime/metrics
+curl http://127.0.0.1:8000/runtime/metrics.prom
 ```
 
 This reports whether LLM mode, LangSmith metadata, API hardening, and vector DB settings are active.
 It also reports active prompt versions so operators can tie generated outputs to the prompt registry.
 Readiness validates database connectivity, knowledge-base loading, auth configuration, API hardening, LLM configuration, and vector DB availability when Qdrant or Pinecone is enabled.
+Metrics expose request counts, error counts, status counts, and average route latency. The `.prom` endpoint emits Prometheus-compatible text for lightweight scraping.
 
 ## Pagination
 

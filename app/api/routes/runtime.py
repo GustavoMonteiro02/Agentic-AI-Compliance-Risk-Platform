@@ -1,9 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from sqlalchemy import text
 
 from app.config import get_settings
 from app.database.session import SessionLocal
 from app.llm.provider import OptionalLLMProvider
+from app.observability.metrics import http_metrics
 from app.prompts.registry import PROMPT_REGISTRY
 from app.rag.ingest import legal_source_summary
 from app.rag.retriever import LocalComplianceRetriever
@@ -150,3 +151,13 @@ def runtime_readiness() -> dict:
 
     ready = all(item.get("ok") for item in checks.values())
     return {"ready": ready, "checks": checks}
+
+
+@router.get("/metrics")
+def runtime_metrics() -> dict:
+    return http_metrics.snapshot()
+
+
+@router.get("/metrics.prom")
+def runtime_metrics_prometheus() -> Response:
+    return Response(content=http_metrics.prometheus(), media_type="text/plain; version=0.0.4")

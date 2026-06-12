@@ -23,6 +23,7 @@ from app.api.errors import http_exception_handler, validation_exception_handler
 from app.config import get_settings
 from app.database.session import init_db
 from app.security.middleware import (
+    HTTPMetricsMiddleware,
     InMemoryRateLimitMiddleware,
     RequestIDMiddleware,
     RequestSizeLimitMiddleware,
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
         app.add_middleware(RequestSizeLimitMiddleware, max_body_bytes=settings.max_request_body_bytes)
     if settings.security_headers_enabled:
         app.add_middleware(SecurityHeadersMiddleware, hsts_enabled=settings.security_hsts_enabled)
+    app.add_middleware(HTTPMetricsMiddleware)
     app.add_middleware(RequestIDMiddleware)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)

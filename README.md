@@ -73,6 +73,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - AI incident reporting, triage, resolution tracking, and audit events
 - Structured audit trail for evidence updates and human review decisions
 - Runtime readiness checks and Docker healthchecks for production operations
+- Runtime HTTP metrics in JSON and Prometheus text formats
 - Configurable API hardening with security headers, request body limits, CORS allowlists, and tenant-aware rate limiting
 - Request correlation IDs and consistent problem-style API error responses
 - Bounded list endpoints with `limit` / `offset` pagination headers for production data volumes

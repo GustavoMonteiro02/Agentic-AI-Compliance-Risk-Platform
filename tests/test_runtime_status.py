@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from app.config import get_settings
 from app.api.main import create_app
 from app.api.main import app
+from app.observability.metrics import http_metrics
 
 
 client = TestClient(app)
@@ -93,6 +94,24 @@ def test_security_headers_are_enabled_by_default():
     assert response.headers["referrer-policy"] == "no-referrer"
     assert response.headers["permissions-policy"] == "camera=(), microphone=(), geolocation=()"
     assert response.headers["cache-control"] == "no-store"
+    assert "x-response-time-ms" in response.headers
+
+
+def test_runtime_metrics_report_request_counts():
+    http_metrics.reset()
+
+    health_response = client.get("/health")
+    metrics_response = client.get("/runtime/metrics")
+    prometheus_response = client.get("/runtime/metrics.prom")
+
+    assert health_response.status_code == 200
+    assert metrics_response.status_code == 200
+    metrics = metrics_response.json()
+    assert metrics["total_requests"] >= 1
+    assert metrics["routes"]["GET /health"]["request_count"] == 1
+    assert prometheus_response.status_code == 200
+    assert "ai_governance_http_requests_total" in prometheus_response.text
+    assert 'route="/health"' in prometheus_response.text
 
 
 def test_request_size_limit_rejects_large_payloads(monkeypatch):
