@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+import hashlib
 import time
 from typing import Any
 
@@ -47,6 +48,9 @@ class OptionalLLMProvider:
         started_at: float,
         response_data: dict[str, Any] | None = None,
         attempts: int = 1,
+        system_prompt: str | None = None,
+        user_prompt: str | None = None,
+        output_text: str | None = None,
     ) -> dict[str, Any]:
         usage = (response_data or {}).get("usage", {})
         if self.provider_name == "anthropic":
@@ -65,6 +69,9 @@ class OptionalLLMProvider:
             "prompt_tokens": usage.get("prompt_tokens"),
             "completion_tokens": usage.get("completion_tokens"),
             "total_tokens": usage.get("total_tokens"),
+            "system_prompt_sha256": _hash_text(system_prompt),
+            "user_prompt_sha256": _hash_text(user_prompt),
+            "output_sha256": _hash_text(output_text),
         }
 
     def _chat_completion(self, payload: dict[str, Any], timeout: int) -> tuple[dict[str, Any], int]:
@@ -152,9 +159,17 @@ class OptionalLLMProvider:
                 },
                 timeout=self.settings.openai_timeout_seconds,
             )
+        content = self._content_from_response(data)
         return LLMResult(
-            content=self._content_from_response(data),
-            metadata=self._metadata(started_at, data, attempts),
+            content=content,
+            metadata=self._metadata(
+                started_at,
+                data,
+                attempts,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                output_text=content,
+            ),
         )
 
     def advisory_completion(self, system_prompt: str, user_prompt: str) -> str | None:
@@ -165,9 +180,11 @@ class OptionalLLMProvider:
         if not self.enabled():
             return None
         started_at = time.perf_counter()
+        request_user_prompt = user_prompt
         if self.provider_name == "anthropic":
             json_instruction = "\n\nReturn only a valid JSON object. Do not include markdown fences."
-            data, attempts = self._anthropic_completion(system_prompt, user_prompt + json_instruction)
+            request_user_prompt = user_prompt + json_instruction
+            data, attempts = self._anthropic_completion(system_prompt, request_user_prompt)
         else:
             data, attempts = self._chat_completion(
                 {
@@ -183,8 +200,22 @@ class OptionalLLMProvider:
                 timeout=self.settings.openai_timeout_seconds,
             )
         content = self._content_from_response(data)
-        return json.loads(content), self._metadata(started_at, data, attempts)
+        parsed = json.loads(content)
+        return parsed, self._metadata(
+            started_at,
+            data,
+            attempts,
+            system_prompt=system_prompt,
+            user_prompt=request_user_prompt,
+            output_text=content,
+        )
 
     def structured_json(self, system_prompt: str, user_prompt: str) -> dict[str, Any] | None:
         result = self.structured_json_result(system_prompt, user_prompt)
         return result[0] if result else None
+
+
+def _hash_text(text: str | None) -> str | None:
+    if not text:
+        return None
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()

@@ -191,7 +191,7 @@ Copy `.env.example` to `.env` and adjust values.
 - `MCP_TRANSPORT`: `stdio` locally, or an HTTP transport such as `streamable-http` for deployment
 - `MCP_HOST` / `MCP_PORT`: MCP runtime bind settings
 
-LLM prompt templates are versioned in `app/prompts/registry.py`; LLM tool calls include prompt version, model, latency, and token metadata where available.
+LLM prompt templates are versioned in `app/prompts/registry.py`; LLM tool calls include prompt version, model, latency, token metadata, schema-validation status, applied sections, and SHA-256 prompt/output fingerprints where available.
 
 When Qdrant or Pinecone is configured, populate the persistent collection with:
 

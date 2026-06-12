@@ -51,7 +51,7 @@ The deterministic workflow always runs first. When `AI_GENERATION_MODE=openai` o
 
 The LLM output is validated with Pydantic before it can replace deterministic outputs. Failed LLM calls are logged in the graph state and do not break the assessment workflow. Production deployments can set `LLM_PROVIDER=openai`, `LLM_PROVIDER=openai_compatible`, or `LLM_PROVIDER=anthropic`, and tune `OPENAI_BASE_URL`, `OPENAI_TIMEOUT_SECONDS`, `OPENAI_MAX_RETRIES`, `OPENAI_MAX_TOKENS`, `ANTHROPIC_BASE_URL`, and `ANTHROPIC_MODEL` without code changes.
 
-Prompt templates are versioned in `app/prompts/registry.py`. Each LLM refinement tool call records the prompt name, prompt version, provider, model, latency, retry attempts, and token usage when the provider returns usage metadata. This keeps generated assessments auditable and makes prompt changes reviewable like code changes.
+Prompt templates are versioned in `app/prompts/registry.py`. Each LLM refinement tool call records the prompt name, prompt version, provider, model, latency, retry attempts, token usage when the provider returns usage metadata, SHA-256 fingerprints for the system prompt, user prompt, and output, schema-validation status, and applied output sections. This keeps generated assessments auditable without persisting raw prompt or response text in tool-call metadata.
 
 ## Evaluation Experiments
 

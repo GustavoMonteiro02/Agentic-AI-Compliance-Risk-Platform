@@ -76,4 +76,6 @@ def test_llm_refiner_applies_structured_output(monkeypatch):
     assert updated["tool_calls"][-1]["status"] == "success"
     assert updated["tool_calls"][-1]["prompt_name"] == "llm_refiner"
     assert updated["tool_calls"][-1]["prompt_version"] == "2026-06-10.v1"
+    assert updated["tool_calls"][-1]["schema_validated"] is True
+    assert "risk_classification" in updated["tool_calls"][-1]["applied_sections"]
     assert updated["tool_calls"][-1]["total_tokens"] == 150

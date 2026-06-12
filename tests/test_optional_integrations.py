@@ -1,3 +1,5 @@
+import hashlib
+
 import requests
 
 from app.llm.provider import OptionalLLMProvider
@@ -37,6 +39,9 @@ def test_optional_llm_provider_parses_structured_metadata(monkeypatch):
     assert metadata["attempts"] == 1
     assert metadata["total_tokens"] == 14
     assert metadata["latency_ms"] >= 0
+    assert metadata["system_prompt_sha256"] == hashlib.sha256(b"system").hexdigest()
+    assert metadata["user_prompt_sha256"] == hashlib.sha256(b"user").hexdigest()
+    assert metadata["output_sha256"] == hashlib.sha256(b'{"ok": true}').hexdigest()
 
 
 def test_optional_llm_provider_parses_anthropic_structured_response(monkeypatch):

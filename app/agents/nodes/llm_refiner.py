@@ -89,6 +89,19 @@ def llm_refiner_node(state: GovernanceAssessmentState) -> GovernanceAssessmentSt
                 "mode": provider_mode,
                 "prompt_name": prompt.name,
                 "prompt_version": prompt.version,
+                "schema_validated": True,
+                "applied_sections": sorted(
+                    key
+                    for key in [
+                        "risk_classification",
+                        "mapped_controls",
+                        "gap_analysis",
+                        "evidence_checklist",
+                        "ai_system_card_markdown",
+                        "audit_report_markdown",
+                    ]
+                    if refined.get(key)
+                ),
                 **metadata,
             }
         )
@@ -101,6 +114,8 @@ def llm_refiner_node(state: GovernanceAssessmentState) -> GovernanceAssessmentSt
                 "mode": provider_mode,
                 "prompt_name": prompt.name,
                 "prompt_version": prompt.version,
+                "schema_validated": False,
+                "fallback": "deterministic_state_preserved",
             }
         )
     return state
