@@ -78,6 +78,29 @@ export type ReviewEscalation = {
   age_hours: number;
 };
 
+export type RequirementSearchResult = {
+  requirement_id: string;
+  title: string;
+  source: string;
+  category: string;
+  summary: string;
+  relevance: string;
+  source_url?: string;
+  jurisdiction?: string;
+  document_type?: string;
+  authority?: string;
+  locator?: string;
+  tags: string[];
+  retriever?: string;
+  reranker?: string;
+  score?: number;
+  score_breakdown: Record<string, number>;
+  rank_reasons: string[];
+  matched_terms: string[];
+  citation_quality?: string;
+  evidence_grade?: string;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 function headers() {
@@ -108,4 +131,6 @@ export const api = {
   riskRegister: () => getJson<RiskItem[]>("/risk-register"),
   incidents: () => getJson<Incident[]>("/incidents"),
   reviewEscalations: () => getJson<ReviewEscalation[]>("/reviews/escalations"),
+  requirementSearch: (query: string) =>
+    getJson<RequirementSearchResult[]>(`/requirements/search?q=${encodeURIComponent(query)}&top_k=4`),
 };

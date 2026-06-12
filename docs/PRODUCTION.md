@@ -194,7 +194,7 @@ Local development defaults to `MCP_TRANSPORT=stdio`. Container deployments can s
 
 ## RAG Ingestion
 
-The local fallback uses hybrid lexical, phrase, metadata, query-expansion, and citation-aware reranking. `GET /requirements/search` exposes the same retrieval path with metadata filters for jurisdiction, document type, category, tags, and authority. When Qdrant or Pinecone is available, ingest the same knowledge-base chunks into a persistent vector collection:
+The local fallback uses hybrid lexical, phrase, metadata, query-expansion, and citation-aware reranking. `GET /requirements/search` exposes the same retrieval path with metadata filters for jurisdiction, document type, category, tags, and authority, plus rank reasons, matched terms, citation quality, evidence grade, and per-signal score breakdowns. When Qdrant or Pinecone is available, ingest the same knowledge-base chunks into a persistent vector collection:
 
 ```bash
 make ingest-qdrant

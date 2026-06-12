@@ -26,6 +26,15 @@ STOPWORDS = {
     "to",
     "with",
 }
+RERANK_WEIGHTS = {
+    "exact_title": 2.4,
+    "locator": 2.0,
+    "citation": 1.7,
+    "authority": 1.1,
+    "freshness": 0.6,
+    "official_source": 0.8,
+    "tag_coverage": 1.2,
+}
 QUERY_EXPANSIONS = {
     "hr": {"employment", "candidate", "recruitment", "human oversight", "bias"},
     "candidate": {"employment", "recruitment", "human oversight", "bias"},
@@ -154,6 +163,75 @@ def _source_quality(chunk: DocumentChunk) -> float:
     return score
 
 
+def _effective_year(effective_date: str | None) -> int | None:
+    if not effective_date:
+        return None
+    match = re.search(r"(20\d{2}|19\d{2})", effective_date)
+    return int(match.group(1)) if match else None
+
+
+def _rerank_score(query_tokens: set[str], query_phrases: set[str], query: str, chunk: DocumentChunk) -> tuple[float, list[str], dict[str, Any]]:
+    score = 0.0
+    reasons: list[str] = []
+    query_lower = query.lower()
+    title_lower = chunk.title.lower()
+    locator_lower = (chunk.locator or "").lower()
+    citation_text = " ".join(
+        [
+            chunk.title,
+            chunk.source,
+            chunk.authority,
+            chunk.locator or "",
+            chunk.source_url or "",
+            " ".join(chunk.tags),
+        ]
+    ).lower()
+
+    matched_terms = sorted(query_tokens & _tokens(citation_text))
+    matched_tags = sorted(query_tokens & {tag.lower() for tag in chunk.tags})
+
+    if any(phrase in title_lower for phrase in query_phrases):
+        score += RERANK_WEIGHTS["exact_title"]
+        reasons.append("query phrase matched the requirement title")
+    if locator_lower and (locator_lower in query_lower or any(token in locator_lower for token in query_tokens)):
+        score += RERANK_WEIGHTS["locator"]
+        reasons.append("query matched the legal locator")
+    if matched_terms:
+        score += min(len(matched_terms), 5) * RERANK_WEIGHTS["citation"] / 5
+        reasons.append("query terms matched citation metadata")
+    if chunk.authority and _tokens(chunk.authority) & query_tokens:
+        score += RERANK_WEIGHTS["authority"]
+        reasons.append("query matched the issuing authority")
+    if matched_tags:
+        score += min(len(matched_tags), 4) * RERANK_WEIGHTS["tag_coverage"] / 4
+        reasons.append("query matched requirement tags")
+    if chunk.source_url and chunk.document_type in {"regulation", "directive"}:
+        score += RERANK_WEIGHTS["official_source"]
+        reasons.append("official source URL is available")
+
+    year = _effective_year(chunk.effective_date)
+    if year and year >= 2020:
+        score += RERANK_WEIGHTS["freshness"]
+        reasons.append("recent effective-date metadata is available")
+
+    if not reasons:
+        reasons.append("ranked by lexical, metadata, and vector score")
+
+    evidence_grade = "official" if chunk.source_url and chunk.document_type in {"regulation", "directive"} else "internal"
+    citation_quality = "high" if chunk.source_url and chunk.locator else "medium" if chunk.source_url or chunk.locator else "low"
+    return (
+        round(score, 3),
+        reasons,
+        {
+            "matched_terms": matched_terms,
+            "matched_tags": matched_tags,
+            "citation_quality": citation_quality,
+            "evidence_grade": evidence_grade,
+            "reranker": "metadata-cross-signal-v1",
+        },
+    )
+
+
 def _matches_filters(chunk: DocumentChunk, filters: RetrievalFilters | None) -> bool:
     if not filters or not filters.active:
         return True
@@ -187,10 +265,10 @@ class LocalComplianceRetriever:
 
     def _diversified_top_k(
         self,
-        scored: list[tuple[float, DocumentChunk, dict[str, float]]],
+        scored: list[tuple[float, DocumentChunk, dict[str, float], dict[str, Any]]],
         top_k: int,
-    ) -> list[tuple[float, DocumentChunk, dict[str, float]]]:
-        selected: list[tuple[float, DocumentChunk, dict[str, float]]] = []
+    ) -> list[tuple[float, DocumentChunk, dict[str, float], dict[str, Any]]]:
+        selected: list[tuple[float, DocumentChunk, dict[str, float], dict[str, Any]]] = []
         category_counts: dict[str, int] = {}
         for item in scored:
             category = item[1].category
@@ -278,7 +356,15 @@ class LocalComplianceRetriever:
             )
             metadata_score = _metadata_score(query_tokens, expanded_query, chunk)
             source_quality = _source_quality(chunk)
-            final_score = lexical_score + (phrase_score * 1.4) + metadata_score + source_quality + (vector_score * 8)
+            rerank_score, rerank_reasons, rerank_metadata = _rerank_score(query_tokens, query_phrases, expanded_query, chunk)
+            final_score = (
+                lexical_score
+                + (phrase_score * 1.4)
+                + metadata_score
+                + source_quality
+                + rerank_score
+                + (vector_score * 8)
+            )
             if final_score:
                 scored.append(
                     (
@@ -289,8 +375,14 @@ class LocalComplianceRetriever:
                             "phrase": round(phrase_score, 3),
                             "metadata": round(metadata_score, 3),
                             "source_quality": round(source_quality, 3),
+                            "rerank": round(rerank_score, 3),
                             "vector": round(vector_score, 3),
                             "final": round(final_score, 3),
+                        },
+                        {
+                            **rerank_metadata,
+                            "rank_reasons": rerank_reasons,
+                            "expanded_query": expanded_query,
                         },
                     )
                 )
@@ -317,6 +409,13 @@ class LocalComplianceRetriever:
                 "retriever": retriever_mode,
                 "score": round(score, 3),
                 "score_breakdown": breakdown,
+                "rank_reasons": ranking["rank_reasons"],
+                "matched_terms": ranking["matched_terms"],
+                "matched_tags": ranking["matched_tags"],
+                "citation_quality": ranking["citation_quality"],
+                "evidence_grade": ranking["evidence_grade"],
+                "reranker": ranking["reranker"],
+                "expanded_query": ranking["expanded_query"],
                 "metadata": chunk.metadata,
                 "citation": {
                     "label": f"{chunk.authority}: {chunk.title}",
@@ -326,5 +425,5 @@ class LocalComplianceRetriever:
                     "locator": chunk.locator,
                 },
             }
-            for score, chunk, breakdown in reranked
+            for score, chunk, breakdown, ranking in reranked
         ]

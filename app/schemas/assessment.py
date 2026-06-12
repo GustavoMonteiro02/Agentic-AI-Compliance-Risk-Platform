@@ -74,8 +74,15 @@ class RetrievedRequirement(BaseModel):
     content_hash: str | None = None
     tags: list[str] = Field(default_factory=list)
     retriever: str | None = None
+    reranker: str | None = None
     score: float | None = None
     score_breakdown: dict[str, float] = Field(default_factory=dict)
+    rank_reasons: list[str] = Field(default_factory=list)
+    matched_terms: list[str] = Field(default_factory=list)
+    matched_tags: list[str] = Field(default_factory=list)
+    citation_quality: str | None = None
+    evidence_grade: str | None = None
+    expanded_query: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     citation: dict[str, Any] = Field(default_factory=dict)
 

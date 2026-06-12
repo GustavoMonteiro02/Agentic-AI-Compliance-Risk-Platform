@@ -37,9 +37,12 @@ def test_requirements_rag_search_exposes_metadata_filters_and_scores():
     assert all(item["jurisdiction"] == "EU" for item in results)
     assert all(item["document_type"] == "regulation" for item in results)
     assert any(item["locator"] == "Article 14" for item in results)
-    assert {"lexical", "phrase", "metadata", "source_quality", "vector", "final"} <= set(
+    assert {"lexical", "phrase", "metadata", "source_quality", "rerank", "vector", "final"} <= set(
         results[0]["score_breakdown"]
     )
+    assert results[0]["reranker"] == "metadata-cross-signal-v1"
+    assert results[0]["rank_reasons"]
+    assert results[0]["citation_quality"] in {"medium", "high"}
 
 
 def test_requirements_legal_sources_report_manifest_readiness():

@@ -8,14 +8,16 @@ import {
   Database,
   FileCheck2,
   Layers3,
+  Search,
   ShieldCheck,
   Siren,
   Users,
 } from "lucide-react";
-import {
-  api,
+import { api } from "./api";
+import type {
   Assessment,
   Incident,
+  RequirementSearchResult,
   ReviewEscalation,
   RiskItem,
   RuntimeMetrics,
@@ -34,6 +36,7 @@ type LoadState = {
   risks: RiskItem[];
   incidents: Incident[];
   escalations: ReviewEscalation[];
+  ragResults: RequirementSearchResult[];
   error?: string;
 };
 
@@ -53,7 +56,14 @@ function metric(label: string, value: string | number, detail: string, icon: Rea
 }
 
 function App() {
-  const [state, setState] = useState<LoadState>({ systems: [], assessments: [], risks: [], incidents: [], escalations: [] });
+  const [state, setState] = useState<LoadState>({
+    systems: [],
+    assessments: [],
+    risks: [],
+    incidents: [],
+    escalations: [],
+    ragResults: [],
+  });
 
   useEffect(() => {
     Promise.all([
@@ -65,9 +75,10 @@ function App() {
       api.riskRegister(),
       api.incidents(),
       api.reviewEscalations(),
+      api.requirementSearch("AI Act human oversight personal data incident reporting"),
     ])
-      .then(([runtime, readiness, metrics, systems, assessments, risks, incidents, escalations]) =>
-        setState({ runtime, readiness, metrics, systems, assessments, risks, incidents, escalations })
+      .then(([runtime, readiness, metrics, systems, assessments, risks, incidents, escalations, ragResults]) =>
+        setState({ runtime, readiness, metrics, systems, assessments, risks, incidents, escalations, ragResults })
       )
       .catch((error: Error) => setState((current) => ({ ...current, error: error.message })));
   }, []);
@@ -187,6 +198,37 @@ function App() {
                   </strong>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="panel wide">
+            <div className="panel-title">
+              <h2>RAG retrieval evidence</h2>
+              <span>{state.ragResults[0]?.reranker || "metadata reranker"}</span>
+            </div>
+            <div className="rag-list">
+              {state.ragResults.map((item, index) => (
+                <article key={item.requirement_id}>
+                  <div className="rag-rank">
+                    <Search size={16} />
+                    <strong>#{index + 1}</strong>
+                  </div>
+                  <div className="rag-body">
+                    <div className="rag-heading">
+                      <strong>{item.title}</strong>
+                      <span>{item.score?.toFixed(1) || "0.0"}</span>
+                    </div>
+                    <p>{item.rank_reasons[0] || item.relevance}</p>
+                    <div className="rag-meta">
+                      <span>{item.jurisdiction || "internal"}</span>
+                      <span>{item.document_type || "unknown"}</span>
+                      <span>{item.citation_quality || "citation"}</span>
+                      <span>{item.evidence_grade || "evidence"}</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+              {state.ragResults.length === 0 ? <div className="empty">Retrieval evidence will appear after API traffic.</div> : null}
             </div>
           </div>
 

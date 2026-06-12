@@ -188,6 +188,10 @@ h2 {
   padding: 18px;
 }
 
+.panel.wide {
+  grid-column: span 1;
+}
+
 .panel-title {
   display: flex;
   justify-content: space-between;
@@ -283,6 +287,80 @@ h2 {
   font-size: 13px;
 }
 
+.rag-list {
+  display: grid;
+  gap: 10px;
+}
+
+.rag-list article {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #eef2f5;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.rag-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.rag-body {
+  min-width: 0;
+}
+
+.rag-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.rag-heading strong,
+.rag-body p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rag-heading span {
+  flex: 0 0 auto;
+  color: #176b4d;
+  font-weight: 800;
+}
+
+.rag-body p {
+  margin: 8px 0 10px;
+  color: #526071;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.rag-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rag-meta span {
+  max-width: 100%;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #344054;
+  background: #eef2f6;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .check-list {
   display: grid;
   gap: 8px;
@@ -352,6 +430,10 @@ h2 {
   .workspace {
     grid-template-columns: 1fr;
   }
+
+  .panel.wide {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 720px) {
@@ -402,5 +484,14 @@ h2 {
   .row {
     grid-template-columns: 1fr;
     align-items: start;
+  }
+
+  .rag-list article,
+  .rag-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .rag-heading {
+    display: grid;
   }
 }

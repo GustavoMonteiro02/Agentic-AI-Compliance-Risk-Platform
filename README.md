@@ -51,7 +51,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 
 - Python, FastAPI, Pydantic, SQLAlchemy
 - LangGraph-compatible workflow abstraction with optional LangGraph integration
-- RAG over a source-linked local Markdown compliance knowledge base with hybrid retrieval, metadata boosts, and reranking
+- RAG over a source-linked local Markdown compliance knowledge base with hybrid retrieval, metadata boosts, explainable reranking, citation quality, and evidence grading
 - MCP/FastMCP server exposing tools, resources, and prompts
 - PostgreSQL and Qdrant via Docker Compose, SQLite for fast local development and tests
 - Optional OpenAI advisory mode and LangSmith trace metadata
@@ -262,7 +262,7 @@ Prompts:
 - Regulatory documents are summarized, source-linked study notes for product demonstration, not a complete legal corpus.
 - The MVP uses deterministic policy logic by default for reproducible tests.
 - Risk results are preliminary and require human compliance/legal review.
-- Retrieval uses local hybrid lexical + metadata ranking with query expansion and reranking by default. Qdrant and Pinecone adapters are available as persistent vector-store extension points.
+- Retrieval uses local hybrid lexical + metadata ranking with query expansion, explainable reranking, matched-term evidence, citation-quality labels, and evidence grading by default. Qdrant and Pinecone adapters are available as persistent vector-store extension points.
 - Rich RAG search is exposed through `GET /requirements/search?q=...` with optional `jurisdiction`, `document_type`, `category`, `tags`, and `authority` filters.
 - Legal source readiness is exposed through `GET /requirements/legal-sources`; it shows which official-source files are locally available and whether the corpus is complete.
 - `make validate-legal-sources` validates manifest completeness and exits non-zero until official full-text sources are locally available.

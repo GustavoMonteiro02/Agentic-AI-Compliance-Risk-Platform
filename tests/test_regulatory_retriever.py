@@ -15,8 +15,13 @@ def test_retriever_marks_local_hybrid_rerank_mode_by_default():
 
     assert results
     assert results[0]["retriever"] == "local-hybrid-rerank"
+    assert results[0]["reranker"] == "metadata-cross-signal-v1"
     assert results[0]["score"] > 0
-    assert {"lexical", "phrase", "metadata", "source_quality", "vector", "final"} <= set(results[0]["score_breakdown"])
+    assert {"lexical", "phrase", "metadata", "source_quality", "rerank", "vector", "final"} <= set(
+        results[0]["score_breakdown"]
+    )
+    assert results[0]["rank_reasons"]
+    assert results[0]["matched_terms"]
     assert results[0]["citation"]["requirement_id"] == results[0]["requirement_id"]
 
 
@@ -28,6 +33,8 @@ def test_retriever_surfaces_source_metadata_for_regulations():
     assert top["jurisdiction"] == "EU"
     assert top["document_type"] == "regulation"
     assert top["source_url"] == "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+    assert top["evidence_grade"] == "official"
+    assert top["citation_quality"] in {"medium", "high"}
 
 
 def test_retriever_can_return_article_level_locator():
