@@ -30,6 +30,16 @@ export type RuntimeMetrics = {
   >;
 };
 
+export type RuntimePreflight = {
+  target: string;
+  release_ready: boolean;
+  blocker_count: number;
+  warning_count: number;
+  blockers: { code: string; message: string; check?: string }[];
+  warnings: { code: string; message: string; check?: string }[];
+  actions: string[];
+};
+
 export type Assessment = {
   id: string;
   status: string;
@@ -157,6 +167,7 @@ async function getJson<T>(path: string): Promise<T> {
 export const api = {
   runtime: () => getJson<RuntimeStatus>("/runtime/status"),
   readiness: () => getJson<RuntimeReadiness>("/runtime/readiness"),
+  preflight: () => getJson<RuntimePreflight>("/runtime/preflight"),
   metrics: () => getJson<RuntimeMetrics>("/runtime/metrics"),
   systems: () => getJson<SystemRecord[]>("/systems"),
   assessments: () => getJson<Assessment[]>("/assessments"),

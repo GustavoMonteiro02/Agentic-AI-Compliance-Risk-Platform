@@ -197,6 +197,7 @@ Use:
 ```bash
 curl http://127.0.0.1:8000/runtime/status
 curl http://127.0.0.1:8000/runtime/readiness
+curl http://127.0.0.1:8000/runtime/preflight
 curl http://127.0.0.1:8000/runtime/metrics
 curl http://127.0.0.1:8000/runtime/metrics.prom
 ```
@@ -204,6 +205,7 @@ curl http://127.0.0.1:8000/runtime/metrics.prom
 This reports whether LLM mode, LangSmith metadata, API hardening, and vector DB settings are active.
 It also reports active prompt versions so operators can tie generated outputs to the prompt registry.
 Readiness validates database connectivity, knowledge-base loading, auth configuration, API hardening, LLM configuration, and vector DB availability when Qdrant or Pinecone is enabled.
+Preflight converts readiness and production posture into release blockers, warnings, and actions. `target=production` treats local-only posture such as disabled auth, local vector search, disabled rate limits, partial legal corpus, and HSTS-off as warnings that prevent production release readiness; `target=development` reports the same warnings without blocking local iteration.
 Metrics expose request counts, error counts, status counts, and average route latency. The `.prom` endpoint emits Prometheus-compatible text for lightweight scraping.
 
 ## Database Migrations

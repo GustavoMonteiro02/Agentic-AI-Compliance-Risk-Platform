@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Query, Response
 from sqlalchemy import text
 
 from app.config import get_settings
@@ -167,6 +167,98 @@ def runtime_readiness() -> dict:
 
     ready = all(item.get("ok") for item in checks.values())
     return {"ready": ready, "checks": checks}
+
+
+@router.get("/preflight")
+def runtime_preflight(target: str = Query(default="production", pattern="^(production|staging|development)$")) -> dict:
+    settings = get_settings()
+    readiness = runtime_readiness()
+    checks = readiness["checks"]
+    blockers: list[dict] = []
+    warnings: list[dict] = []
+    actions: list[str] = []
+
+    def add_blocker(code: str, message: str, action: str, check: str | None = None) -> None:
+        blockers.append({"code": code, "message": message, "check": check})
+        actions.append(action)
+
+    def add_warning(code: str, message: str, action: str, check: str | None = None) -> None:
+        warnings.append({"code": code, "message": message, "check": check})
+        actions.append(action)
+
+    for check_name, check in checks.items():
+        if check.get("ok") is False or check.get("current") is False:
+            add_blocker(
+                f"{check_name}_not_ready",
+                check.get("error") or f"{check_name.replace('_', ' ')} check is not ready.",
+                f"Fix {check_name.replace('_', ' ')} before release.",
+                check_name,
+            )
+
+    legal_check = checks.get("legal_sources", {})
+    if not legal_check.get("ready_for_full_legal_corpus"):
+        add_warning(
+            "legal_corpus_partial",
+            "Legal-source corpus is not marked ready for full official-source use.",
+            "Load official article-level legal sources and run make validate-legal-sources.",
+            "legal_sources",
+        )
+
+    if target in {"production", "staging"} and settings.auth_mode == "disabled":
+        add_warning(
+            "auth_disabled",
+            "API authentication is disabled.",
+            "Set AUTH_MODE=api_key and configure PLATFORM_API_KEY before shared environments.",
+            "auth",
+        )
+    if target == "production" and not settings.security_hsts_enabled:
+        add_warning(
+            "hsts_disabled",
+            "HSTS is disabled.",
+            "Enable SECURITY_HSTS_ENABLED=true once the API is served exclusively over HTTPS.",
+            "api_hardening",
+        )
+    if target == "production" and settings.api_rate_limit_per_minute <= 0:
+        add_warning(
+            "rate_limit_disabled",
+            "API rate limiting is disabled.",
+            "Set API_RATE_LIMIT_PER_MINUTE to a tenant-appropriate production value.",
+            "api_hardening",
+        )
+    if target == "production" and settings.vector_db == "local":
+        add_warning(
+            "local_vector_store",
+            "Vector search is using the local fallback.",
+            "Set VECTOR_DB=qdrant or VECTOR_DB=pinecone and ingest the corpus for persistent retrieval.",
+            "vector_db",
+        )
+    if target == "production" and settings.ai_generation_mode == "deterministic":
+        add_warning(
+            "llm_disabled",
+            "LLM refinement is disabled; outputs use deterministic generation only.",
+            "Set AI_GENERATION_MODE=llm and configure an LLM provider if production requires live LLM refinement.",
+            "llm",
+        )
+    if settings.notification_delivery_mode == "webhook" and not settings.notification_webhook_url:
+        add_warning(
+            "notification_webhook_missing",
+            "Webhook notification delivery is enabled without a default webhook URL.",
+            "Set NOTIFICATION_WEBHOOK_URL or ensure every webhook event has a recipient URL.",
+            "notification_delivery",
+        )
+
+    unique_actions = list(dict.fromkeys(actions))
+    release_ready = not blockers and (target == "development" or not warnings)
+    return {
+        "target": target,
+        "release_ready": release_ready,
+        "blocker_count": len(blockers),
+        "warning_count": len(warnings),
+        "blockers": blockers,
+        "warnings": warnings,
+        "actions": unique_actions,
+        "checks": checks,
+    }
 
 
 @router.get("/metrics")

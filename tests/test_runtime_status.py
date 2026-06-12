@@ -57,6 +57,30 @@ def test_runtime_readiness_reports_operational_checks():
     assert payload["checks"]["api_hardening"]["max_request_body_bytes"] == 1_048_576
 
 
+def test_runtime_preflight_reports_production_warnings():
+    response = client.get("/runtime/preflight")
+
+    assert response.status_code == 200
+    payload = response.json()
+    warning_codes = {item["code"] for item in payload["warnings"]}
+    assert payload["target"] == "production"
+    assert payload["release_ready"] is False
+    assert payload["blocker_count"] == 0
+    assert {"auth_disabled", "legal_corpus_partial", "local_vector_store", "rate_limit_disabled"} <= warning_codes
+    assert any("AUTH_MODE=api_key" in action for action in payload["actions"])
+    assert "checks" in payload
+
+
+def test_runtime_preflight_development_allows_warnings_without_blocking():
+    response = client.get("/runtime/preflight?target=development")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["target"] == "development"
+    assert payload["release_ready"] is True
+    assert payload["warning_count"] >= 1
+
+
 def test_runtime_readiness_reports_missing_pinecone_credentials(monkeypatch):
     monkeypatch.setenv("VECTOR_DB", "pinecone")
     monkeypatch.delenv("PINECONE_API_KEY", raising=False)

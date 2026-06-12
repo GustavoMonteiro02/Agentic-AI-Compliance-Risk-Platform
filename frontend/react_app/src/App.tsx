@@ -23,6 +23,7 @@ import type {
   ReviewEscalation,
   RiskItem,
   RuntimeMetrics,
+  RuntimePreflight,
   RuntimeReadiness,
   RuntimeStatus,
   SystemRecord,
@@ -32,6 +33,7 @@ import "./styles.css";
 type LoadState = {
   runtime?: RuntimeStatus;
   readiness?: RuntimeReadiness;
+  preflight?: RuntimePreflight;
   metrics?: RuntimeMetrics;
   systems: SystemRecord[];
   assessments: Assessment[];
@@ -74,6 +76,7 @@ function App() {
     Promise.all([
       api.runtime(),
       api.readiness(),
+      api.preflight(),
       api.metrics(),
       api.systems(),
       api.assessments(),
@@ -88,6 +91,7 @@ function App() {
         ([
           runtime,
           readiness,
+          preflight,
           metrics,
           systems,
           assessments,
@@ -101,6 +105,7 @@ function App() {
         setState({
           runtime,
           readiness,
+          preflight,
           metrics,
           systems,
           assessments,
@@ -188,6 +193,12 @@ function App() {
           {metric("Open incidents", summary.openIncidents.length, "Operational response", <Siren size={20} />)}
           {metric("Escalated reviews", state.escalations.length, "SLA and critical gaps", <AlertTriangle size={20} />)}
           {metric("Expiring exceptions", state.expiringExceptions.length, "Waiver review queue", <Clock3 size={20} />)}
+          {metric(
+            "Release preflight",
+            state.preflight?.release_ready ? "Ready" : "Review",
+            `${state.preflight?.warning_count || 0} warnings, ${state.preflight?.blocker_count || 0} blockers`,
+            <ShieldCheck size={20} />
+          )}
           {metric("API requests", state.metrics?.total_requests || 0, "Runtime traffic", <BarChart3 size={20} />)}
           {metric("Evidence approved", summary.approvedEvidence.length, "Audit-ready records", <FileCheck2 size={20} />)}
           {metric(
@@ -237,6 +248,26 @@ function App() {
                   </strong>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>Release preflight</h2>
+              <span>{state.preflight?.release_ready ? "Ready" : "Review"}</span>
+            </div>
+            <div className="check-list">
+              {(state.preflight?.blockers.length ? state.preflight.blockers : state.preflight?.warnings || [])
+                .slice(0, 5)
+                .map((item) => (
+                  <div className="check-row" key={item.code}>
+                    <span>{item.message}</span>
+                    <strong className={state.preflight?.blockers.length ? "bad" : "good"}>{item.code}</strong>
+                  </div>
+                ))}
+              {!state.preflight?.blockers.length && !state.preflight?.warnings.length ? (
+                <div className="empty">Production preflight is clear.</div>
+              ) : null}
             </div>
           </div>
 
