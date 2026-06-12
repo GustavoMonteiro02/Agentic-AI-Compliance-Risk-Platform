@@ -10,6 +10,29 @@ export type RuntimeStatus = {
   default_tenant_id: string;
 };
 
+export type LLMProviderOption = {
+  id: string;
+  label: string;
+  configured: boolean;
+  model: string;
+  base_url: string;
+  requires_key: string;
+};
+
+export type LLMOptions = {
+  default_mode: string;
+  default_provider?: string | null;
+  default_model?: string | null;
+  providers: LLMProviderOption[];
+  configured_provider_count: number;
+  defaults: {
+    timeout_seconds: number;
+    max_retries: number;
+    max_tokens: number;
+    temperature: number;
+  };
+};
+
 export type RuntimeReadiness = {
   ready: boolean;
   checks: Record<string, { ok?: boolean; current?: boolean; mode?: string; provider?: string; error?: string }>;
@@ -184,6 +207,7 @@ async function getJson<T>(path: string): Promise<T> {
 
 export const api = {
   runtime: () => getJson<RuntimeStatus>("/runtime/status"),
+  llmOptions: () => getJson<LLMOptions>("/runtime/llm-options"),
   readiness: () => getJson<RuntimeReadiness>("/runtime/readiness"),
   preflight: () => getJson<RuntimePreflight>("/runtime/preflight"),
   llmUsage: () => getJson<LLMUsageSummary>("/assessments/llm-usage"),

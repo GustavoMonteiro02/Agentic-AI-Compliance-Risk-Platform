@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.agents.graph import run_governance_assessment
 from app.config import get_settings
 from app.database.repositories import AssessmentRepository, SystemRepository
+from app.llm.runtime import LLMRuntimeConfig, reset_llm_runtime_config, set_llm_runtime_config
 from app.schemas.assessment import AssessmentRunRequest, GovernanceAssessment
 from app.schemas.llm_usage import LLMUsageSummary
 from app.schemas.remediation import RemediationAction, RemediationPlan
@@ -49,12 +50,16 @@ class AssessmentService:
             "security_testing_status": (system.system_metadata or {}).get("security_testing_status"),
             **request.additional_context,
         }
-        assessment = run_governance_assessment(
-            system.id,
-            system.description,
-            system_context=context,
-            user_answers=[item.model_dump() for item in request.user_answers],
-        )
+        runtime_token = set_llm_runtime_config(_runtime_config_from_request(request))
+        try:
+            assessment = run_governance_assessment(
+                system.id,
+                system.description,
+                system_context=context,
+                user_answers=[item.model_dump() for item in request.user_answers],
+            )
+        finally:
+            reset_llm_runtime_config(runtime_token)
         self.assessments.save(assessment)
         return assessment
 
@@ -144,3 +149,69 @@ class AssessmentService:
             critical_gap_count=len(assessment.gap_analysis.critical_gaps),
             medium_gap_count=len(assessment.gap_analysis.medium_gaps),
         )
+
+
+def configured_llm_providers() -> list[dict]:
+    settings = get_settings()
+    providers = []
+    if settings.openai_api_key:
+        providers.append(
+            {
+                "id": "openai",
+                "label": "OpenAI",
+                "configured": True,
+                "model": settings.openai_model,
+                "base_url": settings.openai_base_url,
+                "requires_key": "OPENAI_API_KEY",
+            }
+        )
+        if settings.openai_base_url.rstrip("/") != "https://api.openai.com/v1":
+            providers.append(
+                {
+                    "id": "openai_compatible",
+                    "label": "OpenAI-compatible",
+                    "configured": True,
+                    "model": settings.openai_model,
+                    "base_url": settings.openai_base_url,
+                    "requires_key": "OPENAI_API_KEY",
+                }
+            )
+    if settings.anthropic_api_key:
+        providers.append(
+            {
+                "id": "anthropic",
+                "label": "Anthropic",
+                "configured": True,
+                "model": settings.anthropic_model,
+                "base_url": settings.anthropic_base_url,
+                "requires_key": "ANTHROPIC_API_KEY",
+            }
+        )
+    return providers
+
+
+def _runtime_config_from_request(request: AssessmentRunRequest) -> LLMRuntimeConfig | None:
+    if not request.llm_config:
+        return None
+
+    settings = get_settings()
+    config = request.llm_config
+    mode = config.ai_generation_mode or settings.ai_generation_mode
+    provider = config.llm_provider or settings.llm_provider
+    if mode in {"llm", "openai"}:
+        configured = {item["id"] for item in configured_llm_providers()}
+        if provider not in configured:
+            raise HTTPException(
+                status_code=422,
+                detail=f"LLM provider '{provider}' is not configured. Configure its API key before selecting it.",
+            )
+
+    return LLMRuntimeConfig(
+        ai_generation_mode=config.ai_generation_mode,
+        llm_provider=config.llm_provider,
+        model=config.model,
+        timeout_seconds=config.timeout_seconds,
+        max_retries=config.max_retries,
+        max_tokens=config.max_tokens,
+        temperature=config.temperature,
+    )

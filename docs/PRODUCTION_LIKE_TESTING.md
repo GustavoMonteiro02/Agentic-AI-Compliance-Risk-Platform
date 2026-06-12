@@ -24,6 +24,8 @@ Optional keys:
 - `PINECONE_API_KEY` and `PINECONE_INDEX_HOST`: only needed when `VECTOR_DB=pinecone`.
 - `NOTIFICATION_WEBHOOK_URL`: only needed when `NOTIFICATION_DELIVERY_MODE=webhook`.
 
+The assessment UI discovers configured LLM providers from `GET /runtime/llm-options`. It shows only providers with keys configured in `.env`, then lets you choose mode, provider, model, token limit, timeout, retry count, and temperature per assessment.
+
 ## Configure
 
 Edit `.env` and set:
@@ -33,6 +35,33 @@ OPENAI_API_KEY=...
 ```
 
 The local `PLATFORM_API_KEY` and `VITE_PLATFORM_API_KEY` are already generated in `.env`. They must stay equal.
+
+For OpenAI + LangSmith + the full local feature set, use:
+
+```bash
+AI_GENERATION_MODE=llm
+LLM_PROVIDER=openai
+OPENAI_API_KEY=your-openai-key
+OPENAI_MODEL=gpt-4.1-mini
+VECTOR_DB=qdrant
+EMBEDDING_PROVIDER=openai
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIMENSIONS=1536
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=your-langsmith-key
+LANGSMITH_PROJECT=ai-governance-compliance-platform
+AUTH_MODE=api_key
+PLATFORM_API_KEY=change-me
+VITE_PLATFORM_API_KEY=change-me
+MCP_TRANSPORT=streamable-http
+NOTIFICATION_DELIVERY_MODE=manual
+```
+
+Optional integrations remain disabled until their keys are set:
+
+- Add `ANTHROPIC_API_KEY` to make Anthropic appear in the UI provider selector.
+- Add `PINECONE_API_KEY` and `PINECONE_INDEX_HOST`, then set `VECTOR_DB=pinecone`, to test Pinecone instead of local Qdrant.
+- Set `NOTIFICATION_DELIVERY_MODE=webhook` and `NOTIFICATION_WEBHOOK_URL=https://...` to test real outbound notification dispatch.
 
 Keep these defaults for a full live local test:
 

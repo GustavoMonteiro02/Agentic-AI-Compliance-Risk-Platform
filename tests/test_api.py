@@ -59,6 +59,25 @@ def test_create_system_and_assessment():
     assert assessment["retrieved_requirements"]
 
 
+def test_assessment_rejects_unconfigured_llm_provider():
+    system_response = client.post(
+        "/systems",
+        json={
+            "name": "Provider Config Test System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    )
+    assert system_response.status_code == 200
+
+    response = client.post(
+        f"/systems/{system_response.json()['id']}/assess",
+        json={"llm_config": {"ai_generation_mode": "llm", "llm_provider": "anthropic"}},
+    )
+
+    assert response.status_code == 422
+    assert "not configured" in response.json()["detail"]
+
+
 def test_report_exports_markdown():
     system_response = client.post(
         "/systems",

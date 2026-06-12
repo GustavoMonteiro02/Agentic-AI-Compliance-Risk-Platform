@@ -165,6 +165,8 @@ make prod-ingest-qdrant
 make prod-smoke
 ```
 
+`make prod-up` starts FastAPI, Streamlit, React/Vite, MCP, PostgreSQL, and Qdrant from Docker Compose. The React and Python services are built from separate Dockerfile targets.
+
 ## Environment
 
 Copy `.env.example` to `.env` and adjust values.

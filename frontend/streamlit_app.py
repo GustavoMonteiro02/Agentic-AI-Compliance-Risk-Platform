@@ -129,6 +129,95 @@ def show_assessment_picker():
         st.session_state["assessment_id"] = selected["id"]
 
 
+def runtime_llm_options() -> dict:
+    try:
+        return api_get("/runtime/llm-options")
+    except Exception:
+        return {
+            "default_mode": "deterministic",
+            "default_provider": None,
+            "default_model": None,
+            "providers": [],
+            "defaults": {"timeout_seconds": 60, "max_retries": 2, "max_tokens": 2000, "temperature": 0.1},
+        }
+
+
+def llm_config_controls(key_prefix: str = "assessment") -> dict:
+    options = runtime_llm_options()
+    providers = options.get("providers", [])
+    defaults = options.get("defaults", {})
+
+    st.markdown("<div class='section-title'>Assessment runtime</div>", unsafe_allow_html=True)
+    mode_choices = ["deterministic"]
+    if providers:
+        mode_choices.append("llm")
+    default_mode = "llm" if providers and options.get("default_mode") in {"llm", "openai"} else "deterministic"
+    mode = st.selectbox(
+        "Generation mode",
+        mode_choices,
+        index=mode_choices.index(default_mode),
+        key=f"{key_prefix}_generation_mode",
+    )
+
+    if mode == "deterministic":
+        if not providers:
+            st.caption("No live LLM provider is configured. Add a provider key in .env to enable LLM mode.")
+        return {"ai_generation_mode": "deterministic"}
+
+    provider_ids = [item["id"] for item in providers]
+    default_provider = options.get("default_provider") if options.get("default_provider") in provider_ids else provider_ids[0]
+    provider = st.selectbox(
+        "LLM provider",
+        providers,
+        index=provider_ids.index(default_provider),
+        format_func=lambda item: f"{item['label']} - {item['model']}",
+        key=f"{key_prefix}_llm_provider",
+    )
+    model = st.text_input("Model", value=provider.get("model") or options.get("default_model") or "", key=f"{key_prefix}_model")
+    cols = st.columns(4)
+    max_tokens = cols[0].number_input(
+        "Max tokens",
+        min_value=128,
+        max_value=8000,
+        value=int(defaults.get("max_tokens") or 2000),
+        step=128,
+        key=f"{key_prefix}_max_tokens",
+    )
+    timeout_seconds = cols[1].number_input(
+        "Timeout seconds",
+        min_value=1,
+        max_value=300,
+        value=int(defaults.get("timeout_seconds") or 60),
+        step=5,
+        key=f"{key_prefix}_timeout",
+    )
+    max_retries = cols[2].number_input(
+        "Retries",
+        min_value=0,
+        max_value=5,
+        value=int(defaults.get("max_retries") or 0),
+        step=1,
+        key=f"{key_prefix}_retries",
+    )
+    temperature = cols[3].number_input(
+        "Temperature",
+        min_value=0.0,
+        max_value=1.0,
+        value=float(defaults.get("temperature") if defaults.get("temperature") is not None else 0.1),
+        step=0.05,
+        key=f"{key_prefix}_temperature",
+    )
+    return {
+        "ai_generation_mode": "llm",
+        "llm_provider": provider["id"],
+        "model": model.strip() or provider.get("model"),
+        "max_tokens": int(max_tokens),
+        "timeout_seconds": int(timeout_seconds),
+        "max_retries": int(max_retries),
+        "temperature": float(temperature),
+    }
+
+
 st.sidebar.title("AI Governance")
 try:
     runtime = api_get("/runtime/status")
@@ -244,6 +333,7 @@ elif page == "Intake":
             ),
             height=150,
         )
+        llm_config = llm_config_controls("intake")
         submitted = st.form_submit_button("Create and assess", use_container_width=True)
     if submitted:
         system = api_post(
@@ -269,7 +359,7 @@ elif page == "Intake":
                 "security_testing_status": security_testing_status,
             },
         )
-        result = api_post(f"/systems/{system['id']}/assess")
+        result = api_post(f"/systems/{system['id']}/assess", {"llm_config": llm_config})
         st.session_state["assessment_id"] = result["id"]
         st.success("Assessment generated and queued for human review.")
 
@@ -292,8 +382,9 @@ elif page == "Demo Scenarios":
     )
     selected = st.selectbox("Scenario", scenarios, format_func=lambda item: item["name"])
     st.info(selected["description"])
+    llm_config = llm_config_controls("demo")
     if st.button("Create and assess scenario", use_container_width=True):
-        result = api_post(f"/demo/scenarios/{selected['slug']}/assess")
+        result = api_post(f"/demo/scenarios/{selected['slug']}/assess", {"llm_config": llm_config})
         st.session_state["assessment_id"] = result["id"]
         st.success("Demo assessment generated.")
 

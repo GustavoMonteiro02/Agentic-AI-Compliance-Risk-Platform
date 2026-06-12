@@ -46,9 +46,20 @@ class UserAnswer(BaseModel):
     answer: str
 
 
+class AssessmentLLMConfig(BaseModel):
+    ai_generation_mode: str | None = Field(default=None, pattern="^(deterministic|llm|openai)$")
+    llm_provider: str | None = Field(default=None, pattern="^(openai|openai_compatible|anthropic)$")
+    model: str | None = None
+    timeout_seconds: int | None = Field(default=None, ge=1, le=300)
+    max_retries: int | None = Field(default=None, ge=0, le=5)
+    max_tokens: int | None = Field(default=None, ge=128, le=8000)
+    temperature: float | None = Field(default=None, ge=0, le=1)
+
+
 class AssessmentRunRequest(BaseModel):
     user_answers: list[UserAnswer] = Field(default_factory=list)
     additional_context: dict[str, Any] = Field(default_factory=dict)
+    llm_config: AssessmentLLMConfig | None = None
 
 
 class RiskClassification(BaseModel):

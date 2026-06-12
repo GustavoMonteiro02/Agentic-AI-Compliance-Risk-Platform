@@ -52,6 +52,25 @@ def test_runtime_status_reports_production_toggles():
     }
 
 
+def test_runtime_llm_options_only_lists_configured_providers(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    get_settings.cache_clear()
+    try:
+        test_client = TestClient(create_app())
+        response = test_client.get("/runtime/llm-options")
+    finally:
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert [provider["id"] for provider in payload["providers"]] == ["openai"]
+    assert payload["default_provider"] == "openai"
+    assert payload["defaults"]["max_tokens"] == 2000
+
+
 def test_runtime_readiness_reports_operational_checks():
     response = client.get("/runtime/readiness")
 

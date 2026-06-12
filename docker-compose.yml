@@ -1,13 +1,20 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      target: api
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/ai_governance
+      QDRANT_URL: http://qdrant:6333
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - qdrant
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/runtime/readiness', timeout=3)"]
       interval: 30s
@@ -15,9 +22,38 @@ services:
       retries: 3
       start_period: 20s
 
+  streamlit:
+    build:
+      context: .
+      target: streamlit
+    env_file:
+      - .env
+    environment:
+      API_BASE_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  react:
+    build:
+      context: .
+      target: react-ui
+    env_file:
+      - .env
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+
   mcp:
-    build: .
-    command: ["python", "scripts/run_mcp_server.py"]
+    build:
+      context: .
+      target: mcp
+    env_file:
+      - .env
     environment:
       MCP_TRANSPORT: streamable-http
       MCP_HOST: 0.0.0.0
@@ -26,7 +62,8 @@ services:
     ports:
       - "9000:9000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:16

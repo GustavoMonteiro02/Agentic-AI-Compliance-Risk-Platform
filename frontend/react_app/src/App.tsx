@@ -18,6 +18,7 @@ import type {
   Assessment,
   Incident,
   LegalSourceSummary,
+  LLMOptions,
   LLMUsageSummary,
   PolicyExceptionQueueItem,
   RequirementSearchResult,
@@ -33,6 +34,7 @@ import "./styles.css";
 
 type LoadState = {
   runtime?: RuntimeStatus;
+  llmOptions?: LLMOptions;
   readiness?: RuntimeReadiness;
   preflight?: RuntimePreflight;
   llmUsage?: LLMUsageSummary;
@@ -77,6 +79,7 @@ function App() {
   useEffect(() => {
     Promise.all([
       api.runtime(),
+      api.llmOptions(),
       api.readiness(),
       api.preflight(),
       api.llmUsage(),
@@ -93,6 +96,7 @@ function App() {
       .then(
         ([
           runtime,
+          llmOptions,
           readiness,
           preflight,
           llmUsage,
@@ -108,6 +112,7 @@ function App() {
         ]) =>
         setState({
           runtime,
+          llmOptions,
           readiness,
           preflight,
           llmUsage,
@@ -299,6 +304,26 @@ function App() {
                 <span>Providers</span>
                 <strong>{state.llmUsage?.providers.join(", ") || "none"}</strong>
               </div>
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>Configured LLMs</h2>
+              <span>{state.llmOptions?.configured_provider_count || 0} available</span>
+            </div>
+            <div className="risk-list">
+              {state.llmOptions?.providers.map((provider) => (
+                <article key={provider.id}>
+                  <strong>{provider.label}</strong>
+                  <div>
+                    <span className="pill risk-limited">{provider.id}</span>
+                    <span>{provider.model}</span>
+                  </div>
+                  <small>{provider.base_url}</small>
+                </article>
+              ))}
+              {!state.llmOptions?.providers.length ? <div className="empty">No live LLM provider configured.</div> : null}
             </div>
           </div>
 

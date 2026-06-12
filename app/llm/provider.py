@@ -7,6 +7,7 @@ from typing import Any
 import requests
 
 from app.config import get_settings
+from app.llm.runtime import get_llm_runtime_config
 
 
 @dataclass(frozen=True)
@@ -24,13 +25,38 @@ class OptionalLLMProvider:
 
     def __init__(self) -> None:
         self.settings = get_settings()
+        self.runtime_config = get_llm_runtime_config()
+
+    @property
+    def ai_generation_mode(self) -> str:
+        return (getattr(self.runtime_config, "ai_generation_mode", None) or self.settings.ai_generation_mode).lower()
 
     @property
     def provider_name(self) -> str:
-        return (getattr(self.settings, "llm_provider", None) or "openai").lower()
+        return (
+            getattr(self.runtime_config, "llm_provider", None) or getattr(self.settings, "llm_provider", None) or "openai"
+        ).lower()
+
+    @property
+    def timeout_seconds(self) -> int:
+        return getattr(self.runtime_config, "timeout_seconds", None) or self.settings.openai_timeout_seconds
+
+    @property
+    def max_retries(self) -> int:
+        value = getattr(self.runtime_config, "max_retries", None)
+        return value if value is not None else self.settings.openai_max_retries
+
+    @property
+    def max_tokens(self) -> int:
+        return getattr(self.runtime_config, "max_tokens", None) or self.settings.openai_max_tokens
+
+    @property
+    def temperature(self) -> float:
+        value = getattr(self.runtime_config, "temperature", None)
+        return value if value is not None else 0.1
 
     def enabled(self) -> bool:
-        if self.settings.ai_generation_mode not in {"openai", "llm"}:
+        if self.ai_generation_mode not in {"openai", "llm"}:
             return False
         if self.provider_name in {"openai", "openai_compatible"}:
             return bool(self.settings.openai_api_key)
@@ -39,6 +65,8 @@ class OptionalLLMProvider:
         return False
 
     def model_name(self) -> str:
+        if getattr(self.runtime_config, "model", None):
+            return self.runtime_config.model or ""
         if self.provider_name == "anthropic":
             return self.settings.anthropic_model
         return self.settings.openai_model
@@ -77,7 +105,7 @@ class OptionalLLMProvider:
     def _chat_completion(self, payload: dict[str, Any], timeout: int) -> tuple[dict[str, Any], int]:
         attempts = 0
         last_error: requests.RequestException | None = None
-        max_attempts = max(1, self.settings.openai_max_retries + 1)
+        max_attempts = max(1, self.max_retries + 1)
         url = f"{self.settings.openai_base_url.rstrip('/')}/chat/completions"
         for attempt in range(1, max_attempts + 1):
             attempts = attempt
@@ -102,13 +130,13 @@ class OptionalLLMProvider:
     def _anthropic_completion(self, system_prompt: str, user_prompt: str) -> tuple[dict[str, Any], int]:
         attempts = 0
         last_error: requests.RequestException | None = None
-        max_attempts = max(1, self.settings.openai_max_retries + 1)
+        max_attempts = max(1, self.max_retries + 1)
         payload = {
-            "model": self.settings.anthropic_model,
+            "model": self.model_name(),
             "system": system_prompt,
             "messages": [{"role": "user", "content": user_prompt}],
-            "max_tokens": self.settings.openai_max_tokens,
-            "temperature": 0.1,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
         }
         for attempt in range(1, max_attempts + 1):
             attempts = attempt
@@ -121,7 +149,7 @@ class OptionalLLMProvider:
                         "Content-Type": "application/json",
                     },
                     json=payload,
-                    timeout=self.settings.openai_timeout_seconds,
+                    timeout=self.timeout_seconds,
                 )
                 response.raise_for_status()
                 return response.json(), attempts
@@ -149,15 +177,15 @@ class OptionalLLMProvider:
         else:
             data, attempts = self._chat_completion(
                 {
-                    "model": self.settings.openai_model,
+                    "model": self.model_name(),
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
-                    "temperature": 0.1,
-                    "max_tokens": self.settings.openai_max_tokens,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_tokens,
                 },
-                timeout=self.settings.openai_timeout_seconds,
+                timeout=self.timeout_seconds,
             )
         content = self._content_from_response(data)
         return LLMResult(
@@ -188,16 +216,16 @@ class OptionalLLMProvider:
         else:
             data, attempts = self._chat_completion(
                 {
-                    "model": self.settings.openai_model,
+                    "model": self.model_name(),
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
-                    "temperature": 0.1,
+                    "temperature": self.temperature,
                     "response_format": {"type": "json_object"},
-                    "max_tokens": self.settings.openai_max_tokens,
+                    "max_tokens": self.max_tokens,
                 },
-                timeout=self.settings.openai_timeout_seconds,
+                timeout=self.timeout_seconds,
             )
         content = self._content_from_response(data)
         parsed = json.loads(content)

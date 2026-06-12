@@ -65,6 +65,7 @@ http://127.0.0.1:8501
 ```
 
 Create or run an assessment. The workflow will run deterministic controls first, then the `llm_refiner` node if your key is valid.
+The assessment form only shows live LLM providers that are configured in `.env`, and lets you choose provider, model, token limit, timeout, retries, and temperature for that run.
 
 ## 6. Check LLM usage
 

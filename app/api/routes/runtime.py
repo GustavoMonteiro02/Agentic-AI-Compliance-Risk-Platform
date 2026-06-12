@@ -11,6 +11,7 @@ from app.prompts.registry import PROMPT_REGISTRY
 from app.rag.ingest import legal_source_summary
 from app.rag.retriever import LocalComplianceRetriever
 from app.rag.vector_store import PineconeVectorStore, QdrantVectorStore
+from app.services.assessment_service import configured_llm_providers
 
 router = APIRouter(prefix="/runtime", tags=["runtime"])
 
@@ -58,6 +59,39 @@ def runtime_status() -> dict:
         },
         "default_user_role": settings.default_user_role,
         "default_tenant_id": settings.default_tenant_id,
+    }
+
+
+@router.get("/llm-options")
+def runtime_llm_options() -> dict:
+    settings = get_settings()
+    providers = configured_llm_providers()
+    configured_ids = {provider["id"] for provider in providers}
+    default_provider = settings.llm_provider if settings.llm_provider in configured_ids else (providers[0]["id"] if providers else None)
+    return {
+        "default_mode": settings.ai_generation_mode,
+        "default_provider": default_provider,
+        "default_model": (
+            settings.anthropic_model
+            if default_provider == "anthropic"
+            else settings.openai_model
+            if default_provider in {"openai", "openai_compatible"}
+            else None
+        ),
+        "providers": providers,
+        "configured_provider_count": len(providers),
+        "defaults": {
+            "timeout_seconds": settings.openai_timeout_seconds,
+            "max_retries": settings.openai_max_retries,
+            "max_tokens": settings.openai_max_tokens,
+            "temperature": 0.1,
+        },
+        "limits": {
+            "timeout_seconds": {"min": 1, "max": 300},
+            "max_retries": {"min": 0, "max": 5},
+            "max_tokens": {"min": 128, "max": 8000},
+            "temperature": {"min": 0, "max": 1},
+        },
     }
 
 

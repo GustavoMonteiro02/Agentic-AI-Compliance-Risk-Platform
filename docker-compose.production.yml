@@ -1,6 +1,8 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      target: api
     env_file:
       - .env
     environment:
@@ -21,8 +23,9 @@ services:
       start_period: 25s
 
   streamlit:
-    build: .
-    command: ["python", "-m", "streamlit", "run", "frontend/streamlit_app.py", "--server.address", "0.0.0.0", "--server.port", "8501", "--server.headless", "true"]
+    build:
+      context: .
+      target: streamlit
     env_file:
       - .env
     environment:
@@ -34,14 +37,11 @@ services:
         condition: service_healthy
 
   react:
-    image: node:20-alpine
-    working_dir: /workspace/frontend/react_app
-    command: ["sh", "-lc", "npm install && npm run dev -- --host 0.0.0.0 --port 5173"]
+    build:
+      context: .
+      target: react-ui
     env_file:
       - .env
-    volumes:
-      - .:/workspace
-      - react_node_modules:/workspace/frontend/react_app/node_modules
     ports:
       - "5173:5173"
     depends_on:
@@ -49,8 +49,9 @@ services:
         condition: service_healthy
 
   mcp:
-    build: .
-    command: ["python", "scripts/run_mcp_server.py"]
+    build:
+      context: .
+      target: mcp
     env_file:
       - .env
     environment:
@@ -95,4 +96,3 @@ services:
 volumes:
   postgres_data_prod:
   qdrant_data_prod:
-  react_node_modules:
