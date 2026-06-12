@@ -24,16 +24,16 @@ def test_production_like_testing_runbook_is_wired():
     runbook = Path("docs/PRODUCTION_LIKE_TESTING.md").read_text(encoding="utf-8")
     makefile = Path("Makefile").read_text(encoding="utf-8")
     compose = Path("docker-compose.production.yml").read_text(encoding="utf-8")
-    env_example = Path(".env.production.example").read_text(encoding="utf-8")
+    env_example = Path(".env.example").read_text(encoding="utf-8")
     gitignore = Path(".gitignore").read_text(encoding="utf-8")
 
     assert "make prod-up" in runbook
     assert "make prod-ingest-qdrant" in runbook
     assert "make prod-smoke" in runbook
-    assert "OPENAI_API_KEY=replace-with-your-openai-api-key" in env_example
-    assert "PLATFORM_API_KEY=change-me" in env_example
-    assert ".env.production" in gitignore
-    assert "docker compose --env-file .env.production -f docker-compose.production.yml up --build" in makefile
+    assert "OPENAI_API_KEY=" in env_example
+    assert "PLATFORM_API_KEY=" in env_example
+    assert ".env" in gitignore
+    assert "docker compose --env-file .env -f docker-compose.production.yml up --build" in makefile
     assert "API_BASE_URL=http://127.0.0.1:8000 $(PYTHON) scripts/smoke_production_stack.py" in makefile
 
     for service in ["api:", "streamlit:", "react:", "mcp:", "postgres:", "qdrant:"]:

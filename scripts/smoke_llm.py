@@ -10,7 +10,7 @@ def main() -> int:
     provider = OptionalLLMProvider()
     if not provider.enabled():
         print(
-            "LLM provider is not enabled. Copy .env.llm.example to .env, set OPENAI_API_KEY, "
+            "LLM provider is not enabled. Copy .env.example to .env, set OPENAI_API_KEY, "
             "and ensure AI_GENERATION_MODE=llm."
         )
         return 1

@@ -26,17 +26,13 @@ Optional keys:
 
 ## Configure
 
-```bash
-cp .env.production.example .env.production
-```
-
-Edit `.env.production` and set at least:
+Edit `.env` and set:
 
 ```bash
 OPENAI_API_KEY=...
-PLATFORM_API_KEY=...
-VITE_PLATFORM_API_KEY=...
 ```
+
+The local `PLATFORM_API_KEY` and `VITE_PLATFORM_API_KEY` are already generated in `.env`. They must stay equal.
 
 Keep these defaults for a full live local test:
 
@@ -48,7 +44,7 @@ VECTOR_DB=qdrant
 AUTH_MODE=api_key
 ```
 
-`.env.production` is ignored by git. Do not commit real keys.
+`.env` is ignored by git. Do not commit real keys.
 
 ## Start The Stack
 
@@ -92,7 +88,7 @@ Expected local caveats:
 
 ```bash
 set -a
-. ./.env.production
+. ./.env
 set +a
 
 curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: admin" \

@@ -6,6 +6,13 @@ os.environ["LLM_PROVIDER"] = "openai"
 os.environ["OPENAI_API_KEY"] = ""
 os.environ["VECTOR_DB"] = "local"
 os.environ["EMBEDDING_PROVIDER"] = "local_hash"
+os.environ["AUTH_MODE"] = "disabled"
+os.environ["PLATFORM_API_KEY"] = ""
+os.environ["PLATFORM_API_KEY_SHA256"] = ""
+os.environ["DEFAULT_TENANT_ID"] = "default"
+os.environ["CORS_ALLOWED_ORIGINS"] = ""
+os.environ["API_RATE_LIMIT_PER_MINUTE"] = "0"
+os.environ["MCP_TRANSPORT"] = "stdio"
 
 import pytest
 

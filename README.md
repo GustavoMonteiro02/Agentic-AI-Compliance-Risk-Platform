@@ -159,8 +159,7 @@ docker compose up --build
 Production-like Docker with live LLMs, Qdrant, PostgreSQL, Streamlit, React, and MCP:
 
 ```bash
-cp .env.production.example .env.production
-# Fill OPENAI_API_KEY, PLATFORM_API_KEY, and VITE_PLATFORM_API_KEY.
+# Fill OPENAI_API_KEY in .env.
 make prod-up
 make prod-ingest-qdrant
 make prod-smoke

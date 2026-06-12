@@ -26,16 +26,16 @@ llm-smoke:
 	$(PYTHON) scripts/smoke_llm.py
 
 prod-up:
-	docker compose --env-file .env.production -f docker-compose.production.yml up --build
+	docker compose --env-file .env -f docker-compose.production.yml up --build
 
 prod-down:
-	docker compose --env-file .env.production -f docker-compose.production.yml down
+	docker compose --env-file .env -f docker-compose.production.yml down
 
 prod-ingest-qdrant:
-	docker compose --env-file .env.production -f docker-compose.production.yml exec api python scripts/ingest_qdrant.py
+	docker compose --env-file .env -f docker-compose.production.yml exec api python scripts/ingest_qdrant.py
 
 prod-smoke:
-	set -a; . ./.env.production; set +a; API_BASE_URL=http://127.0.0.1:8000 $(PYTHON) scripts/smoke_production_stack.py
+	set -a; . ./.env; set +a; API_BASE_URL=http://127.0.0.1:8000 $(PYTHON) scripts/smoke_production_stack.py
 
 ingest-qdrant:
 	$(PYTHON) scripts/ingest_qdrant.py

@@ -5,13 +5,14 @@ Use this path when you want to test live LLM refinement locally.
 ## 1. Create `.env`
 
 ```bash
-cp .env.llm.example .env
+cp .env.example .env
 ```
 
-Edit `.env` and replace:
+Edit `.env` and set:
 
 ```bash
-OPENAI_API_KEY=replace-with-your-openai-api-key
+AI_GENERATION_MODE=llm
+OPENAI_API_KEY=your-openai-api-key
 ```
 
 Keep `AUTH_MODE=disabled` for local UI testing. Use `AUTH_MODE=api_key` only when you also want to test platform API authentication.
