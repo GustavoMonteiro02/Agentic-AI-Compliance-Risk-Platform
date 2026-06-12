@@ -84,7 +84,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Guardrails that prevent final compliance claims without human approval
 - Evaluation tests for risk consistency, RAG relevance, structured outputs, and prompt-injection resistance
 - Markdown and PDF exports for system cards and audit reports
-- JSON and ZIP audit packages for regulator or internal audit handoff
+- JSON and ZIP assessment and tenant-level audit packages for regulator, backup, or internal audit handoff
 - Demo scenario pack for portfolio walkthroughs
 
 ## Evaluation Metrics

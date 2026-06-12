@@ -107,6 +107,19 @@ curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
 
 The package includes the tenant-scoped system record, assessment snapshot, mapped controls, gaps, evidence, risks, policy exceptions, incidents, human reviews, tool calls, audit events, system card, audit report, and a summary manifest.
 
+Auditors can also export a complete tenant archive for backup, regulator discovery, or periodic control evidence snapshots:
+
+```bash
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  http://127.0.0.1:8000/audit/tenant/export
+
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  -o tenant_audit_export.zip \
+  http://127.0.0.1:8000/audit/tenant/export.zip
+```
+
+The tenant export contains tenant-scoped systems, assessments, per-assessment audit packages, risks, exceptions, incidents, audit events, and notification events.
+
 Evidence records support operational audit metadata such as source system, file URL, checksum/hash, collection date, expiry date, retention date, reviewer notes, and custom metadata. These fields are included in evidence APIs and audit packages so exported evidence can be reconciled against external GRC, ticketing, storage, or data-governance systems.
 
 ## Notifications

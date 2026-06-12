@@ -190,6 +190,55 @@ def test_audit_package_is_tenant_scoped():
     assert response.status_code == 404
 
 
+def test_tenant_audit_export_includes_only_tenant_records():
+    tenant_a_admin = {"X-Tenant-ID": "export-tenant-a", "X-User-Role": "admin"}
+    tenant_a_auditor = {"X-Tenant-ID": "export-tenant-a", "X-User-Role": "auditor"}
+    tenant_b_admin = {"X-Tenant-ID": "export-tenant-b", "X-User-Role": "admin"}
+    tenant_b_auditor = {"X-Tenant-ID": "export-tenant-b", "X-User-Role": "auditor"}
+    tenant_a_system = client.post(
+        "/systems",
+        headers=tenant_a_admin,
+        json={
+            "name": "Tenant Export System A",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    ).json()
+    tenant_b_system = client.post(
+        "/systems",
+        headers=tenant_b_admin,
+        json={
+            "name": "Tenant Export System B",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    ).json()
+    assessment = client.post(f"/systems/{tenant_a_system['id']}/assess", headers=tenant_a_admin).json()
+    client.post(f"/systems/{tenant_b_system['id']}/assess", headers=tenant_b_admin)
+    client.post("/reviews/escalations/notifications", headers=tenant_a_admin)
+
+    export_response = client.get("/audit/tenant/export", headers=tenant_a_auditor)
+    zip_response = client.get("/audit/tenant/export.zip", headers=tenant_a_auditor)
+    tenant_b_export = client.get("/audit/tenant/export", headers=tenant_b_auditor).json()
+
+    assert export_response.status_code == 200
+    export = export_response.json()
+    assert export["manifest"]["package_type"] == "ai_governance_tenant_export"
+    assert export["manifest"]["tenant_id"] == "export-tenant-a"
+    assert {system["id"] for system in export["systems"]} == {tenant_a_system["id"]}
+    assert {item["id"] for item in export["assessments"]} == {assessment["id"]}
+    assert export["assessment_packages"][0]["manifest"]["assessment_id"] == assessment["id"]
+    assert export["notification_events"]
+    assert tenant_b_system["id"] in {system["id"] for system in tenant_b_export["systems"]}
+    assert tenant_a_system["id"] not in {system["id"] for system in tenant_b_export["systems"]}
+
+    assert zip_response.status_code == 200
+    assert zip_response.headers["content-type"] == "application/zip"
+    with ZipFile(BytesIO(zip_response.content)) as archive:
+        names = set(archive.namelist())
+        assert "manifest.json" in names
+        assert "tenant_export.json" in names
+        assert f"assessments/{assessment['id']}/audit_package.json" in names
+
+
 def test_assessment_remediation_plan_prioritizes_gaps_and_evidence():
     system_response = client.post(
         "/systems",

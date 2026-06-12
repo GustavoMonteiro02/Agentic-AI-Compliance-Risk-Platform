@@ -13,6 +13,27 @@ from app.services.audit_service import AuditService
 router = APIRouter(prefix="/audit", tags=["audit"], dependencies=[Depends(require_roles("auditor"))])
 
 
+@router.get("/tenant/export")
+def tenant_audit_export(
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
+) -> dict:
+    return AuditPackageService(db, user.tenant_id).build_tenant_export()
+
+
+@router.get("/tenant/export.zip")
+def tenant_audit_export_zip(
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
+) -> FastAPIResponse:
+    content = AuditPackageService(db, user.tenant_id).build_tenant_export_zip()
+    return FastAPIResponse(
+        content=content,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{user.tenant_id}_audit_export.zip"'},
+    )
+
+
 @router.get("/assessments/{assessment_id}/events")
 def assessment_events(
     assessment_id: str,

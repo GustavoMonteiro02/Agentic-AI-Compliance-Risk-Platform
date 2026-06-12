@@ -101,6 +101,51 @@ class AuditPackageService:
         package["summary"] = self._summary(package)
         return package
 
+    def build_tenant_export(self) -> dict:
+        assessments = self._list(models.RiskAssessment, models.RiskAssessment.tenant_id == self.tenant_id)
+        assessment_packages = [self.build(assessment["id"]) for assessment in assessments]
+        systems = self._list(models.AISystem, models.AISystem.tenant_id == self.tenant_id)
+        export = {
+            "manifest": {
+                "package_type": "ai_governance_tenant_export",
+                "version": "2026-06-12.v1",
+                "tenant_id": self.tenant_id,
+                "generated_at": datetime.now(UTC).isoformat(),
+                "assessment_count": len(assessment_packages),
+                "system_count": len(systems),
+                "contents": [
+                    "systems",
+                    "assessments",
+                    "assessment_packages",
+                    "risk_register_items",
+                    "policy_exceptions",
+                    "incidents",
+                    "audit_events",
+                    "notification_events",
+                ],
+            },
+            "systems": systems,
+            "assessments": assessments,
+            "assessment_packages": assessment_packages,
+            "risk_register_items": self._list(models.RiskRegisterItem, models.RiskRegisterItem.tenant_id == self.tenant_id),
+            "policy_exceptions": self._list(models.PolicyException, models.PolicyException.tenant_id == self.tenant_id),
+            "incidents": self._list(models.AIIncident, models.AIIncident.tenant_id == self.tenant_id),
+            "audit_events": self._list(models.AuditEvent, models.AuditEvent.tenant_id == self.tenant_id),
+            "notification_events": self._list(
+                models.NotificationEvent,
+                models.NotificationEvent.tenant_id == self.tenant_id,
+            ),
+        }
+        export["summary"] = {
+            "system_count": len(export["systems"]),
+            "assessment_count": len(export["assessments"]),
+            "risk_count": len(export["risk_register_items"]),
+            "incident_count": len(export["incidents"]),
+            "audit_event_count": len(export["audit_events"]),
+            "notification_event_count": len(export["notification_events"]),
+        }
+        return export
+
     def build_zip(self, assessment_id: str) -> bytes:
         package = self.build(assessment_id)
         payload = json.dumps(package, indent=2, sort_keys=True)
@@ -112,6 +157,30 @@ class AuditPackageService:
                 archive.writestr("reports/audit_report.md", package["audit_report"]["content_markdown"])
             if package["system_card"]:
                 archive.writestr("reports/system_card.md", package["system_card"]["content_markdown"])
+        return buffer.getvalue()
+
+    def build_tenant_export_zip(self) -> bytes:
+        export = self.build_tenant_export()
+        buffer = BytesIO()
+        with ZipFile(buffer, mode="w", compression=ZIP_DEFLATED) as archive:
+            archive.writestr("manifest.json", json.dumps(export["manifest"], indent=2, sort_keys=True))
+            archive.writestr("tenant_export.json", json.dumps(export, indent=2, sort_keys=True))
+            for package in export["assessment_packages"]:
+                assessment_id = package["manifest"]["assessment_id"]
+                archive.writestr(
+                    f"assessments/{assessment_id}/audit_package.json",
+                    json.dumps(package, indent=2, sort_keys=True),
+                )
+                if package["audit_report"]:
+                    archive.writestr(
+                        f"assessments/{assessment_id}/audit_report.md",
+                        package["audit_report"]["content_markdown"],
+                    )
+                if package["system_card"]:
+                    archive.writestr(
+                        f"assessments/{assessment_id}/system_card.md",
+                        package["system_card"]["content_markdown"],
+                    )
         return buffer.getvalue()
 
     def _get_assessment(self, assessment_id: str) -> models.RiskAssessment:
