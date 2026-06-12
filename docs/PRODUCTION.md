@@ -2,6 +2,8 @@
 
 The platform runs locally without credentials in deterministic mode, but it is designed to run with real LLM-backed refinement in production.
 
+For an end-to-end local stack with PostgreSQL, Qdrant, Streamlit, React, MCP, API-key auth, live OpenAI LLM calls, and OpenAI embeddings, follow [Production-Like Local Testing](PRODUCTION_LIKE_TESTING.md).
+
 ## Required Services
 
 - FastAPI backend

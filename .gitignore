@@ -5,10 +5,11 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .env
+.env.local
+.env.production
 *.db
 *.sqlite
 htmlcov/
 dist/
 build/
 .DS_Store
-

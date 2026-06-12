@@ -47,6 +47,7 @@ See [Requirements Coverage](docs/REQUIREMENTS_COVERAGE.md) for a mapping from th
 See [Demo Guide](docs/DEMO.md) for the recommended walkthrough.
 See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, LangSmith metadata, PostgreSQL, and Qdrant.
 See [Test With Your OpenAI API Key](docs/TEST_WITH_OPENAI_KEY.md) for a local live-LLM smoke test and app runbook.
+See [Production-Like Local Testing](docs/PRODUCTION_LIKE_TESTING.md) for a Docker stack with API-key auth, PostgreSQL, Qdrant, Streamlit, React, MCP, live OpenAI LLM calls, and OpenAI embeddings.
 
 ## Stack
 
@@ -153,6 +154,16 @@ Docker:
 
 ```bash
 docker compose up --build
+```
+
+Production-like Docker with live LLMs, Qdrant, PostgreSQL, Streamlit, React, and MCP:
+
+```bash
+cp .env.production.example .env.production
+# Fill OPENAI_API_KEY, PLATFORM_API_KEY, and VITE_PLATFORM_API_KEY.
+make prod-up
+make prod-ingest-qdrant
+make prod-smoke
 ```
 
 ## Environment

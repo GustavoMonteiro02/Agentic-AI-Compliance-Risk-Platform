@@ -1,12 +1,23 @@
 from fastapi.testclient import TestClient
 
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.api.main import create_app
 from app.api.main import app
 from app.observability.metrics import http_metrics
 
 
 client = TestClient(app)
+
+
+def test_settings_ignore_frontend_only_environment_keys(monkeypatch):
+    monkeypatch.setenv("API_BASE_URL", "http://127.0.0.1:8000")
+    monkeypatch.setenv("PLATFORM_USER", "streamlit-user")
+    monkeypatch.setenv("PLATFORM_USER_ROLE", "admin")
+    monkeypatch.setenv("PLATFORM_TENANT_ID", "default")
+
+    settings = Settings()
+
+    assert settings.app_name == "AI Governance & Compliance Intelligence Platform"
 
 
 def test_runtime_status_reports_production_toggles():
