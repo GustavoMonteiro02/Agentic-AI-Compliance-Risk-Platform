@@ -39,6 +39,8 @@ def runtime_status() -> dict:
         "embedding_model": settings.openai_embedding_model if settings.embedding_provider == "openai" else "local_hash",
         "prompt_versions": {name: prompt.version for name, prompt in PROMPT_REGISTRY.items()},
         "auth_mode": settings.auth_mode,
+        "platform_api_key_configured": bool(settings.platform_api_key or settings.platform_api_key_sha256),
+        "platform_api_key_hash_configured": bool(settings.platform_api_key_sha256),
         "cors_allowed_origins": settings.cors_origins,
         "security_headers_enabled": settings.security_headers_enabled,
         "security_hsts_enabled": settings.security_hsts_enabled,
@@ -96,9 +98,11 @@ def runtime_readiness() -> dict:
         checks["legal_sources"] = {"ok": False, "error": str(exc)}
 
     checks["auth"] = {
-        "ok": settings.auth_mode == "disabled" or bool(settings.platform_api_key),
+        "ok": settings.auth_mode == "disabled" or bool(settings.platform_api_key or settings.platform_api_key_sha256),
         "mode": settings.auth_mode,
         "tenant": settings.default_tenant_id,
+        "api_key_configured": bool(settings.platform_api_key or settings.platform_api_key_sha256),
+        "api_key_hash_configured": bool(settings.platform_api_key_sha256),
     }
     try:
         checks["database_migrations"] = migration_status(database_engine)

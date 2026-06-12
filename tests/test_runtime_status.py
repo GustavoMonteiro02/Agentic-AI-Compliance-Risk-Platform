@@ -22,6 +22,8 @@ def test_runtime_status_reports_production_toggles():
     assert payload["langsmith_api_url"] == "https://api.smith.langchain.com"
     assert payload["prompt_versions"]["llm_refiner"] == "2026-06-10.v1"
     assert payload["auth_mode"] == "disabled"
+    assert payload["platform_api_key_configured"] is False
+    assert payload["platform_api_key_hash_configured"] is False
     assert payload["cors_allowed_origins"] == []
     assert payload["security_headers_enabled"] is True
     assert payload["security_hsts_enabled"] is False
@@ -55,6 +57,8 @@ def test_runtime_readiness_reports_operational_checks():
     assert payload["checks"]["database_migrations"]["current"] is True
     assert payload["checks"]["api_hardening"]["security_headers_enabled"] is True
     assert payload["checks"]["api_hardening"]["max_request_body_bytes"] == 1_048_576
+    assert payload["checks"]["auth"]["api_key_configured"] is False
+    assert payload["checks"]["auth"]["api_key_hash_configured"] is False
 
 
 def test_runtime_preflight_reports_production_warnings():

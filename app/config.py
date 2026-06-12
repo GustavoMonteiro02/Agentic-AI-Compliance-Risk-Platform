@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     embedding_dimensions: int = 128
     auth_mode: str = "disabled"
     platform_api_key: str | None = None
+    platform_api_key_sha256: str | None = None
     default_user_role: str = "admin"
     default_tenant_id: str = "default"
     cors_allowed_origins: str = ""

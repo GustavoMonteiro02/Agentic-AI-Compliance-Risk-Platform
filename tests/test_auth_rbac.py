@@ -1,3 +1,5 @@
+import hashlib
+
 from fastapi.testclient import TestClient
 
 from app.api.main import app
@@ -55,3 +57,23 @@ def test_admin_can_create_system_with_api_key(monkeypatch):
     get_settings.cache_clear()
     assert response.status_code == 200
     assert response.json()["name"] == "RBAC System"
+
+
+def test_api_key_auth_accepts_sha256_configured_key(monkeypatch):
+    secret_hash = hashlib.sha256(b"hashed-secret").hexdigest()
+    monkeypatch.setenv("AUTH_MODE", "api_key")
+    monkeypatch.delenv("PLATFORM_API_KEY", raising=False)
+    monkeypatch.setenv("PLATFORM_API_KEY_SHA256", secret_hash)
+    monkeypatch.setenv("DEFAULT_USER_ROLE", "viewer")
+    get_settings.cache_clear()
+    try:
+        accepted = client.get("/systems", headers={"Authorization": "Bearer hashed-secret"})
+        rejected = client.get("/systems", headers={"Authorization": "Bearer wrong-secret"})
+    finally:
+        monkeypatch.delenv("AUTH_MODE", raising=False)
+        monkeypatch.delenv("PLATFORM_API_KEY_SHA256", raising=False)
+        monkeypatch.delenv("DEFAULT_USER_ROLE", raising=False)
+        get_settings.cache_clear()
+
+    assert accepted.status_code == 200
+    assert rejected.status_code == 401

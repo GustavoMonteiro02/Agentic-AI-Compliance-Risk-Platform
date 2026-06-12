@@ -181,6 +181,7 @@ Copy `.env.example` to `.env` and adjust values.
 - `EMBEDDING_DIMENSIONS`: local deterministic embedding size for offline dev/test retrieval
 - `AUTH_MODE`: `disabled` for local demos, or `api_key` for API-key protected deployments
 - `PLATFORM_API_KEY`: shared API key used when `AUTH_MODE=api_key`
+- `PLATFORM_API_KEY_SHA256`: optional SHA-256 hash of the shared API key; preferred over plaintext secret env vars where supported
 - `DEFAULT_USER_ROLE`: fallback role, one of `viewer`, `auditor`, `compliance_reviewer`, `admin`
 - `DEFAULT_TENANT_ID`: fallback workspace/tenant id for local or single-tenant deployments
 - `CORS_ALLOWED_ORIGINS`: comma-separated browser origins allowed to call the API
