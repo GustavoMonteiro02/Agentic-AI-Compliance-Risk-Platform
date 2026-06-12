@@ -42,6 +42,7 @@ def test_runtime_readiness_reports_operational_checks():
     assert payload["checks"]["langsmith"]["ok"] is True
     assert payload["checks"]["embeddings"]["provider"] == "local_hash"
     assert payload["checks"]["vector_db"]["ok"] is True
+    assert payload["checks"]["database_migrations"]["current"] is True
     assert payload["checks"]["api_hardening"]["security_headers_enabled"] is True
     assert payload["checks"]["api_hardening"]["max_request_body_bytes"] == 1_048_576
 

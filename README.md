@@ -77,6 +77,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Configurable API hardening with security headers, request body limits, CORS allowlists, and tenant-aware rate limiting
 - Request correlation IDs and consistent problem-style API error responses
 - Bounded list endpoints with `limit` / `offset` pagination headers for production data volumes
+- Named database migration registry with migration readiness checks
 - AI system card and audit report generation
 - Human review workflow: draft, approved, rejected, needs more evidence
 - Review queue escalation signals for SLA breaches, high-risk gaps, and missing evidence
@@ -129,6 +130,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 make ci
+make migrate-db
 uvicorn app.api.main:app --reload
 ```
 

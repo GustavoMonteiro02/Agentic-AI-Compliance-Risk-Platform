@@ -2,7 +2,9 @@ from fastapi import APIRouter, Response
 from sqlalchemy import text
 
 from app.config import get_settings
+from app.database.migrations import migration_status
 from app.database.session import SessionLocal
+from app.database.session import engine as database_engine
 from app.llm.provider import OptionalLLMProvider
 from app.observability.metrics import http_metrics
 from app.prompts.registry import PROMPT_REGISTRY
@@ -88,6 +90,10 @@ def runtime_readiness() -> dict:
         "mode": settings.auth_mode,
         "tenant": settings.default_tenant_id,
     }
+    try:
+        checks["database_migrations"] = migration_status(database_engine)
+    except Exception as exc:
+        checks["database_migrations"] = {"ok": False, "current": False, "error": str(exc)}
     checks["api_hardening"] = {
         "ok": settings.max_request_body_bytes > 0 and settings.security_headers_enabled,
         "security_headers_enabled": settings.security_headers_enabled,

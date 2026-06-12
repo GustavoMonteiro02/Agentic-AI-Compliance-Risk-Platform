@@ -123,6 +123,16 @@ It also reports active prompt versions so operators can tie generated outputs to
 Readiness validates database connectivity, knowledge-base loading, auth configuration, API hardening, LLM configuration, and vector DB availability when Qdrant or Pinecone is enabled.
 Metrics expose request counts, error counts, status counts, and average route latency. The `.prom` endpoint emits Prometheus-compatible text for lightweight scraping.
 
+## Database Migrations
+
+The application records named schema migrations in `schema_migrations` and applies missing migrations during startup after SQLAlchemy creates known tables. Operators can run the same path explicitly before a release:
+
+```bash
+make migrate-db
+```
+
+`/runtime/readiness` includes `database_migrations.current`, `applied`, and `pending` so deployments can fail fast when the database schema is not current.
+
 ## Pagination
 
 List endpoints accept `limit` and `offset` query parameters with a maximum `limit` of `250`. Responses remain plain JSON arrays for compatibility and include `X-Total-Count`, `X-Limit`, and `X-Offset` headers so operational clients can page through larger tenants safely.

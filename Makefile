@@ -1,10 +1,12 @@
-.PHONY: test security-check ci api ui mcp ingest-qdrant ingest-pinecone validate-legal-sources register-legal-source
+.PHONY: test security-check ci api ui mcp migrate-db ingest-qdrant ingest-pinecone validate-legal-sources register-legal-source
+
+PYTHON ?= python3.11
 
 test:
 	pytest
 
 security-check:
-	python3 scripts/security_check.py
+	$(PYTHON) scripts/security_check.py
 
 ci: security-check test
 
@@ -15,16 +17,19 @@ ui:
 	streamlit run frontend/streamlit_app.py
 
 mcp:
-	python3 scripts/run_mcp_server.py
+	$(PYTHON) scripts/run_mcp_server.py
+
+migrate-db:
+	$(PYTHON) scripts/migrate_db.py
 
 ingest-qdrant:
-	python3 scripts/ingest_qdrant.py
+	$(PYTHON) scripts/ingest_qdrant.py
 
 ingest-pinecone:
-	python3 scripts/ingest_pinecone.py
+	$(PYTHON) scripts/ingest_pinecone.py
 
 validate-legal-sources:
-	python3 scripts/validate_legal_sources.py
+	$(PYTHON) scripts/validate_legal_sources.py
 
 register-legal-source:
-	python3 scripts/register_legal_source.py
+	$(PYTHON) scripts/register_legal_source.py
