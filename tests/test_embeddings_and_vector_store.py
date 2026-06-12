@@ -69,6 +69,9 @@ def test_pinecone_payload_contains_metadata_namespace_and_citation():
 
 def test_openai_embedding_provider_parses_embedding_response(monkeypatch):
     class FakeResponse:
+        status_code = 200
+        headers = {}
+
         def raise_for_status(self):
             return None
 
@@ -81,6 +84,64 @@ def test_openai_embedding_provider_parses_embedding_response(monkeypatch):
 
     assert provider.embed("human oversight") == [0.1, 0.2, 0.3]
     assert provider.provider_name == "openai"
+
+
+def test_openai_embedding_provider_batches_inputs(monkeypatch):
+    captured_payloads = []
+
+    class FakeResponse:
+        status_code = 200
+        headers = {}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"data": [{"embedding": [0.1, 0.2]}, {"embedding": [0.3, 0.4]}]}
+
+    def fake_post(*args, **kwargs):
+        captured_payloads.append(kwargs["json"])
+        return FakeResponse()
+
+    monkeypatch.setattr("app.rag.embeddings.requests.post", fake_post)
+
+    provider = OpenAIEmbeddingProvider(api_key="test", dimensions=2)
+
+    assert provider.embed_many(["human oversight", "audit logging"]) == [[0.1, 0.2], [0.3, 0.4]]
+    assert captured_payloads == [{"model": "text-embedding-3-small", "input": ["human oversight", "audit logging"]}]
+
+
+def test_openai_embedding_provider_retries_rate_limits(monkeypatch):
+    calls = []
+
+    class RateLimitResponse:
+        status_code = 429
+        headers = {"retry-after": "0"}
+
+        def raise_for_status(self):
+            raise AssertionError("retryable response should not raise before final attempt")
+
+    class SuccessResponse:
+        status_code = 200
+        headers = {}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"data": [{"embedding": [0.1, 0.2, 0.3]}]}
+
+    def fake_post(*args, **kwargs):
+        calls.append(kwargs)
+        return RateLimitResponse() if len(calls) == 1 else SuccessResponse()
+
+    monkeypatch.setattr("app.rag.embeddings.requests.post", fake_post)
+    monkeypatch.setattr("app.rag.embeddings.time.sleep", lambda seconds: None)
+
+    provider = OpenAIEmbeddingProvider(api_key="test", dimensions=3, max_retries=1)
+
+    assert provider.embed("human oversight") == [0.1, 0.2, 0.3]
+    assert len(calls) == 2
 
 
 def test_embedding_factory_requires_openai_key():

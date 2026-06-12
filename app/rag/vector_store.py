@@ -55,13 +55,15 @@ class QdrantVectorStore:
         import requests
 
         self.ensure_collection()
+        embedding_texts = [self._embedding_text(chunk) for chunk in chunks]
+        vectors = self.embedding_provider.embed_many(embedding_texts)
         points = [
             {
                 "id": self._point_id(chunk),
-                "vector": self.embedding_provider.embed(self._embedding_text(chunk)),
+                "vector": vector,
                 "payload": self._payload(chunk),
             }
-            for chunk in chunks
+            for chunk, vector in zip(chunks, vectors, strict=True)
         ]
         response = requests.put(
             f"{self.url}/collections/{self.collection}/points",
@@ -164,13 +166,15 @@ class PineconeVectorStore:
     def upsert(self, chunks: list[DocumentChunk]) -> dict:
         import requests
 
+        embedding_texts = [self._embedding_text(chunk) for chunk in chunks]
+        embeddings = self.embedding_provider.embed_many(embedding_texts)
         vectors = [
             {
                 "id": self._point_id(chunk),
-                "values": self.embedding_provider.embed(self._embedding_text(chunk)),
+                "values": vector,
                 "metadata": self._payload(chunk),
             }
-            for chunk in chunks
+            for chunk, vector in zip(chunks, embeddings, strict=True)
         ]
         response = requests.post(
             f"{self.index_host}/vectors/upsert",
