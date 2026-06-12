@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class NotificationEventRead(BaseModel):
@@ -20,3 +20,8 @@ class NotificationEventRead(BaseModel):
     delivered_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+class NotificationEventUpdate(BaseModel):
+    status: str = Field(pattern="^(queued|delivered|failed|skipped)$")
+    delivery_notes: str | None = None

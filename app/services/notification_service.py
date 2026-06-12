@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import models
+from app.schemas.notifications import NotificationEventUpdate
 from app.schemas.review import ReviewQueueItem
 from app.security import AuthenticatedUser
 from app.services.audit_service import AuditService
@@ -28,6 +30,54 @@ class NotificationService:
         if event_type:
             statement = statement.where(models.NotificationEvent.event_type == event_type)
         return list(self.db.scalars(statement.order_by(models.NotificationEvent.created_at.desc())))
+
+    def update(
+        self,
+        notification_id: str,
+        payload: NotificationEventUpdate,
+        user: AuthenticatedUser | None = None,
+    ) -> models.NotificationEvent:
+        event = self.db.scalar(
+            select(models.NotificationEvent)
+            .where(
+                models.NotificationEvent.id == notification_id,
+                models.NotificationEvent.tenant_id == self.tenant_id,
+            )
+            .limit(1)
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="Notification event not found")
+
+        previous_status = event.status
+        event.status = payload.status
+        event.payload_json = {
+            **(event.payload_json or {}),
+            **({"delivery_notes": payload.delivery_notes} if payload.delivery_notes else {}),
+        }
+        if payload.status == "delivered" and event.delivered_at is None:
+            event.delivered_at = datetime.utcnow()
+        if payload.status in {"queued", "failed", "skipped"}:
+            event.delivered_at = None
+
+        self.db.commit()
+        self.db.refresh(event)
+
+        if user:
+            AuditService(self.db).record(
+                user=user,
+                action=f"notification.{payload.status}",
+                resource_type="notification_event",
+                resource_id=event.id,
+                assessment_id=event.assessment_id,
+                details={
+                    "previous_status": previous_status,
+                    "status": event.status,
+                    "event_type": event.event_type,
+                    "channel": event.channel,
+                    "recipient": event.recipient,
+                },
+            )
+        return event
 
     def queue_review_escalations(
         self,

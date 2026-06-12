@@ -154,3 +154,38 @@ def test_review_notification_events_are_included_in_audit_package():
 
     assert any(event["event_type"] == "review_escalation" for event in package["notification_events"])
     assert package["summary"]["notification_event_count"] >= 1
+
+
+def test_notification_delivery_status_can_be_updated_and_audited():
+    headers = {"X-Tenant-ID": "delivery-tenant", "X-User-Role": "admin", "X-User": "review-ops"}
+    auditor_headers = {"X-Tenant-ID": "delivery-tenant", "X-User-Role": "auditor", "X-User": "audit-ops"}
+    system = client.post(
+        "/systems",
+        headers=headers,
+        json={
+            "name": "Notification Delivery System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    ).json()
+    assessment = client.post(f"/systems/{system['id']}/assess", headers=headers).json()
+    notification = client.post("/reviews/escalations/notifications", headers=headers).json()[0]
+
+    delivered = client.patch(
+        f"/notifications/{notification['id']}",
+        headers=auditor_headers,
+        json={"status": "delivered", "delivery_notes": "Accepted by downstream email gateway."},
+    )
+    tenant_b = client.patch(
+        f"/notifications/{notification['id']}",
+        headers={"X-Tenant-ID": "delivery-tenant-b", "X-User-Role": "auditor"},
+        json={"status": "failed"},
+    )
+    events = client.get(f"/audit/assessments/{assessment['id']}/events", headers=auditor_headers).json()
+
+    assert delivered.status_code == 200
+    payload = delivered.json()
+    assert payload["status"] == "delivered"
+    assert payload["delivered_at"]
+    assert payload["payload_json"]["delivery_notes"] == "Accepted by downstream email gateway."
+    assert tenant_b.status_code == 404
+    assert any(event["action"] == "notification.delivered" for event in events)

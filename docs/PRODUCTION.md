@@ -119,9 +119,14 @@ curl -X POST -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: compliance_revie
 
 curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
   "http://127.0.0.1:8000/notifications?event_type=review_escalation&status=queued"
+
+curl -X PATCH -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"delivered","delivery_notes":"Accepted by downstream email gateway."}' \
+  "http://127.0.0.1:8000/notifications/{notification_id}"
 ```
 
-The current delivery model is an internal outbox: events are deduplicated by assessment and escalation level, tenant-scoped, audit logged, and included in audit packages. External Slack, email, or ticketing delivery can consume queued events from this stable API surface.
+The current delivery model is an internal outbox: events are deduplicated by assessment and escalation level, tenant-scoped, audit logged, and included in audit packages. External Slack, email, or ticketing delivery can consume queued events from this stable API surface, then mark each event as `delivered`, `failed`, or `skipped`.
 
 ## Runtime Check
 

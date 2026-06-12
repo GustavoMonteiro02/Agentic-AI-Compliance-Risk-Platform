@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Response
 
 from app.api.deps import DbSession
 from app.api.pagination import PaginationParams, get_pagination, paginate
-from app.schemas.notifications import NotificationEventRead
+from app.schemas.notifications import NotificationEventRead, NotificationEventUpdate
 from app.security import AuthenticatedUser, require_roles
 from app.services.notification_service import NotificationService
 
@@ -25,3 +25,13 @@ def list_notifications(
         for item in NotificationService(db, user.tenant_id).list(status=status, event_type=event_type)
     ]
     return paginate(notifications, pagination, response)
+
+
+@router.patch("/{notification_id}")
+def update_notification(
+    notification_id: str,
+    payload: NotificationEventUpdate,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
+) -> NotificationEventRead:
+    return NotificationEventRead.model_validate(NotificationService(db, user.tenant_id).update(notification_id, payload, user))
