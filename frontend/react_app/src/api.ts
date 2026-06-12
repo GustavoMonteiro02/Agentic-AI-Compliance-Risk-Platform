@@ -1,10 +1,33 @@
 export type RuntimeStatus = {
   ai_generation_mode: string;
   llm_enabled: boolean;
+  llm_provider: string;
   vector_db: string;
   embedding_provider: string;
   auth_mode: string;
+  api_rate_limit_per_minute: number;
+  security_headers_enabled: boolean;
   default_tenant_id: string;
+};
+
+export type RuntimeReadiness = {
+  ready: boolean;
+  checks: Record<string, { ok?: boolean; current?: boolean; mode?: string; provider?: string; error?: string }>;
+};
+
+export type RuntimeMetrics = {
+  total_requests: number;
+  total_errors: number;
+  routes: Record<
+    string,
+    {
+      request_count: number;
+      error_count: number;
+      average_duration_ms: number;
+      max_duration_ms: number;
+      status_counts: Record<string, number>;
+    }
+  >;
 };
 
 export type Assessment = {
@@ -78,6 +101,8 @@ async function getJson<T>(path: string): Promise<T> {
 
 export const api = {
   runtime: () => getJson<RuntimeStatus>("/runtime/status"),
+  readiness: () => getJson<RuntimeReadiness>("/runtime/readiness"),
+  metrics: () => getJson<RuntimeMetrics>("/runtime/metrics"),
   systems: () => getJson<SystemRecord[]>("/systems"),
   assessments: () => getJson<Assessment[]>("/assessments"),
   riskRegister: () => getJson<RiskItem[]>("/risk-register"),

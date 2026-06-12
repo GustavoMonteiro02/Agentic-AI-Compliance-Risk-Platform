@@ -1,10 +1,34 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, CheckCircle2, Database, FileCheck2, Layers3, ShieldCheck, Siren, Users } from "lucide-react";
-import { api, Assessment, Incident, ReviewEscalation, RiskItem, RuntimeStatus, SystemRecord } from "./api";
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  Clock3,
+  Database,
+  FileCheck2,
+  Layers3,
+  ShieldCheck,
+  Siren,
+  Users,
+} from "lucide-react";
+import {
+  api,
+  Assessment,
+  Incident,
+  ReviewEscalation,
+  RiskItem,
+  RuntimeMetrics,
+  RuntimeReadiness,
+  RuntimeStatus,
+  SystemRecord,
+} from "./api";
 import "./styles.css";
 
 type LoadState = {
   runtime?: RuntimeStatus;
+  readiness?: RuntimeReadiness;
+  metrics?: RuntimeMetrics;
   systems: SystemRecord[];
   assessments: Assessment[];
   risks: RiskItem[];
@@ -32,9 +56,18 @@ function App() {
   const [state, setState] = useState<LoadState>({ systems: [], assessments: [], risks: [], incidents: [], escalations: [] });
 
   useEffect(() => {
-    Promise.all([api.runtime(), api.systems(), api.assessments(), api.riskRegister(), api.incidents(), api.reviewEscalations()])
-      .then(([runtime, systems, assessments, risks, incidents, escalations]) =>
-        setState({ runtime, systems, assessments, risks, incidents, escalations })
+    Promise.all([
+      api.runtime(),
+      api.readiness(),
+      api.metrics(),
+      api.systems(),
+      api.assessments(),
+      api.riskRegister(),
+      api.incidents(),
+      api.reviewEscalations(),
+    ])
+      .then(([runtime, readiness, metrics, systems, assessments, risks, incidents, escalations]) =>
+        setState({ runtime, readiness, metrics, systems, assessments, risks, incidents, escalations })
       )
       .catch((error: Error) => setState((current) => ({ ...current, error: error.message })));
   }, []);
@@ -43,10 +76,18 @@ function App() {
     const highRisk = state.assessments.filter((item) => riskOrder[item.risk_classification.risk_level] >= 3);
     const pending = state.assessments.filter((item) => item.human_review_status !== "approved");
     const missingEvidence = state.assessments.flatMap((item) => item.evidence_checklist).filter((item) => item.status === "missing");
+    const approvedEvidence = state.assessments
+      .flatMap((item) => item.evidence_checklist)
+      .filter((item) => item.status === "approved");
     const openRisks = state.risks.filter((item) => item.status !== "closed");
     const openIncidents = state.incidents.filter((item) => !["resolved", "closed"].includes(item.status));
-    return { highRisk, pending, missingEvidence, openRisks, openIncidents };
+    return { highRisk, pending, missingEvidence, approvedEvidence, openRisks, openIncidents };
   }, [state.assessments, state.risks, state.incidents]);
+
+  const readinessChecks = Object.entries(state.readiness?.checks || {});
+  const slowRoutes = Object.entries(state.metrics?.routes || {})
+    .sort(([, a], [, b]) => b.average_duration_ms - a.average_duration_ms)
+    .slice(0, 4);
 
   const recentAssessments = [...state.assessments]
     .sort((a, b) => riskOrder[b.risk_classification.risk_level] - riskOrder[a.risk_classification.risk_level])
@@ -76,6 +117,8 @@ function App() {
           <strong>{state.runtime?.vector_db || "local"}</strong>
           <span>Embeddings</span>
           <strong>{state.runtime?.embedding_provider || "local_hash"}</strong>
+          <span>Readiness</span>
+          <strong>{state.readiness?.ready ? "ready" : "checking"}</strong>
         </div>
       </aside>
 
@@ -86,7 +129,7 @@ function App() {
             <h1>Governance command center</h1>
           </div>
           <div className="status">
-            <CheckCircle2 size={18} />
+            {state.readiness?.ready ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
             {state.runtime?.auth_mode === "api_key" ? "Protected API" : "Local mode"}
           </div>
         </header>
@@ -101,6 +144,8 @@ function App() {
           {metric("Open risks", summary.openRisks.length, "Risk register", <Activity size={20} />)}
           {metric("Open incidents", summary.openIncidents.length, "Operational response", <Siren size={20} />)}
           {metric("Escalated reviews", state.escalations.length, "SLA and critical gaps", <AlertTriangle size={20} />)}
+          {metric("API requests", state.metrics?.total_requests || 0, "Runtime traffic", <BarChart3 size={20} />)}
+          {metric("Evidence approved", summary.approvedEvidence.length, "Audit-ready records", <FileCheck2 size={20} />)}
         </section>
 
         <section className="workspace">
@@ -124,6 +169,24 @@ function App() {
                   <span>{item.evidence_checklist.filter((evidence) => evidence.status === "missing").length} missing</span>
                 </div>
               ))}
+              {recentAssessments.length === 0 ? <div className="empty">No assessments yet.</div> : null}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>Runtime readiness</h2>
+              <span>{state.readiness?.ready ? "Ready" : "Needs attention"}</span>
+            </div>
+            <div className="check-list">
+              {readinessChecks.slice(0, 7).map(([name, check]) => (
+                <div className="check-row" key={name}>
+                  <span>{name.replace(/_/g, " ")}</span>
+                  <strong className={check.ok === false || check.current === false ? "bad" : "good"}>
+                    {check.ok === false || check.current === false ? "attention" : "ok"}
+                  </strong>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -142,6 +205,7 @@ function App() {
                   </div>
                 </article>
               ))}
+              {summary.openRisks.length === 0 ? <div className="empty">No open risks.</div> : null}
             </div>
           </div>
 
@@ -161,6 +225,7 @@ function App() {
                   <small>{incident.regulatory_report_required ? "Report review required" : incident.owner}</small>
                 </article>
               ))}
+              {summary.openIncidents.length === 0 ? <div className="empty">No open incidents.</div> : null}
             </div>
           </div>
 
@@ -180,6 +245,25 @@ function App() {
                   <small>{item.escalation_reason || `${item.age_hours}h in queue`}</small>
                 </article>
               ))}
+              {state.escalations.length === 0 ? <div className="empty">No escalations.</div> : null}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>API latency</h2>
+              <span>Observed routes</span>
+            </div>
+            <div className="check-list">
+              {slowRoutes.map(([route, item]) => (
+                <div className="check-row" key={route}>
+                  <span>{route}</span>
+                  <strong>
+                    <Clock3 size={14} /> {item.average_duration_ms.toFixed(1)} ms
+                  </strong>
+                </div>
+              ))}
+              {slowRoutes.length === 0 ? <div className="empty">Metrics will appear after API traffic.</div> : null}
             </div>
           </div>
         </section>
