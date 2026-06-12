@@ -123,6 +123,16 @@ export type LegalSourceSummary = {
   }[];
 };
 
+export type PolicyExceptionQueueItem = {
+  id: string;
+  title: string;
+  status: string;
+  expiry_state: string;
+  days_until_expiry?: number;
+  action_required: string;
+  compensating_control_count: number;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 function headers() {
@@ -156,4 +166,5 @@ export const api = {
   requirementSearch: (query: string) =>
     getJson<RequirementSearchResult[]>(`/requirements/search?q=${encodeURIComponent(query)}&top_k=4`),
   legalSources: () => getJson<LegalSourceSummary>("/requirements/legal-sources"),
+  expiringExceptions: () => getJson<PolicyExceptionQueueItem[]>("/risk-register/exceptions/expiring?within_days=30"),
 };

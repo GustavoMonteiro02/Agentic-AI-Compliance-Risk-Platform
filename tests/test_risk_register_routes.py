@@ -64,6 +64,57 @@ def test_policy_exception_lifecycle_and_audit_event():
     assert any(event["action"] == "policy_exception.approved" for event in events)
 
 
+def test_policy_exception_expiry_queue_and_expire_due():
+    assessment = _create_assessment("exception-expiry")
+    headers = {"X-Tenant-ID": "exception-expiry", "X-User-Role": "admin", "X-User": "exception-owner"}
+    expired_at = (datetime.utcnow() - timedelta(days=1)).isoformat()
+    soon_at = (datetime.utcnow() + timedelta(days=3)).isoformat()
+
+    expired = client.post(
+        "/risk-register/exceptions",
+        headers=headers,
+        json={
+            "assessment_id": assessment["id"],
+            "requirement_id": "HUMAN_OVERSIGHT_001",
+            "title": "Expired oversight exception",
+            "justification": "Temporary exception has passed its approved expiry window.",
+            "compensating_controls": ["Daily manual review"],
+            "requested_by": "Compliance Reviewer",
+            "expires_at": expired_at,
+        },
+    ).json()
+    client.patch(
+        f"/risk-register/exceptions/{expired['id']}",
+        headers=headers,
+        json={"status": "approved", "approved_by": "Compliance Lead"},
+    )
+    client.post(
+        "/risk-register/exceptions",
+        headers=headers,
+        json={
+            "assessment_id": assessment["id"],
+            "title": "Soon oversight exception",
+            "justification": "Temporary exception needs review before expiry.",
+            "compensating_controls": ["Weekly compliance review"],
+            "requested_by": "Compliance Reviewer",
+            "expires_at": soon_at,
+        },
+    )
+
+    queue = client.get("/risk-register/exceptions/expiring?within_days=7", headers=headers).json()
+    expired_items = client.post("/risk-register/exceptions/expire-due", headers=headers).json()
+    events = client.get(f"/audit/assessments/{assessment['id']}/events", headers=headers).json()
+
+    expired_queue_item = next(item for item in queue if item["id"] == expired["id"])
+    assert expired_queue_item["expiry_state"] == "expired"
+    assert expired_queue_item["days_until_expiry"] < 0
+    assert expired_queue_item["compensating_control_count"] == 1
+    assert any(item["expiry_state"] == "expires_soon" for item in queue)
+    assert [item["id"] for item in expired_items] == [expired["id"]]
+    assert expired_items[0]["status"] == "expired"
+    assert any(event["action"] == "policy_exception.expired" for event in events)
+
+
 def test_risk_register_is_tenant_scoped():
     assessment = _create_assessment("tenant-a")
     client.post(

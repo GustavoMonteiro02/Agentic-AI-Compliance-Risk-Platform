@@ -18,6 +18,7 @@ import type {
   Assessment,
   Incident,
   LegalSourceSummary,
+  PolicyExceptionQueueItem,
   RequirementSearchResult,
   ReviewEscalation,
   RiskItem,
@@ -39,6 +40,7 @@ type LoadState = {
   escalations: ReviewEscalation[];
   ragResults: RequirementSearchResult[];
   legalSources?: LegalSourceSummary;
+  expiringExceptions: PolicyExceptionQueueItem[];
   error?: string;
 };
 
@@ -65,6 +67,7 @@ function App() {
     incidents: [],
     escalations: [],
     ragResults: [],
+    expiringExceptions: [],
   });
 
   useEffect(() => {
@@ -79,8 +82,22 @@ function App() {
       api.reviewEscalations(),
       api.requirementSearch("AI Act human oversight personal data incident reporting"),
       api.legalSources(),
+      api.expiringExceptions(),
     ])
-      .then(([runtime, readiness, metrics, systems, assessments, risks, incidents, escalations, ragResults, legalSources]) =>
+      .then(
+        ([
+          runtime,
+          readiness,
+          metrics,
+          systems,
+          assessments,
+          risks,
+          incidents,
+          escalations,
+          ragResults,
+          legalSources,
+          expiringExceptions,
+        ]) =>
         setState({
           runtime,
           readiness,
@@ -92,6 +109,7 @@ function App() {
           escalations,
           ragResults,
           legalSources,
+          expiringExceptions,
         })
       )
       .catch((error: Error) => setState((current) => ({ ...current, error: error.message })));
@@ -169,6 +187,7 @@ function App() {
           {metric("Open risks", summary.openRisks.length, "Risk register", <Activity size={20} />)}
           {metric("Open incidents", summary.openIncidents.length, "Operational response", <Siren size={20} />)}
           {metric("Escalated reviews", state.escalations.length, "SLA and critical gaps", <AlertTriangle size={20} />)}
+          {metric("Expiring exceptions", state.expiringExceptions.length, "Waiver review queue", <Clock3 size={20} />)}
           {metric("API requests", state.metrics?.total_requests || 0, "Runtime traffic", <BarChart3 size={20} />)}
           {metric("Evidence approved", summary.approvedEvidence.length, "Audit-ready records", <FileCheck2 size={20} />)}
           {metric(
@@ -313,6 +332,28 @@ function App() {
                 </article>
               ))}
               {summary.openIncidents.length === 0 ? <div className="empty">No open incidents.</div> : null}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>Policy exceptions</h2>
+              <span>Expiry queue</span>
+            </div>
+            <div className="risk-list">
+              {state.expiringExceptions.slice(0, 5).map((item) => (
+                <article key={item.id}>
+                  <strong>{item.title}</strong>
+                  <div>
+                    <span className={`pill ${item.expiry_state === "expired" ? "risk-high" : "risk-medium"}`}>
+                      {item.expiry_state}
+                    </span>
+                    <span>{typeof item.days_until_expiry === "number" ? `${item.days_until_expiry}d` : "no date"}</span>
+                  </div>
+                  <small>{item.action_required}</small>
+                </article>
+              ))}
+              {state.expiringExceptions.length === 0 ? <div className="empty">No expiring exceptions.</div> : null}
             </div>
           </div>
 

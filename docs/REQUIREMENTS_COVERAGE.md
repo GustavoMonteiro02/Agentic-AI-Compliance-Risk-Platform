@@ -20,7 +20,7 @@ This document maps the original project requirements to the current implementati
 - MCP tool, resource, and prompt catalog with tests.
 - Evidence checklist records, evidence status updates, owners, due dates, expiry, approval metadata, and compliance readiness score.
 - Remediation plan endpoint generated from critical gaps, medium gaps, missing evidence, owners, priorities, and due dates.
-- Risk register and policy exception workflows with mitigation plans and compensating controls.
+- Risk register and policy exception workflows with mitigation plans, compensating controls, expiry queues, and due-expiration audit events.
 - AI incident lifecycle for reporting, regulatory report due dates/queue/submission references, triage, containment, resolution, corrective actions, tenant scoping, and audit events.
 - AI system card and audit report Markdown generation/export.
 - Dedicated Pydantic schema modules for risk, controls, requirements, evidence, review, report, system, and assessment contracts.

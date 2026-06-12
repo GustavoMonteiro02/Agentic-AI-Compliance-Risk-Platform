@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 
 from fastapi import HTTPException
@@ -6,7 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.database import models
 from app.database.repositories import AssessmentRepository
-from app.schemas.risk_register import PolicyExceptionCreate, PolicyExceptionUpdate, RiskRegisterItemUpdate
+from app.schemas.risk_register import (
+    PolicyExceptionCreate,
+    PolicyExceptionQueueItem,
+    PolicyExceptionUpdate,
+    RiskRegisterItemUpdate,
+)
 from app.security import AuthenticatedUser
 from app.services.audit_service import AuditService
 
@@ -149,6 +156,56 @@ class PolicyExceptionService:
             )
         )
 
+    def expiring(self, *, within_days: int = 30, include_expired: bool = True) -> list[PolicyExceptionQueueItem]:
+        now = datetime.utcnow()
+        horizon = now + timedelta(days=within_days)
+        statement = (
+            select(models.PolicyException)
+            .where(
+                models.PolicyException.tenant_id == self.tenant_id,
+                models.PolicyException.status.in_(["requested", "approved", "expired"]),
+                models.PolicyException.expires_at.is_not(None),
+                models.PolicyException.expires_at <= horizon,
+            )
+            .order_by(models.PolicyException.expires_at.asc())
+        )
+        if not include_expired:
+            statement = statement.where(models.PolicyException.expires_at >= now)
+        return [self._queue_item(exception, now) for exception in self.db.scalars(statement)]
+
+    def expire_due(self, user: AuthenticatedUser) -> list[models.PolicyException]:
+        now = datetime.utcnow()
+        due = list(
+            self.db.scalars(
+                select(models.PolicyException)
+                .where(
+                    models.PolicyException.tenant_id == self.tenant_id,
+                    models.PolicyException.status.in_(["requested", "approved"]),
+                    models.PolicyException.expires_at.is_not(None),
+                    models.PolicyException.expires_at < now,
+                )
+                .order_by(models.PolicyException.expires_at.asc())
+            )
+        )
+        for exception in due:
+            exception.status = "expired"
+        self.db.commit()
+        for exception in due:
+            self.db.refresh(exception)
+            AuditService(self.db).record(
+                user=user,
+                action="policy_exception.expired",
+                resource_type="policy_exception",
+                resource_id=exception.id,
+                assessment_id=exception.assessment_id,
+                details={
+                    "title": exception.title,
+                    "expires_at": exception.expires_at.isoformat() if exception.expires_at else None,
+                    "approved_by": exception.approved_by,
+                },
+            )
+        return due
+
     def update(self, exception_id: str, payload: PolicyExceptionUpdate, user: AuthenticatedUser) -> models.PolicyException:
         exception = self.db.scalar(
             select(models.PolicyException)
@@ -175,3 +232,35 @@ class PolicyExceptionService:
             details={"approved_by": exception.approved_by, "status": exception.status},
         )
         return exception
+
+    def _queue_item(self, exception: models.PolicyException, now: datetime) -> PolicyExceptionQueueItem:
+        days_until_expiry = None
+        expiry_state = "no_expiry"
+        action_required = "Set an expiry date before approval."
+        if exception.expires_at:
+            days_until_expiry = (exception.expires_at.date() - now.date()).days
+            if exception.status == "expired" or days_until_expiry < 0:
+                expiry_state = "expired"
+                action_required = "Reassess the exception and close, renew, or remediate."
+            elif days_until_expiry <= 7:
+                expiry_state = "expires_soon"
+                action_required = "Review compensating controls and renew or close before expiry."
+            else:
+                expiry_state = "upcoming"
+                action_required = "Monitor exception owner and compensating controls."
+
+        return PolicyExceptionQueueItem(
+            id=exception.id,
+            tenant_id=exception.tenant_id,
+            assessment_id=exception.assessment_id,
+            system_id=exception.system_id,
+            requirement_id=exception.requirement_id,
+            title=exception.title,
+            status=exception.status,
+            approved_by=exception.approved_by,
+            expires_at=exception.expires_at,
+            days_until_expiry=days_until_expiry,
+            expiry_state=expiry_state,
+            compensating_control_count=len(exception.compensating_controls_json or []),
+            action_required=action_required,
+        )

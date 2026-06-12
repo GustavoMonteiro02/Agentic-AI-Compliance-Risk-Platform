@@ -43,7 +43,7 @@ Tenant context is carried through the same auth dependency. Core workflow data i
 
 Human review and evidence changes emit structured audit events. Audit events include actor, actor role, action, resource type, resource id, assessment id, details, and timestamp so governance actions can be reconstructed later. The review queue also surfaces escalation levels for SLA breaches, high-risk assessments with critical gaps, and assessments with multiple missing evidence items.
 
-Risk register items can be synchronized from assessment gaps and tracked through mitigation or acceptance. Policy exceptions capture justification, compensating controls, requester, approver, expiry, and audit events.
+Risk register items can be synchronized from assessment gaps and tracked through mitigation or acceptance. Policy exceptions capture justification, compensating controls, requester, approver, expiry, expiration queue state, and audit events.
 
 AI incidents are tenant-scoped operational records linked to systems and optionally assessments. They track severity, status, owner, containment actions, root cause, corrective actions, regulatory report review, resolution time, and audit events.
 

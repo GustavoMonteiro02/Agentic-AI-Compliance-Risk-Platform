@@ -67,3 +67,19 @@ class PolicyExceptionRead(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PolicyExceptionQueueItem(BaseModel):
+    id: str
+    tenant_id: str
+    assessment_id: str
+    system_id: str
+    requirement_id: str | None = None
+    title: str
+    status: str
+    approved_by: str | None = None
+    expires_at: datetime | None = None
+    days_until_expiry: int | None = None
+    expiry_state: str
+    compensating_control_count: int = 0
+    action_required: str

@@ -1,11 +1,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response
+from fastapi import Query
 
 from app.api.deps import DbSession
 from app.api.pagination import PaginationParams, get_pagination, paginate
 from app.schemas.risk_register import (
     PolicyExceptionCreate,
+    PolicyExceptionQueueItem,
     PolicyExceptionRead,
     PolicyExceptionUpdate,
     RiskRegisterItemRead,
@@ -62,6 +64,33 @@ def list_exceptions(
         for item in PolicyExceptionService(db, user.tenant_id).list()
     ]
     return paginate(exceptions, pagination, response)
+
+
+@router.get("/exceptions/expiring")
+def expiring_exceptions(
+    response: Response,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
+    within_days: int = Query(default=30, ge=0, le=365),
+    include_expired: bool = Query(default=True),
+    pagination: PaginationParams = Depends(get_pagination),
+) -> list[PolicyExceptionQueueItem]:
+    queue = PolicyExceptionService(db, user.tenant_id).expiring(
+        within_days=within_days,
+        include_expired=include_expired,
+    )
+    return paginate(queue, pagination, response)
+
+
+@router.post("/exceptions/expire-due")
+def expire_due_exceptions(
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+) -> list[PolicyExceptionRead]:
+    return [
+        PolicyExceptionRead.model_validate(item)
+        for item in PolicyExceptionService(db, user.tenant_id).expire_due(user)
+    ]
 
 
 @router.post("/exceptions")

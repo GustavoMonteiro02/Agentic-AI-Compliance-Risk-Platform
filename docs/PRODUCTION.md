@@ -122,6 +122,22 @@ The tenant export contains tenant-scoped systems, assessments, per-assessment au
 
 Evidence records support operational audit metadata such as source system, file URL, checksum/hash, collection date, expiry date, retention date, reviewer notes, and custom metadata. These fields are included in evidence APIs and audit packages so exported evidence can be reconciled against external GRC, ticketing, storage, or data-governance systems.
 
+## Policy Exceptions
+
+Policy exceptions track temporary deviations with justification, compensating controls, requester, approver, status, and expiry. Operators can review upcoming and expired exceptions through:
+
+```bash
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  "http://127.0.0.1:8000/risk-register/exceptions/expiring?within_days=30"
+```
+
+Run the expiry action from a scheduled job to mark due exceptions as `expired` and write audit events:
+
+```bash
+curl -X POST -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: compliance_reviewer" \
+  "http://127.0.0.1:8000/risk-register/exceptions/expire-due"
+```
+
 ## Review Escalation Policy
 
 Review queues and escalation notifications use configurable policy thresholds:

@@ -17,6 +17,7 @@ def test_react_saas_ui_scaffold_is_present():
     assert "Governance command center" in app
     assert "Open incidents" in app
     assert "Escalated reviews" in app
+    assert "Policy exceptions" in app
     assert "Runtime readiness" in app
     assert "Legal source readiness" in app
     assert "API latency" in app
@@ -32,6 +33,9 @@ def test_react_saas_ui_scaffold_is_present():
         "frontend/react_app/src/api.ts"
     ).read_text(encoding="utf-8")
     assert 'getJson<LegalSourceSummary>("/requirements/legal-sources")' in Path(
+        "frontend/react_app/src/api.ts"
+    ).read_text(encoding="utf-8")
+    assert 'getJson<PolicyExceptionQueueItem[]>("/risk-register/exceptions/expiring?within_days=30")' in Path(
         "frontend/react_app/src/api.ts"
     ).read_text(encoding="utf-8")
     assert "grid-template-columns: 280px minmax(0, 1fr)" in styles
