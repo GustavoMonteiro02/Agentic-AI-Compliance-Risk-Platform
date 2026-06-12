@@ -93,6 +93,27 @@ MIGRATIONS: tuple[DatabaseMigration, ...] = (
             ),
         ),
     ),
+    DatabaseMigration(
+        migration_id="20260612_005_incident_regulatory_reporting",
+        description="Add regulatory reporting due date, submission timestamp, and reference to AI incidents.",
+        operations=(
+            ColumnMigration(
+                "ai_incidents",
+                "regulatory_report_due_at",
+                "ALTER TABLE ai_incidents ADD COLUMN regulatory_report_due_at DATETIME",
+            ),
+            ColumnMigration(
+                "ai_incidents",
+                "regulatory_reported_at",
+                "ALTER TABLE ai_incidents ADD COLUMN regulatory_reported_at DATETIME",
+            ),
+            ColumnMigration(
+                "ai_incidents",
+                "regulatory_report_reference",
+                "ALTER TABLE ai_incidents ADD COLUMN regulatory_report_reference VARCHAR(255)",
+            ),
+        ),
+    ),
 )
 
 TABLE_MIGRATIONS: tuple[tuple[str, str, str], ...] = (

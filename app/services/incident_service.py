@@ -1,4 +1,6 @@
-from datetime import datetime
+from __future__ import annotations
+
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -55,6 +57,8 @@ class IncidentService:
             impact_summary=payload.impact_summary,
             containment_actions_json=payload.containment_actions,
             regulatory_report_required=payload.regulatory_report_required,
+            regulatory_report_due_at=payload.regulatory_report_due_at
+            or (datetime.utcnow() + timedelta(hours=72) if payload.regulatory_report_required else None),
         )
         self.db.add(incident)
         self.db.commit()
@@ -65,7 +69,14 @@ class IncidentService:
             resource_type="incident",
             resource_id=incident.id,
             assessment_id=incident.assessment_id,
-            details={"severity": incident.severity, "system_id": incident.system_id},
+            details={
+                "severity": incident.severity,
+                "system_id": incident.system_id,
+                "regulatory_report_required": incident.regulatory_report_required,
+                "regulatory_report_due_at": incident.regulatory_report_due_at.isoformat()
+                if incident.regulatory_report_due_at
+                else None,
+            },
         )
         return incident
 
@@ -77,6 +88,19 @@ class IncidentService:
             statement = statement.where(models.AIIncident.severity == severity)
         return list(self.db.scalars(statement.order_by(models.AIIncident.detected_at.desc())))
 
+    def regulatory_report_queue(self) -> list[models.AIIncident]:
+        return list(
+            self.db.scalars(
+                select(models.AIIncident)
+                .where(
+                    models.AIIncident.tenant_id == self.tenant_id,
+                    models.AIIncident.regulatory_report_required.is_(True),
+                    models.AIIncident.regulatory_reported_at.is_(None),
+                )
+                .order_by(models.AIIncident.regulatory_report_due_at.asc().nulls_last())
+            )
+        )
+
     def update(self, incident_id: str, payload: IncidentUpdate, user: AuthenticatedUser) -> models.AIIncident:
         incident = self._get_incident(incident_id)
         changes = payload.model_dump(exclude_unset=True)
@@ -86,6 +110,12 @@ class IncidentService:
             incident.corrective_actions_json = changes.pop("corrective_actions")
         for key, value in changes.items():
             setattr(incident, key, value)
+        if incident.regulatory_report_required and incident.regulatory_report_due_at is None:
+            incident.regulatory_report_due_at = datetime.utcnow() + timedelta(hours=72)
+        if not incident.regulatory_report_required:
+            incident.regulatory_report_due_at = None
+            incident.regulatory_reported_at = None
+            incident.regulatory_report_reference = None
         if incident.status in {"resolved", "closed"} and incident.resolved_at is None:
             incident.resolved_at = datetime.utcnow()
         self.db.commit()
@@ -96,6 +126,12 @@ class IncidentService:
             resource_type="incident",
             resource_id=incident.id,
             assessment_id=incident.assessment_id,
-            details={"severity": incident.severity, "owner": incident.owner},
+            details={
+                "severity": incident.severity,
+                "owner": incident.owner,
+                "regulatory_report_required": incident.regulatory_report_required,
+                "regulatory_reported": bool(incident.regulatory_reported_at),
+                "regulatory_report_reference": incident.regulatory_report_reference,
+            },
         )
         return incident

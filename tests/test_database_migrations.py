@@ -12,11 +12,13 @@ def test_database_migrations_add_missing_columns_to_existing_tables(tmp_path):
         connection.execute(text("CREATE TABLE ai_system_profiles (id VARCHAR PRIMARY KEY)"))
         connection.execute(text("CREATE TABLE risk_assessments (id VARCHAR PRIMARY KEY)"))
         connection.execute(text("CREATE TABLE audit_events (id VARCHAR PRIMARY KEY)"))
+        connection.execute(text("CREATE TABLE ai_incidents (id VARCHAR PRIMARY KEY)"))
 
     result = apply_database_migrations(engine)
     inspector = inspect(engine)
 
     evidence_columns = {column["name"] for column in inspector.get_columns("evidence_items")}
+    incident_columns = {column["name"] for column in inspector.get_columns("ai_incidents")}
     system_columns = {column["name"] for column in inspector.get_columns("ai_systems")}
     table_names = set(inspector.get_table_names())
     assert result["current"] is True
@@ -34,6 +36,9 @@ def test_database_migrations_add_missing_columns_to_existing_tables(tmp_path):
         "evidence_metadata_json",
     }.issubset(evidence_columns)
     assert "tenant_id" in system_columns
+    assert {"regulatory_report_due_at", "regulatory_reported_at", "regulatory_report_reference"}.issubset(
+        incident_columns
+    )
     assert "notification_events" in table_names
     assert migration_status(engine)["pending"] == []
 

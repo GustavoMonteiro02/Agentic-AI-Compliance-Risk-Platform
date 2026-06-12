@@ -70,7 +70,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Remediation plan generation from gaps and missing evidence
 - Evidence checklist generation with owner, due-date, expiry, source, checksum, retention, approval, and readiness lifecycle tracking
 - Risk register and policy exception workflows with compensating controls
-- AI incident reporting, triage, resolution tracking, and audit events
+- AI incident reporting, regulatory report queue, triage, resolution tracking, and audit events
 - Structured audit trail for evidence updates and human review decisions
 - Runtime readiness checks and Docker healthchecks for production operations
 - Runtime HTTP metrics in JSON and Prometheus text formats

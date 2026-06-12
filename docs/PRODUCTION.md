@@ -141,6 +141,17 @@ curl -X PATCH -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
 
 The current delivery model is an internal outbox: events are deduplicated by assessment and escalation level, tenant-scoped, audit logged, and included in audit packages. External Slack, email, or ticketing delivery can consume queued events from this stable API surface, then mark each event as `delivered`, `failed`, or `skipped`.
 
+## Incident Regulatory Reporting
+
+Reportable incidents set `regulatory_report_required=true`. If no due date is supplied, the platform sets a default `regulatory_report_due_at` 72 hours after creation. Auditors can inspect unresolved reportable incidents:
+
+```bash
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  http://127.0.0.1:8000/incidents/regulatory-report-queue
+```
+
+After submitting to an external regulator or internal reporting desk, update `regulatory_reported_at` and `regulatory_report_reference` on the incident. The update is audit logged and removes the incident from the reporting queue.
+
 ## Runtime Check
 
 Use:

@@ -25,6 +25,17 @@ def list_incidents(
     return paginate(incidents, pagination, response)
 
 
+@router.get("/regulatory-report-queue")
+def regulatory_report_queue(
+    response: Response,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
+    pagination: PaginationParams = Depends(get_pagination),
+) -> list[IncidentRead]:
+    incidents = [IncidentRead.model_validate(item) for item in IncidentService(db, user.tenant_id).regulatory_report_queue()]
+    return paginate(incidents, pagination, response)
+
+
 @router.post("")
 def create_incident(
     payload: IncidentCreate,

@@ -58,6 +58,43 @@ def test_incident_lifecycle_and_audit_event():
     assert any(event["action"] == "incident.resolved" for event in events)
 
 
+def test_regulatory_report_queue_and_submission_tracking():
+    system, assessment = _create_system_and_assessment("reg-report-tenant")
+    headers = {"X-Tenant-ID": "reg-report-tenant", "X-User-Role": "admin", "X-User": "incident-owner"}
+    auditor_headers = {"X-Tenant-ID": "reg-report-tenant", "X-User-Role": "auditor"}
+
+    created = client.post(
+        "/incidents",
+        headers=headers,
+        json={
+            "system_id": system["id"],
+            "assessment_id": assessment["id"],
+            "title": "Reportable AI incident",
+            "description": "A reportable incident affected regulated customer decision support.",
+            "severity": "critical",
+            "regulatory_report_required": True,
+        },
+    ).json()
+    queue_before = client.get("/incidents/regulatory-report-queue", headers=auditor_headers).json()
+    submitted = client.patch(
+        f"/incidents/{created['id']}",
+        headers=headers,
+        json={
+            "regulatory_reported_at": created["detected_at"],
+            "regulatory_report_reference": "REG-2026-0001",
+        },
+    ).json()
+    queue_after = client.get("/incidents/regulatory-report-queue", headers=auditor_headers).json()
+    events = client.get(f"/audit/assessments/{assessment['id']}/events", headers=auditor_headers).json()
+
+    assert created["regulatory_report_due_at"]
+    assert any(item["id"] == created["id"] for item in queue_before)
+    assert submitted["regulatory_report_reference"] == "REG-2026-0001"
+    assert submitted["regulatory_reported_at"]
+    assert all(item["id"] != created["id"] for item in queue_after)
+    assert any(event["details_json"]["regulatory_reported"] is True for event in events)
+
+
 def test_incidents_are_tenant_scoped():
     system, _assessment = _create_system_and_assessment("incident-tenant-a")
     created = client.post(

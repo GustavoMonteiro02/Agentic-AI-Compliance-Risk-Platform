@@ -14,6 +14,7 @@ class IncidentCreate(BaseModel):
     impact_summary: str = ""
     containment_actions: list[str] = Field(default_factory=list)
     regulatory_report_required: bool = False
+    regulatory_report_due_at: datetime | None = None
 
 
 class IncidentUpdate(BaseModel):
@@ -25,6 +26,9 @@ class IncidentUpdate(BaseModel):
     root_cause: str | None = None
     corrective_actions: list[str] | None = None
     regulatory_report_required: bool | None = None
+    regulatory_report_due_at: datetime | None = None
+    regulatory_reported_at: datetime | None = None
+    regulatory_report_reference: str | None = None
     resolved_at: datetime | None = None
 
 
@@ -44,6 +48,9 @@ class IncidentRead(BaseModel):
     root_cause: str | None = None
     corrective_actions_json: list[str]
     regulatory_report_required: bool
+    regulatory_report_due_at: datetime | None = None
+    regulatory_reported_at: datetime | None = None
+    regulatory_report_reference: str | None = None
     resolved_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
