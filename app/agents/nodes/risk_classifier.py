@@ -41,10 +41,18 @@ def risk_classifier_node(state: GovernanceAssessmentState) -> GovernanceAssessme
         "Preliminary classification based on domain, data sensitivity, decision impact, "
         "autonomy, and oversight signals. Human compliance review is required."
     )
-    llm_advice = OptionalLLMProvider().advisory_completion(
-        "You are an AI governance assistant. Do not provide legal advice or final compliance claims.",
-        f"Summarize the risk rationale for this AI system profile in one sentence: {profile}",
-    )
+    provider = OptionalLLMProvider()
+    provider_mode = getattr(provider, "provider_name", "openai")
+    llm_advice = None
+    llm_error = None
+    try:
+        llm_advice = provider.advisory_completion(
+            "You are an AI governance assistant. Do not provide legal advice or final compliance claims.",
+            f"Summarize the risk rationale for this AI system profile in one sentence: {profile}",
+        )
+    except Exception as exc:
+        llm_error = str(exc)
+        state.setdefault("errors", []).append({"node": "risk_classifier", "error": llm_error})
     if llm_advice:
         reasoning_summary = f"{reasoning_summary} LLM advisory note: {llm_advice}"
 
@@ -60,8 +68,9 @@ def risk_classifier_node(state: GovernanceAssessmentState) -> GovernanceAssessme
     state.setdefault("tool_calls", []).append(
         {
             "tool_name": "classify_ai_system_risk",
-            "status": "success",
-            "mode": "openai" if llm_advice else "deterministic",
+            "status": "success" if not llm_error else "failed",
+            "mode": provider_mode if llm_advice or llm_error else "deterministic",
+            "fallback": "deterministic_risk_preserved" if llm_error else None,
         }
     )
     return state
