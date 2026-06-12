@@ -166,6 +166,8 @@ Copy `.env.example` to `.env` and adjust values.
 - `OPENAI_TIMEOUT_SECONDS`: request timeout for LLM calls
 - `OPENAI_MAX_RETRIES`: retry count for transient LLM request failures
 - `OPENAI_MAX_TOKENS`: maximum completion tokens for LLM refinement calls
+- `LLM_PROMPT_COST_PER_1K_TOKENS`: optional prompt-token cost used for usage estimates
+- `LLM_COMPLETION_COST_PER_1K_TOKENS`: optional completion-token cost used for usage estimates
 - `ANTHROPIC_API_KEY`: optional for Anthropic LLM refinement
 - `ANTHROPIC_MODEL`: defaults to `claude-3-5-sonnet-latest`
 - `LANGSMITH_TRACING`: optional trace metadata

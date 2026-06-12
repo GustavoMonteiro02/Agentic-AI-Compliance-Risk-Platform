@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     openai_timeout_seconds: int = 60
     openai_max_retries: int = 2
     openai_max_tokens: int = 2000
+    llm_prompt_cost_per_1k_tokens: float = 0.0
+    llm_completion_cost_per_1k_tokens: float = 0.0
     anthropic_api_key: str | None = None
     anthropic_base_url: str = "https://api.anthropic.com/v1"
     anthropic_model: str = "claude-3-5-sonnet-latest"

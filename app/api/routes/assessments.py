@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import DbSession
 from app.api.pagination import PaginationParams, get_pagination, paginate
+from app.schemas.llm_usage import LLMUsageSummary
 from app.security import AuthenticatedUser, require_roles
 from app.services.assessment_service import AssessmentService
 
@@ -21,6 +22,14 @@ def list_assessments(
     return paginate(assessments, pagination, response)
 
 
+@router.get("/llm-usage")
+def tenant_llm_usage(
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
+) -> LLMUsageSummary:
+    return AssessmentService(db, user.tenant_id).llm_usage()
+
+
 @router.get("/{assessment_id}")
 def get_assessment(
     assessment_id: str,
@@ -28,6 +37,15 @@ def get_assessment(
     user: Annotated[AuthenticatedUser, Depends(require_roles("viewer"))],
 ) -> dict:
     return AssessmentService(db, user.tenant_id).get(assessment_id).model_dump(mode="json")
+
+
+@router.get("/{assessment_id}/llm-usage")
+def assessment_llm_usage(
+    assessment_id: str,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
+) -> LLMUsageSummary:
+    return AssessmentService(db, user.tenant_id).assessment_llm_usage(assessment_id)
 
 
 @router.post("/{assessment_id}/risk-classification", dependencies=[Depends(require_roles("compliance_reviewer"))])

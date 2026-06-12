@@ -1,6 +1,7 @@
 from app.schemas.controls import MappedControl
 from app.schemas.audit import AuditEventRead
 from app.schemas.report import GeneratedDocument
+from app.schemas.llm_usage import LLMUsageSummary
 from app.schemas.remediation import RemediationPlan
 from app.schemas.risk_register import PolicyExceptionCreate, RiskRegisterItemUpdate
 from app.schemas.risk import RiskClassification
@@ -24,6 +25,7 @@ def test_schema_layout_exports_expected_models():
     assert control.control_status == "unknown"
     assert document.status == "draft"
     assert AuditEventRead.model_fields["action"]
+    assert LLMUsageSummary(total_tokens=10).total_tokens == 10
     assert RemediationPlan.model_fields["actions"]
     assert RiskRegisterItemUpdate(status="open").status == "open"
     exception = PolicyExceptionCreate(

@@ -40,6 +40,24 @@ export type RuntimePreflight = {
   actions: string[];
 };
 
+export type LLMUsageSummary = {
+  assessment_count: number;
+  total_tool_calls: number;
+  llm_call_count: number;
+  successful_llm_call_count: number;
+  failed_llm_call_count: number;
+  skipped_llm_call_count: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  total_latency_ms: number;
+  average_latency_ms: number;
+  estimated_cost_usd?: number;
+  providers: string[];
+  models: string[];
+  prompt_versions: string[];
+};
+
 export type Assessment = {
   id: string;
   status: string;
@@ -168,6 +186,7 @@ export const api = {
   runtime: () => getJson<RuntimeStatus>("/runtime/status"),
   readiness: () => getJson<RuntimeReadiness>("/runtime/readiness"),
   preflight: () => getJson<RuntimePreflight>("/runtime/preflight"),
+  llmUsage: () => getJson<LLMUsageSummary>("/assessments/llm-usage"),
   metrics: () => getJson<RuntimeMetrics>("/runtime/metrics"),
   systems: () => getJson<SystemRecord[]>("/systems"),
   assessments: () => getJson<Assessment[]>("/assessments"),

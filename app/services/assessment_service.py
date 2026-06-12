@@ -4,9 +4,12 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.agents.graph import run_governance_assessment
+from app.config import get_settings
 from app.database.repositories import AssessmentRepository, SystemRepository
 from app.schemas.assessment import AssessmentRunRequest, GovernanceAssessment
+from app.schemas.llm_usage import LLMUsageSummary
 from app.schemas.remediation import RemediationAction, RemediationPlan
+from app.services.llm_usage_service import summarize_llm_usage
 
 
 def _due_date(priority: str) -> datetime:
@@ -69,6 +72,24 @@ class AssessmentService:
 
     def list(self) -> list[GovernanceAssessment]:
         return [GovernanceAssessment.model_validate(item.assessment_json) for item in self.assessments.list()]
+
+    def llm_usage(self) -> LLMUsageSummary:
+        settings = get_settings()
+        return summarize_llm_usage(
+            self.list(),
+            prompt_cost_per_1k_tokens=settings.llm_prompt_cost_per_1k_tokens,
+            completion_cost_per_1k_tokens=settings.llm_completion_cost_per_1k_tokens,
+        )
+
+    def assessment_llm_usage(self, assessment_id: str) -> LLMUsageSummary:
+        settings = get_settings()
+        assessment = self.get(assessment_id)
+        return summarize_llm_usage(
+            [assessment],
+            prompt_cost_per_1k_tokens=settings.llm_prompt_cost_per_1k_tokens,
+            completion_cost_per_1k_tokens=settings.llm_completion_cost_per_1k_tokens,
+            assessment_id=assessment_id,
+        )
 
     def remediation_plan(self, assessment_id: str) -> RemediationPlan:
         assessment = self.get(assessment_id)

@@ -32,7 +32,7 @@ This document maps the original project requirements to the current implementati
 - Evaluation suite covering risk classification consistency, retrieval grounding, retrieval quality top-k recall, system card coverage, evidence completeness, human approval bypass resistance, legal-advice guardrails, and LangSmith-compatible experiment payloads.
 - Guardrails preventing automatic approval or final legal compliance claims without human review.
 - Dockerfile, Docker Compose, Makefile, CI workflow, security/configuration scan, runtime readiness checks, production preflight release gate, Docker healthchecks, and pytest suite.
-- Optional OpenAI LLM refinement mode, LangSmith run metadata, Qdrant Docker service, and PDF report export.
+- Optional OpenAI LLM refinement mode, LLM usage/token/cost summaries, LangSmith run metadata, Qdrant Docker service, and PDF report export.
 - Multi-provider LLM refinement adapter supporting OpenAI, OpenAI-compatible endpoints, and Anthropic behind the same workflow interface, with prompt/output fingerprints, schema-validation audit metadata, retries, and deterministic fallback preservation.
 
 ## Intentionally Deferred External Integrations

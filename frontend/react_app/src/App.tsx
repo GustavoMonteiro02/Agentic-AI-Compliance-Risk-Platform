@@ -18,6 +18,7 @@ import type {
   Assessment,
   Incident,
   LegalSourceSummary,
+  LLMUsageSummary,
   PolicyExceptionQueueItem,
   RequirementSearchResult,
   ReviewEscalation,
@@ -34,6 +35,7 @@ type LoadState = {
   runtime?: RuntimeStatus;
   readiness?: RuntimeReadiness;
   preflight?: RuntimePreflight;
+  llmUsage?: LLMUsageSummary;
   metrics?: RuntimeMetrics;
   systems: SystemRecord[];
   assessments: Assessment[];
@@ -77,6 +79,7 @@ function App() {
       api.runtime(),
       api.readiness(),
       api.preflight(),
+      api.llmUsage(),
       api.metrics(),
       api.systems(),
       api.assessments(),
@@ -92,6 +95,7 @@ function App() {
           runtime,
           readiness,
           preflight,
+          llmUsage,
           metrics,
           systems,
           assessments,
@@ -106,6 +110,7 @@ function App() {
           runtime,
           readiness,
           preflight,
+          llmUsage,
           metrics,
           systems,
           assessments,
@@ -199,6 +204,7 @@ function App() {
             `${state.preflight?.warning_count || 0} warnings, ${state.preflight?.blocker_count || 0} blockers`,
             <ShieldCheck size={20} />
           )}
+          {metric("LLM tokens", state.llmUsage?.total_tokens || 0, `${state.llmUsage?.llm_call_count || 0} LLM calls`, <BarChart3 size={20} />)}
           {metric("API requests", state.metrics?.total_requests || 0, "Runtime traffic", <BarChart3 size={20} />)}
           {metric("Evidence approved", summary.approvedEvidence.length, "Audit-ready records", <FileCheck2 size={20} />)}
           {metric(
@@ -268,6 +274,31 @@ function App() {
               {!state.preflight?.blockers.length && !state.preflight?.warnings.length ? (
                 <div className="empty">Production preflight is clear.</div>
               ) : null}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>LLM usage</h2>
+              <span>{state.llmUsage?.estimated_cost_usd ? `$${state.llmUsage.estimated_cost_usd.toFixed(4)}` : "tokens"}</span>
+            </div>
+            <div className="check-list">
+              <div className="check-row">
+                <span>Prompt tokens</span>
+                <strong>{state.llmUsage?.prompt_tokens || 0}</strong>
+              </div>
+              <div className="check-row">
+                <span>Completion tokens</span>
+                <strong>{state.llmUsage?.completion_tokens || 0}</strong>
+              </div>
+              <div className="check-row">
+                <span>Average latency</span>
+                <strong>{(state.llmUsage?.average_latency_ms || 0).toFixed(1)} ms</strong>
+              </div>
+              <div className="check-row">
+                <span>Providers</span>
+                <strong>{state.llmUsage?.providers.join(", ") || "none"}</strong>
+              </div>
             </div>
           </div>
 

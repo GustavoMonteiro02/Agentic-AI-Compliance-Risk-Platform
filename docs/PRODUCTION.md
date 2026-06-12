@@ -53,6 +53,18 @@ The LLM output is validated with Pydantic before it can replace deterministic ou
 
 Prompt templates are versioned in `app/prompts/registry.py`. Each LLM refinement tool call records the prompt name, prompt version, provider, model, latency, retry attempts, token usage when the provider returns usage metadata, SHA-256 fingerprints for the system prompt, user prompt, and output, schema-validation status, and applied output sections. This keeps generated assessments auditable without persisting raw prompt or response text in tool-call metadata.
 
+LLM usage can be inspected per tenant or assessment:
+
+```bash
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  "http://127.0.0.1:8000/assessments/llm-usage"
+
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  "http://127.0.0.1:8000/assessments/{assessment_id}/llm-usage"
+```
+
+Set `LLM_PROMPT_COST_PER_1K_TOKENS` and `LLM_COMPLETION_COST_PER_1K_TOKENS` to include estimated USD cost in usage summaries.
+
 ## Evaluation Experiments
 
 `GET /evaluation/langsmith-experiment` returns a LangSmith-compatible offline regression payload for the evaluation suite. `POST /evaluation/langsmith-experiment/upload` sends the runs to the configured LangSmith API when `LANGSMITH_API_KEY` is available; without credentials, the payload remains locally inspectable and CI-safe.

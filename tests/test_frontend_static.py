@@ -19,6 +19,7 @@ def test_react_saas_ui_scaffold_is_present():
     assert "Escalated reviews" in app
     assert "Policy exceptions" in app
     assert "Release preflight" in app
+    assert "LLM usage" in app
     assert "Runtime readiness" in app
     assert "Legal source readiness" in app
     assert "API latency" in app
@@ -30,6 +31,9 @@ def test_react_saas_ui_scaffold_is_present():
         "frontend/react_app/src/api.ts"
     ).read_text(encoding="utf-8")
     assert 'getJson<RuntimePreflight>("/runtime/preflight")' in Path(
+        "frontend/react_app/src/api.ts"
+    ).read_text(encoding="utf-8")
+    assert 'getJson<LLMUsageSummary>("/assessments/llm-usage")' in Path(
         "frontend/react_app/src/api.ts"
     ).read_text(encoding="utf-8")
     assert 'getJson<Incident[]>("/incidents")' in Path("frontend/react_app/src/api.ts").read_text(encoding="utf-8")
