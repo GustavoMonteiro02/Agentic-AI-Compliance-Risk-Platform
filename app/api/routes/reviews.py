@@ -19,7 +19,7 @@ def review_queue(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
     status: list[str] | None = Query(default=None),
-    sla_hours: int = Query(default=48, ge=1, le=720),
+    sla_hours: int | None = Query(default=None, ge=1, le=720),
     pagination: PaginationParams = Depends(get_pagination),
 ) -> list[ReviewQueueItem]:
     queue = ReviewService(db, user.tenant_id).queue(status, sla_hours=sla_hours)
@@ -31,7 +31,7 @@ def review_escalations(
     response: Response,
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
-    sla_hours: int = Query(default=48, ge=1, le=720),
+    sla_hours: int | None = Query(default=None, ge=1, le=720),
     pagination: PaginationParams = Depends(get_pagination),
 ) -> list[ReviewQueueItem]:
     escalations = ReviewService(db, user.tenant_id).escalations(sla_hours=sla_hours)
@@ -42,7 +42,7 @@ def review_escalations(
 def queue_review_escalation_notifications(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
-    sla_hours: int = Query(default=48, ge=1, le=720),
+    sla_hours: int | None = Query(default=None, ge=1, le=720),
     channel: str = Query(default="in_app"),
     recipient: str | None = Query(default=None),
 ) -> list[NotificationEventRead]:

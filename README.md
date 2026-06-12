@@ -188,6 +188,9 @@ Copy `.env.example` to `.env` and adjust values.
 - `SECURITY_HSTS_ENABLED`: enables HSTS when the API is served only over HTTPS
 - `MAX_REQUEST_BODY_BYTES`: rejects oversized API requests before route handling
 - `API_RATE_LIMIT_PER_MINUTE`: optional in-memory per-tenant/caller limit; `0` disables it
+- `REVIEW_SLA_HOURS`: default human-review SLA used by review queues and escalation notifications
+- `REVIEW_MISSING_EVIDENCE_ESCALATION_THRESHOLD`: missing evidence count that triggers review attention
+- `REVIEW_HIGH_RISK_CRITICAL_GAP_ESCALATION`: whether high-risk critical gaps trigger urgent escalation
 - `MCP_TRANSPORT`: `stdio` locally, or an HTTP transport such as `streamable-http` for deployment
 - `MCP_HOST` / `MCP_PORT`: MCP runtime bind settings
 

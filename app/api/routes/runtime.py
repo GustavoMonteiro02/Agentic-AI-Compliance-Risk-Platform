@@ -44,6 +44,11 @@ def runtime_status() -> dict:
         "security_hsts_enabled": settings.security_hsts_enabled,
         "max_request_body_bytes": settings.max_request_body_bytes,
         "api_rate_limit_per_minute": settings.api_rate_limit_per_minute,
+        "review_policy": {
+            "sla_hours": settings.review_sla_hours,
+            "missing_evidence_escalation_threshold": settings.review_missing_evidence_escalation_threshold,
+            "high_risk_critical_gap_escalation": settings.review_high_risk_critical_gap_escalation,
+        },
         "default_user_role": settings.default_user_role,
         "default_tenant_id": settings.default_tenant_id,
     }

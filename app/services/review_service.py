@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import models
 from app.database.repositories import AssessmentRepository
+from app.config import get_settings
 from app.schemas.review import ReviewDecision, ReviewQueueItem, ReviewRead
 from app.security import AuthenticatedUser
 from app.services.audit_service import AuditService
@@ -18,14 +19,16 @@ def _review_escalation(
     critical_gap_count: int,
     missing_evidence_count: int,
     sla_hours: int,
+    missing_evidence_threshold: int,
+    high_risk_critical_gap_escalation: bool,
 ) -> tuple[str, str | None, float]:
     age_hours = round((datetime.utcnow() - created_at).total_seconds() / 3600, 1)
     if age_hours >= sla_hours:
         return "sla_breach", f"Review age {age_hours}h exceeds {sla_hours}h SLA", age_hours
-    if risk_level in {"unacceptable", "high"} and critical_gap_count:
+    if high_risk_critical_gap_escalation and risk_level in {"unacceptable", "high"} and critical_gap_count:
         return "urgent", "High-risk assessment has critical compliance gaps", age_hours
-    if missing_evidence_count >= 3:
-        return "attention", "Assessment has multiple missing evidence items", age_hours
+    if missing_evidence_count >= missing_evidence_threshold:
+        return "attention", f"Assessment has {missing_evidence_count} missing evidence items", age_hours
     return "normal", None, age_hours
 
 
@@ -83,7 +86,9 @@ class ReviewService:
             )
         return ReviewRead(assessment_id=assessment_id, reviewer=payload.reviewer, status=status, notes=notes)
 
-    def queue(self, statuses: list[str] | None = None, sla_hours: int = 48) -> list[ReviewQueueItem]:
+    def queue(self, statuses: list[str] | None = None, sla_hours: int | None = None) -> list[ReviewQueueItem]:
+        settings = get_settings()
+        active_sla_hours = sla_hours or settings.review_sla_hours
         selected_statuses = statuses or ["needs_review", "needs_more_evidence"]
         records = self.assessments.list_by_status(selected_statuses)
         items: list[ReviewQueueItem] = []
@@ -98,7 +103,9 @@ class ReviewService:
                 risk_level=data["risk_classification"]["risk_level"],
                 critical_gap_count=critical_gap_count,
                 missing_evidence_count=missing_evidence_count,
-                sla_hours=sla_hours,
+                sla_hours=active_sla_hours,
+                missing_evidence_threshold=settings.review_missing_evidence_escalation_threshold,
+                high_risk_critical_gap_escalation=settings.review_high_risk_critical_gap_escalation,
             )
             items.append(
                 ReviewQueueItem(
@@ -116,7 +123,7 @@ class ReviewService:
             )
         return items
 
-    def escalations(self, sla_hours: int = 48) -> list[ReviewQueueItem]:
+    def escalations(self, sla_hours: int | None = None) -> list[ReviewQueueItem]:
         return [item for item in self.queue(sla_hours=sla_hours) if item.escalation_level != "normal"]
 
     def history(self, assessment_id: str) -> list[ReviewRead]:

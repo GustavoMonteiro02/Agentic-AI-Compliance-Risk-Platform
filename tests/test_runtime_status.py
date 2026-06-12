@@ -27,6 +27,11 @@ def test_runtime_status_reports_production_toggles():
     assert payload["security_hsts_enabled"] is False
     assert payload["max_request_body_bytes"] == 1_048_576
     assert payload["api_rate_limit_per_minute"] == 0
+    assert payload["review_policy"] == {
+        "sla_hours": 48,
+        "missing_evidence_escalation_threshold": 3,
+        "high_risk_critical_gap_escalation": True,
+    }
 
 
 def test_runtime_readiness_reports_operational_checks():

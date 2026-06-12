@@ -1,9 +1,43 @@
+from datetime import datetime, timedelta
+
 from fastapi.testclient import TestClient
 
 from app.api.main import app
+from app.services.review_service import _review_escalation
 
 
 client = TestClient(app)
+
+
+def test_review_escalation_policy_uses_configurable_thresholds():
+    escalation_level, escalation_reason, age_hours = _review_escalation(
+        created_at=datetime.utcnow() - timedelta(hours=2),
+        risk_level="high",
+        critical_gap_count=2,
+        missing_evidence_count=2,
+        sla_hours=48,
+        missing_evidence_threshold=2,
+        high_risk_critical_gap_escalation=False,
+    )
+
+    assert age_hours >= 2
+    assert escalation_level == "attention"
+    assert "2 missing evidence" in escalation_reason
+
+
+def test_review_escalation_policy_sla_breach_takes_precedence():
+    escalation_level, escalation_reason, _age_hours = _review_escalation(
+        created_at=datetime.utcnow() - timedelta(hours=50),
+        risk_level="medium",
+        critical_gap_count=0,
+        missing_evidence_count=0,
+        sla_hours=48,
+        missing_evidence_threshold=3,
+        high_risk_critical_gap_escalation=True,
+    )
+
+    assert escalation_level == "sla_breach"
+    assert "48h SLA" in escalation_reason
 
 
 def test_human_review_approval_requires_notes():

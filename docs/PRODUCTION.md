@@ -122,6 +122,16 @@ The tenant export contains tenant-scoped systems, assessments, per-assessment au
 
 Evidence records support operational audit metadata such as source system, file URL, checksum/hash, collection date, expiry date, retention date, reviewer notes, and custom metadata. These fields are included in evidence APIs and audit packages so exported evidence can be reconciled against external GRC, ticketing, storage, or data-governance systems.
 
+## Review Escalation Policy
+
+Review queues and escalation notifications use configurable policy thresholds:
+
+- `REVIEW_SLA_HOURS`: default review age before SLA breach escalation.
+- `REVIEW_MISSING_EVIDENCE_ESCALATION_THRESHOLD`: missing evidence count that triggers attention.
+- `REVIEW_HIGH_RISK_CRITICAL_GAP_ESCALATION`: whether high-risk assessments with critical gaps become urgent.
+
+`GET /runtime/status` exposes the active policy under `review_policy`. Review queue and notification endpoints still accept a `sla_hours` query parameter for one-off operational overrides.
+
 ## Notifications
 
 Review escalations can be converted into queued notification events:

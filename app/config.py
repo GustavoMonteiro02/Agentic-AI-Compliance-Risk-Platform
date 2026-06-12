@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     security_hsts_enabled: bool = False
     max_request_body_bytes: int = 1_048_576
     api_rate_limit_per_minute: int = 0
+    review_sla_hours: int = 48
+    review_missing_evidence_escalation_threshold: int = 3
+    review_high_risk_critical_gap_escalation: bool = True
     mcp_server_name: str = "ai-governance-compliance"
     mcp_transport: str = "stdio"
     mcp_host: str = "0.0.0.0"
