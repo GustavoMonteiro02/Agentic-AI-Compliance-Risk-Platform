@@ -72,6 +72,8 @@ Security headers are enabled by default with `SECURITY_HEADERS_ENABLED=true`, ad
 
 `MAX_REQUEST_BODY_BYTES` rejects oversized request bodies before route handlers run. `API_RATE_LIMIT_PER_MINUTE` enables an in-memory tenant/caller rate limit using `X-Tenant-ID` plus API key, user, or client IP; keep it at `0` behind a dedicated gateway rate limiter, or set a positive value for standalone deployments.
 
+Every response includes `X-Request-ID`. Clients may provide this header to correlate API calls with gateway logs, traces, and audit workflows. HTTP and validation errors use a problem-style JSON shape with `status`, `detail`, `instance`, `request_id`, and `error.code`; the legacy `detail` field is preserved for existing clients.
+
 Roles are hierarchical:
 
 - `viewer`: read systems, assessments, requirements, reports, and evidence.

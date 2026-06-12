@@ -21,6 +21,10 @@ def test_api_key_auth_rejects_missing_key(monkeypatch):
 
     get_settings.cache_clear()
     assert response.status_code == 401
+    payload = response.json()
+    assert payload["detail"] == "Invalid or missing API key"
+    assert payload["error"]["code"] == "unauthorized"
+    assert payload["request_id"] == response.headers["x-request-id"]
 
 
 def test_viewer_can_read_but_not_create_systems(monkeypatch):

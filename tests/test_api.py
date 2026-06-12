@@ -17,6 +17,24 @@ def test_health():
     assert response.json()["kind"] == "liveness"
 
 
+def test_request_id_is_returned_and_echoed():
+    response = client.get("/health", headers={"X-Request-ID": "req-test-123"})
+
+    assert response.status_code == 200
+    assert response.headers["x-request-id"] == "req-test-123"
+
+
+def test_http_errors_use_problem_shape_with_legacy_detail():
+    response = client.get("/systems/not-found")
+
+    assert response.status_code == 404
+    payload = response.json()
+    assert payload["status"] == 404
+    assert payload["detail"] == "AI system not found"
+    assert payload["error"]["code"] == "not_found"
+    assert payload["error"]["request_id"] == response.headers["x-request-id"]
+
+
 def test_create_system_and_assessment():
     system_response = client.post(
         "/systems",
@@ -86,6 +104,9 @@ def test_pagination_rejects_unbounded_limits():
     response = client.get("/systems?limit=251")
 
     assert response.status_code == 422
+    payload = response.json()
+    assert payload["error"]["code"] == "validation_error"
+    assert payload["detail"]
 
 
 def test_report_exports_pdf():
