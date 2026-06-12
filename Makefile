@@ -32,7 +32,7 @@ prod-down:
 	docker compose --env-file .env -f docker-compose.production.yml down
 
 prod-ingest-qdrant:
-	docker compose --env-file .env -f docker-compose.production.yml exec api python scripts/ingest_qdrant.py
+	docker compose --env-file .env -f docker-compose.production.yml exec -e PYTHONPATH=/app api python scripts/ingest_qdrant.py
 
 prod-smoke:
 	set -a; . ./.env; set +a; API_BASE_URL=http://127.0.0.1:8000 $(PYTHON) scripts/smoke_production_stack.py
