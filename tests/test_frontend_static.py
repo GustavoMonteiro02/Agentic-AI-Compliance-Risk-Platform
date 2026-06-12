@@ -15,43 +15,26 @@ def test_react_saas_ui_scaffold_is_present():
     assert package["scripts"]["dev"].startswith("vite")
     assert "lucide-react" in package["dependencies"]
     assert "Governance command center" in app
-    assert "Open incidents" in app
-    assert "Escalated reviews" in app
-    assert "Policy exceptions" in app
-    assert "Release preflight" in app
+    assert "Create assessment" in app
+    assert "Assessment workspace" in app
+    assert "Requirements search" in app
+    assert "Evidence center" in app
+    assert "Risk register" in app
+    assert "Incident response" in app
+    assert "Human review" in app
     assert "LLM usage" in app
     assert "Configured LLMs" in app
     assert "Runtime readiness" in app
-    assert "Legal source readiness" in app
-    assert "API latency" in app
-    assert "Evidence approved" in app
-    assert 'getJson<RuntimeMetrics>("/runtime/metrics")' in Path(
-        "frontend/react_app/src/api.ts"
-    ).read_text(encoding="utf-8")
-    assert 'getJson<RuntimeReadiness>("/runtime/readiness")' in Path(
-        "frontend/react_app/src/api.ts"
-    ).read_text(encoding="utf-8")
-    assert 'getJson<RuntimePreflight>("/runtime/preflight")' in Path(
-        "frontend/react_app/src/api.ts"
-    ).read_text(encoding="utf-8")
-    assert 'getJson<LLMUsageSummary>("/assessments/llm-usage")' in Path(
-        "frontend/react_app/src/api.ts"
-    ).read_text(encoding="utf-8")
-    assert 'getJson<LLMOptions>("/runtime/llm-options")' in Path(
-        "frontend/react_app/src/api.ts"
-    ).read_text(encoding="utf-8")
-    assert 'getJson<Incident[]>("/incidents")' in Path("frontend/react_app/src/api.ts").read_text(encoding="utf-8")
-    assert 'getJson<ReviewEscalation[]>("/reviews/escalations")' in Path(
-        "frontend/react_app/src/api.ts"
-    ).read_text(encoding="utf-8")
-    assert 'getJson<LegalSourceSummary>("/requirements/legal-sources")' in Path(
-        "frontend/react_app/src/api.ts"
-    ).read_text(encoding="utf-8")
-    assert 'getJson<PolicyExceptionQueueItem[]>("/risk-register/exceptions/expiring?within_days=30")' in Path(
-        "frontend/react_app/src/api.ts"
-    ).read_text(encoding="utf-8")
-    assert "grid-template-columns: 280px minmax(0, 1fr)" in styles
-    assert "@media (max-width: 1120px)" in styles
+    api = Path("frontend/react_app/src/api.ts").read_text(encoding="utf-8")
+    assert 'request<RuntimeMetrics>("GET", "/runtime/metrics")' in api
+    assert 'request<LLMOptions>("GET", "/runtime/llm-options")' in api
+    assert 'request<SystemRecord>("POST", "/systems", payload)' in api
+    assert 'request<Assessment>("POST", `/systems/${systemId}/assess`, payload)' in api
+    assert 'request<EvidenceRecord>("PATCH", `/evidence/items/${evidenceId}`, payload)' in api
+    assert 'request<Incident>("POST", "/incidents", payload)' in api
+    assert 'request<Record<string, unknown>>("POST", `/reviews/${assessmentId}/${action}`, payload)' in api
+    assert "grid-template-columns: 270px minmax(0, 1fr)" in styles
+    assert "@media (max-width: 1180px)" in styles
     assert "overflow-x: auto" in styles
 
 
