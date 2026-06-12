@@ -127,6 +127,8 @@ textarea { min-height: 92px; resize: vertical; }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 .button-row, .inline-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .inline-form input { flex: 1 1 320px; }
+.settings-stack { display: grid; gap: 4px; }
+.mini-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 
 .table { display: grid; gap: 4px; overflow-x: auto; }
 .tr {
@@ -208,4 +210,5 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   .topbar, .top-actions { display: grid; align-items: stretch; }
   .top-actions select { min-width: 0; }
   nav, .runtime { grid-template-columns: 1fr; }
+  .mini-grid { grid-template-columns: 1fr; }
 }

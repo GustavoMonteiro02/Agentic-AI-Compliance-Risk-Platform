@@ -3,6 +3,8 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.runtime_config import load_runtime_overrides
+
 
 class Settings(BaseSettings):
     app_name: str = "AI Governance & Compliance Intelligence Platform"
@@ -64,4 +66,8 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    base = Settings()
+    overrides = load_runtime_overrides()
+    if not overrides:
+        return base
+    return Settings(**{**base.model_dump(), **overrides})

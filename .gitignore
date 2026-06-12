@@ -7,6 +7,7 @@ __pycache__/
 .env
 .env.local
 .env.production
+.runtime-config.json
 *.db
 *.sqlite
 htmlcov/

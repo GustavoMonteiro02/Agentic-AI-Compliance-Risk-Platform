@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from app.config import Settings, get_settings
@@ -97,6 +99,43 @@ def test_runtime_llm_options_lists_openai_compatible_for_custom_base_url(monkeyp
     assert payload["providers"][0]["model"] == "llama3.2:3b"
     assert payload["providers"][0]["base_url"] == "http://ollama:11434/v1"
     assert payload["default_provider"] == "openai_compatible"
+
+
+def test_runtime_config_update_saves_provider_without_echoing_secret(monkeypatch, tmp_path):
+    config_path = tmp_path / "runtime-config.json"
+    monkeypatch.setenv("RUNTIME_CONFIG_PATH", str(config_path))
+    get_settings.cache_clear()
+    try:
+        test_client = TestClient(create_app())
+        response = test_client.patch(
+            "/runtime/config",
+            json={
+                "ai_generation_mode": "llm",
+                "llm_provider": "openai_compatible",
+                "openai_api_key": "secret-token-123",
+                "openai_base_url": "http://ollama:11434/v1",
+                "openai_model": "llama3.2:3b",
+                "vector_db": "qdrant",
+                "embedding_provider": "local_hash",
+                "embedding_dimensions": 128,
+            },
+        )
+        options = test_client.get("/runtime/llm-options")
+    finally:
+        monkeypatch.delenv("RUNTIME_CONFIG_PATH", raising=False)
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    assert "secret-token-123" not in response.text
+    payload = response.json()
+    assert payload["active"]["llm_provider"] == "openai_compatible"
+    assert payload["secrets"]["openai_api_key"]["configured"] is True
+    assert json.loads(config_path.read_text())["openai_api_key"] == "secret-token-123"
+
+    assert options.status_code == 200
+    options_payload = options.json()
+    assert [provider["id"] for provider in options_payload["providers"]] == ["openai_compatible"]
+    assert options_payload["default_provider"] == "openai_compatible"
 
 
 def test_runtime_readiness_reports_operational_checks():

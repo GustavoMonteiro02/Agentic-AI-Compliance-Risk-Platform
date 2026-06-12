@@ -26,6 +26,7 @@ import type {
   ReviewEscalation,
   ReviewQueueItem,
   RiskItem,
+  RuntimeConfig,
   RuntimePreflight,
   RuntimeReadiness,
   RuntimeStatus,
@@ -37,6 +38,7 @@ type Page = "overview" | "intake" | "assessments" | "requirements" | "evidence" 
 
 type LoadState = {
   runtime?: RuntimeStatus;
+  runtimeConfig?: RuntimeConfig;
   llmOptions?: LLMOptions;
   readiness?: RuntimeReadiness;
   preflight?: RuntimePreflight;
@@ -84,9 +86,10 @@ function App() {
 
   const refresh = async () => {
     setError("");
-    const [runtime, llmOptions, readiness, preflight, llmUsage, systems, assessments, risks, incidents, reviewQueue, escalations, legalSources] =
+    const [runtime, runtimeConfig, llmOptions, readiness, preflight, llmUsage, systems, assessments, risks, incidents, reviewQueue, escalations, legalSources] =
       await Promise.all([
         api.runtime(),
+        api.runtimeConfig(),
         api.llmOptions(),
         api.readiness(),
         api.preflight(),
@@ -99,7 +102,7 @@ function App() {
         api.reviewEscalations(),
         api.legalSources(),
       ]);
-    setState({ runtime, llmOptions, readiness, preflight, llmUsage, systems, assessments, risks, incidents, reviewQueue, escalations, legalSources });
+    setState({ runtime, runtimeConfig, llmOptions, readiness, preflight, llmUsage, systems, assessments, risks, incidents, reviewQueue, escalations, legalSources });
     if (!selectedAssessmentId && assessments[0]) setSelectedAssessmentId(assessments[0].id);
   };
 
@@ -210,7 +213,7 @@ function App() {
         {page === "risks" ? <Risks risks={state.risks} assessment={selectedAssessment} run={run} /> : null}
         {page === "incidents" ? <Incidents incidents={state.incidents} systems={state.systems} assessment={selectedAssessment} run={run} /> : null}
         {page === "reviews" ? <Reviews queue={state.reviewQueue} assessment={selectedAssessment} run={run} /> : null}
-        {page === "operations" ? <Operations state={state} /> : null}
+        {page === "operations" ? <Operations state={state} run={run} /> : null}
       </section>
     </main>
   );
@@ -560,12 +563,13 @@ function Reviews({ queue, assessment, run }: { queue: ReviewQueueItem[]; assessm
   );
 }
 
-function Operations({ state }: { state: LoadState }) {
+function Operations({ state, run }: { state: LoadState; run: (fn: () => Promise<void>, success: string) => Promise<void> }) {
   return (
     <section className="grid-2">
       <Panel title="Runtime" meta={state.readiness?.ready ? "Ready" : "Attention"}>
         <KeyValues values={[["API base", API_BASE_URL], ["Generation", state.runtime?.ai_generation_mode || ""], ["LLM provider", state.runtime?.llm_provider || ""], ["Vector DB", state.runtime?.vector_db || ""], ["Embedding provider", state.runtime?.embedding_provider || ""]]} />
       </Panel>
+      <ProviderSettings config={state.runtimeConfig} run={run} />
       <Panel title="Configured LLMs" meta={`${state.llmOptions?.configured_provider_count || 0} available`}>
         {(state.llmOptions?.providers || []).map((provider) => (
           <article className="list-item" key={provider.id}>
@@ -573,7 +577,7 @@ function Operations({ state }: { state: LoadState }) {
             <p>{provider.model} - {provider.base_url}</p>
           </article>
         ))}
-        {!state.llmOptions?.providers.length ? <Empty text="No paid LLM provider configured. Deterministic mode is available." /> : null}
+        {!state.llmOptions?.providers.length ? <Empty text="No live LLM provider configured. Deterministic mode is available." /> : null}
       </Panel>
       <Panel title="Release preflight" meta={`${state.preflight?.warning_count || 0} warnings`}>
         {[...(state.preflight?.blockers || []), ...(state.preflight?.warnings || [])].map((item) => (
@@ -587,6 +591,135 @@ function Operations({ state }: { state: LoadState }) {
         <KeyValues values={[["Prompt tokens", state.llmUsage?.prompt_tokens || 0], ["Completion tokens", state.llmUsage?.completion_tokens || 0], ["Skipped calls", state.llmUsage?.skipped_llm_call_count || 0], ["Providers", state.llmUsage?.providers.join(", ") || "none"]]} />
       </Panel>
     </section>
+  );
+}
+
+function ProviderSettings({ config, run }: { config?: RuntimeConfig; run: (fn: () => Promise<void>, success: string) => Promise<void> }) {
+  const active = config?.active;
+  const [form, setForm] = useState({
+    ai_generation_mode: active?.ai_generation_mode || "deterministic",
+    llm_provider: active?.llm_provider || "openai_compatible",
+    openai_base_url: active?.openai_base_url || "http://ollama:11434/v1",
+    openai_model: active?.openai_model || "llama3.2:3b",
+    openai_api_key: "",
+    anthropic_base_url: active?.anthropic_base_url || "https://api.anthropic.com/v1",
+    anthropic_model: active?.anthropic_model || "claude-3-5-sonnet-latest",
+    anthropic_api_key: "",
+    openai_timeout_seconds: String(active?.openai_timeout_seconds || 60),
+    openai_max_retries: String(active?.openai_max_retries || 2),
+    openai_max_tokens: String(active?.openai_max_tokens || 2000),
+    embedding_provider: active?.embedding_provider || "local_hash",
+    embedding_dimensions: String(active?.embedding_dimensions || 128),
+    vector_db: active?.vector_db || "qdrant",
+    qdrant_url: active?.qdrant_url || "http://qdrant:6333",
+    qdrant_collection: active?.qdrant_collection || "ai_governance_requirements",
+    langsmith_tracing: active?.langsmith_tracing ? "true" : "false",
+    langsmith_project: active?.langsmith_project || "ai-governance-compliance-platform",
+    langsmith_api_key: "",
+  });
+
+  useEffect(() => {
+    if (!active) return;
+    setForm((current) => ({
+      ...current,
+      ai_generation_mode: active.ai_generation_mode,
+      llm_provider: active.llm_provider,
+      openai_base_url: active.openai_base_url,
+      openai_model: active.openai_model,
+      anthropic_base_url: active.anthropic_base_url,
+      anthropic_model: active.anthropic_model,
+      openai_timeout_seconds: String(active.openai_timeout_seconds),
+      openai_max_retries: String(active.openai_max_retries),
+      openai_max_tokens: String(active.openai_max_tokens),
+      embedding_provider: active.embedding_provider,
+      embedding_dimensions: String(active.embedding_dimensions),
+      vector_db: active.vector_db,
+      qdrant_url: active.qdrant_url,
+      qdrant_collection: active.qdrant_collection,
+      langsmith_tracing: active.langsmith_tracing ? "true" : "false",
+      langsmith_project: active.langsmith_project,
+    }));
+  }, [active]);
+
+  const update = (key: string, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const selectedProvider = form.llm_provider;
+  const providerConfigured =
+    selectedProvider === "anthropic"
+      ? Boolean(form.anthropic_api_key || config?.secrets.anthropic_api_key?.configured)
+      : Boolean(form.openai_api_key || config?.secrets.openai_api_key?.configured);
+
+  return (
+    <Panel title="Provider settings" meta={providerConfigured ? "Configured" : "Needs key"}>
+      <div className="settings-stack">
+        <Select label="Generation mode" value={form.ai_generation_mode} options={["deterministic", "llm"]} onChange={(value) => update("ai_generation_mode", value)} />
+        <Select label="Provider" value={form.llm_provider} options={["openai_compatible", "openai", "anthropic"]} onChange={(value) => {
+          const preset = value === "openai" ? { openai_base_url: "https://api.openai.com/v1", openai_model: "gpt-4.1-mini" } : value === "openai_compatible" ? { openai_base_url: form.openai_base_url || "http://ollama:11434/v1", openai_model: form.openai_model || "llama3.2:3b" } : {};
+          setForm((current) => ({ ...current, ...preset, llm_provider: value }));
+        }} />
+        {selectedProvider === "anthropic" ? (
+          <>
+            <Field label="Anthropic base URL" value={form.anthropic_base_url} onChange={(value) => update("anthropic_base_url", value)} />
+            <Field label="Anthropic model" value={form.anthropic_model} onChange={(value) => update("anthropic_model", value)} />
+            <SecretField label={config?.secrets.anthropic_api_key?.configured ? "Anthropic API key configured" : "Anthropic API key"} value={form.anthropic_api_key} onChange={(value) => update("anthropic_api_key", value)} />
+          </>
+        ) : (
+          <>
+            <Field label={selectedProvider === "openai_compatible" ? "OpenAI-compatible base URL" : "OpenAI base URL"} value={form.openai_base_url} onChange={(value) => update("openai_base_url", value)} />
+            <Field label="Model" value={form.openai_model} onChange={(value) => update("openai_model", value)} />
+            <SecretField label={config?.secrets.openai_api_key?.configured ? "API key configured" : "API key"} value={form.openai_api_key} onChange={(value) => update("openai_api_key", value)} />
+          </>
+        )}
+        <div className="mini-grid">
+          <Field label="Timeout seconds" value={form.openai_timeout_seconds} onChange={(value) => update("openai_timeout_seconds", value)} />
+          <Field label="Max retries" value={form.openai_max_retries} onChange={(value) => update("openai_max_retries", value)} />
+          <Field label="Max tokens" value={form.openai_max_tokens} onChange={(value) => update("openai_max_tokens", value)} />
+        </div>
+        <div className="mini-grid">
+          <Select label="Vector DB" value={form.vector_db} options={["qdrant", "local", "pinecone"]} onChange={(value) => update("vector_db", value)} />
+          <Select label="Embeddings" value={form.embedding_provider} options={["local_hash", "openai"]} onChange={(value) => update("embedding_provider", value)} />
+          <Field label="Embedding dimensions" value={form.embedding_dimensions} onChange={(value) => update("embedding_dimensions", value)} />
+        </div>
+        <Field label="Qdrant URL" value={form.qdrant_url} onChange={(value) => update("qdrant_url", value)} />
+        <Field label="Qdrant collection" value={form.qdrant_collection} onChange={(value) => update("qdrant_collection", value)} />
+        <div className="mini-grid">
+          <Select label="LangSmith tracing" value={form.langsmith_tracing} options={["false", "true"]} onChange={(value) => update("langsmith_tracing", value)} />
+          <Field label="LangSmith project" value={form.langsmith_project} onChange={(value) => update("langsmith_project", value)} />
+        </div>
+        <SecretField label={config?.secrets.langsmith_api_key?.configured ? "LangSmith key configured" : "LangSmith API key"} value={form.langsmith_api_key} onChange={(value) => update("langsmith_api_key", value)} />
+        <button
+          className="primary"
+          onClick={() => run(async () => {
+            const payload: Record<string, unknown> = {
+              ai_generation_mode: form.ai_generation_mode,
+              llm_provider: form.llm_provider,
+              openai_base_url: form.openai_base_url,
+              openai_model: form.openai_model,
+              anthropic_base_url: form.anthropic_base_url,
+              anthropic_model: form.anthropic_model,
+              openai_timeout_seconds: Number(form.openai_timeout_seconds),
+              openai_max_retries: Number(form.openai_max_retries),
+              openai_max_tokens: Number(form.openai_max_tokens),
+              embedding_provider: form.embedding_provider,
+              embedding_dimensions: Number(form.embedding_dimensions),
+              vector_db: form.vector_db,
+              qdrant_url: form.qdrant_url,
+              qdrant_collection: form.qdrant_collection,
+              langsmith_tracing: form.langsmith_tracing === "true",
+              langsmith_project: form.langsmith_project,
+            };
+            if (form.openai_api_key) payload.openai_api_key = form.openai_api_key;
+            if (!form.openai_api_key && form.llm_provider === "openai_compatible" && form.openai_base_url.includes("ollama") && !config?.secrets.openai_api_key?.configured) {
+              payload.openai_api_key = "ollama";
+            }
+            if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
+            if (form.langsmith_api_key) payload.langsmith_api_key = form.langsmith_api_key;
+            await api.updateRuntimeConfig(payload);
+          }, "Runtime provider configuration saved.")}
+        >
+          Save provider config
+        </button>
+      </div>
+    </Panel>
   );
 }
 
@@ -615,6 +748,10 @@ function Panel({ title, meta, children }: { title: string; meta?: string; childr
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return <label>{label}<input value={value} onChange={(event) => onChange(event.target.value)} /></label>;
+}
+
+function SecretField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return <label>{label}<input type="password" value={value} placeholder="Leave blank to keep existing value" onChange={(event) => onChange(event.target.value)} /></label>;
 }
 
 function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {

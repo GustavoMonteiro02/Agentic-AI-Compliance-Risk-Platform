@@ -129,6 +129,12 @@ make prod-ingest-qdrant
 With `EMBEDDING_PROVIDER=openai`, this creates OpenAI embeddings for the local regulatory and policy knowledge base and stores them in Qdrant.
 With `EMBEDDING_PROVIDER=local_hash`, ingestion is fully local and costs nothing.
 
+## Configure Providers In The App
+
+After the stack is running, open the React console and go to **Operations**. The provider settings panel can switch between deterministic mode, local Ollama/OpenAI-compatible mode, OpenAI, and Anthropic. Saved values are written to `.runtime-config.json`, which is ignored by git and overrides `.env` for runtime settings such as provider, base URL, model, API keys, vector store, embeddings, and LangSmith tracing.
+
+The assessment creation screen only shows configured LLM providers in its per-run selector. For local Ollama, choose `OpenAI-compatible`, keep the base URL as `http://ollama:11434/v1`, set the model you pulled, and save. The app will use the local placeholder key automatically when no OpenAI-compatible key is configured.
+
 ## Run The Production Smoke Test
 
 ```bash

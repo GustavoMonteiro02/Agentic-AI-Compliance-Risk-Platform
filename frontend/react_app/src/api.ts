@@ -33,6 +33,30 @@ export type LLMOptions = {
   };
 };
 
+export type RuntimeConfig = {
+  active: {
+    ai_generation_mode: string;
+    llm_provider: string;
+    openai_base_url: string;
+    openai_model: string;
+    openai_timeout_seconds: number;
+    openai_max_retries: number;
+    openai_max_tokens: number;
+    anthropic_base_url: string;
+    anthropic_model: string;
+    langsmith_tracing: boolean;
+    langsmith_project: string;
+    vector_db: string;
+    qdrant_url: string;
+    qdrant_collection: string;
+    embedding_provider: string;
+    openai_embedding_model: string;
+    embedding_dimensions: number;
+  };
+  secrets: Record<string, { configured: boolean; from_runtime_config: boolean }>;
+  providers: LLMProviderOption[];
+};
+
 export type RuntimeReadiness = {
   ready: boolean;
   checks: Record<string, { ok?: boolean; current?: boolean; mode?: string; provider?: string; error?: string }>;
@@ -258,6 +282,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const api = {
   runtime: () => request<RuntimeStatus>("GET", "/runtime/status"),
+  runtimeConfig: () => request<RuntimeConfig>("GET", "/runtime/config"),
+  updateRuntimeConfig: (payload: Record<string, unknown>) => request<RuntimeConfig>("PATCH", "/runtime/config", payload),
   llmOptions: () => request<LLMOptions>("GET", "/runtime/llm-options"),
   readiness: () => request<RuntimeReadiness>("GET", "/runtime/readiness"),
   preflight: () => request<RuntimePreflight>("GET", "/runtime/preflight"),

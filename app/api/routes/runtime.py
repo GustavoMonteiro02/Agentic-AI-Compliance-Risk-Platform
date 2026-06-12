@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Query, Response
+from typing import Literal
+
+from fastapi import APIRouter, Depends, Query, Response
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from app.config import get_settings
@@ -11,9 +14,96 @@ from app.prompts.registry import PROMPT_REGISTRY
 from app.rag.ingest import legal_source_summary
 from app.rag.retriever import LocalComplianceRetriever
 from app.rag.vector_store import PineconeVectorStore, QdrantVectorStore
+from app.runtime_config import has_runtime_override, save_runtime_overrides
+from app.security import require_roles
 from app.services.assessment_service import configured_llm_providers
 
 router = APIRouter(prefix="/runtime", tags=["runtime"])
+
+
+class RuntimeConfigUpdate(BaseModel):
+    ai_generation_mode: Literal["deterministic", "llm", "openai"] | None = None
+    llm_provider: Literal["openai", "openai_compatible", "anthropic"] | None = None
+    openai_api_key: str | None = Field(default=None, max_length=4096)
+    openai_base_url: str | None = Field(default=None, max_length=500)
+    openai_model: str | None = Field(default=None, max_length=200)
+    openai_timeout_seconds: int | None = Field(default=None, ge=1, le=300)
+    openai_max_retries: int | None = Field(default=None, ge=0, le=5)
+    openai_max_tokens: int | None = Field(default=None, ge=128, le=8000)
+    anthropic_api_key: str | None = Field(default=None, max_length=4096)
+    anthropic_base_url: str | None = Field(default=None, max_length=500)
+    anthropic_model: str | None = Field(default=None, max_length=200)
+    langsmith_tracing: bool | None = None
+    langsmith_api_key: str | None = Field(default=None, max_length=4096)
+    langsmith_project: str | None = Field(default=None, max_length=200)
+    vector_db: Literal["local", "qdrant", "pinecone"] | None = None
+    qdrant_url: str | None = Field(default=None, max_length=500)
+    qdrant_collection: str | None = Field(default=None, max_length=200)
+    embedding_provider: Literal["local_hash", "openai"] | None = None
+    openai_embedding_model: str | None = Field(default=None, max_length=200)
+    embedding_dimensions: int | None = Field(default=None, ge=32, le=4096)
+
+
+def _secret_state(value: str | None, key: str) -> dict:
+    return {"configured": bool(value), "from_runtime_config": has_runtime_override(key)}
+
+
+def _runtime_config_payload() -> dict:
+    settings = get_settings()
+    return {
+        "active": {
+            "ai_generation_mode": settings.ai_generation_mode,
+            "llm_provider": settings.llm_provider,
+            "openai_base_url": settings.openai_base_url,
+            "openai_model": settings.openai_model,
+            "openai_timeout_seconds": settings.openai_timeout_seconds,
+            "openai_max_retries": settings.openai_max_retries,
+            "openai_max_tokens": settings.openai_max_tokens,
+            "anthropic_base_url": settings.anthropic_base_url,
+            "anthropic_model": settings.anthropic_model,
+            "langsmith_tracing": settings.langsmith_tracing,
+            "langsmith_project": settings.langsmith_project,
+            "vector_db": settings.vector_db,
+            "qdrant_url": settings.qdrant_url,
+            "qdrant_collection": settings.qdrant_collection,
+            "embedding_provider": settings.embedding_provider,
+            "openai_embedding_model": settings.openai_embedding_model,
+            "embedding_dimensions": settings.embedding_dimensions,
+        },
+        "secrets": {
+            "openai_api_key": _secret_state(settings.openai_api_key, "openai_api_key"),
+            "anthropic_api_key": _secret_state(settings.anthropic_api_key, "anthropic_api_key"),
+            "langsmith_api_key": _secret_state(settings.langsmith_api_key, "langsmith_api_key"),
+        },
+        "providers": [
+            {
+                "id": "openai",
+                "label": "OpenAI",
+                "configured": bool(settings.openai_api_key)
+                and settings.openai_base_url.rstrip("/") == "https://api.openai.com/v1",
+                "model": settings.openai_model,
+                "base_url": "https://api.openai.com/v1",
+                "requires_key": "OPENAI_API_KEY",
+            },
+            {
+                "id": "openai_compatible",
+                "label": "OpenAI-compatible / Ollama",
+                "configured": bool(settings.openai_api_key)
+                and settings.openai_base_url.rstrip("/") != "https://api.openai.com/v1",
+                "model": settings.openai_model,
+                "base_url": settings.openai_base_url,
+                "requires_key": "OPENAI_API_KEY",
+            },
+            {
+                "id": "anthropic",
+                "label": "Anthropic",
+                "configured": bool(settings.anthropic_api_key),
+                "model": settings.anthropic_model,
+                "base_url": settings.anthropic_base_url,
+                "requires_key": "ANTHROPIC_API_KEY",
+            },
+        ],
+    }
 
 
 @router.get("/status")
@@ -60,6 +150,19 @@ def runtime_status() -> dict:
         "default_user_role": settings.default_user_role,
         "default_tenant_id": settings.default_tenant_id,
     }
+
+
+@router.get("/config")
+def runtime_config() -> dict:
+    return _runtime_config_payload()
+
+
+@router.patch("/config", dependencies=[Depends(require_roles("admin"))])
+def update_runtime_config(payload: RuntimeConfigUpdate) -> dict:
+    updates = payload.model_dump(exclude_unset=True)
+    save_runtime_overrides(updates)
+    get_settings.cache_clear()
+    return _runtime_config_payload()
 
 
 @router.get("/llm-options")
