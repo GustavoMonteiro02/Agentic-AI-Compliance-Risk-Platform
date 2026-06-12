@@ -1,4 +1,4 @@
-.PHONY: test security-check ci api ui mcp migrate-db ingest-qdrant ingest-pinecone validate-legal-sources register-legal-source
+.PHONY: test security-check ci api ui mcp migrate-db llm-smoke ingest-qdrant ingest-pinecone validate-legal-sources register-legal-source
 
 PYTHON ?= python3.11
 
@@ -21,6 +21,9 @@ mcp:
 
 migrate-db:
 	$(PYTHON) scripts/migrate_db.py
+
+llm-smoke:
+	$(PYTHON) scripts/smoke_llm.py
 
 ingest-qdrant:
 	$(PYTHON) scripts/ingest_qdrant.py

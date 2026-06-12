@@ -46,6 +46,7 @@ See [Requirements Coverage](docs/REQUIREMENTS_COVERAGE.md) for a mapping from th
 
 See [Demo Guide](docs/DEMO.md) for the recommended walkthrough.
 See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, LangSmith metadata, PostgreSQL, and Qdrant.
+See [Test With Your OpenAI API Key](docs/TEST_WITH_OPENAI_KEY.md) for a local live-LLM smoke test and app runbook.
 
 ## Stack
 
