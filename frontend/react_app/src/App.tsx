@@ -17,6 +17,7 @@ import { api } from "./api";
 import type {
   Assessment,
   Incident,
+  LegalSourceSummary,
   RequirementSearchResult,
   ReviewEscalation,
   RiskItem,
@@ -37,6 +38,7 @@ type LoadState = {
   incidents: Incident[];
   escalations: ReviewEscalation[];
   ragResults: RequirementSearchResult[];
+  legalSources?: LegalSourceSummary;
   error?: string;
 };
 
@@ -76,9 +78,21 @@ function App() {
       api.incidents(),
       api.reviewEscalations(),
       api.requirementSearch("AI Act human oversight personal data incident reporting"),
+      api.legalSources(),
     ])
-      .then(([runtime, readiness, metrics, systems, assessments, risks, incidents, escalations, ragResults]) =>
-        setState({ runtime, readiness, metrics, systems, assessments, risks, incidents, escalations, ragResults })
+      .then(([runtime, readiness, metrics, systems, assessments, risks, incidents, escalations, ragResults, legalSources]) =>
+        setState({
+          runtime,
+          readiness,
+          metrics,
+          systems,
+          assessments,
+          risks,
+          incidents,
+          escalations,
+          ragResults,
+          legalSources,
+        })
       )
       .catch((error: Error) => setState((current) => ({ ...current, error: error.message })));
   }, []);
@@ -157,6 +171,12 @@ function App() {
           {metric("Escalated reviews", state.escalations.length, "SLA and critical gaps", <AlertTriangle size={20} />)}
           {metric("API requests", state.metrics?.total_requests || 0, "Runtime traffic", <BarChart3 size={20} />)}
           {metric("Evidence approved", summary.approvedEvidence.length, "Audit-ready records", <FileCheck2 size={20} />)}
+          {metric(
+            "Legal corpus",
+            state.legalSources?.ready_for_full_legal_corpus ? "Ready" : "Partial",
+            `${state.legalSources?.available_count || 0}/${state.legalSources?.source_count || 0} sources available`,
+            <FileCheck2 size={20} />
+          )}
         </section>
 
         <section className="workspace">
@@ -229,6 +249,31 @@ function App() {
                 </article>
               ))}
               {state.ragResults.length === 0 ? <div className="empty">Retrieval evidence will appear after API traffic.</div> : null}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">
+              <h2>Legal source readiness</h2>
+              <span>{state.legalSources?.manifest || "manifest"}</span>
+            </div>
+            <div className="source-list">
+              {state.legalSources?.sources.slice(0, 4).map((source) => (
+                <article key={source.id}>
+                  <div>
+                    <strong>{source.title}</strong>
+                    <span className={source.readiness.ready ? "good" : "bad"}>
+                      {source.readiness.ready ? "ready" : source.ingestion_status}
+                    </span>
+                  </div>
+                  <small>
+                    {source.chunk_count} chunks
+                    {typeof source.coverage_percent === "number" ? `, ${source.coverage_percent.toFixed(1)}% coverage` : ""}
+                  </small>
+                  {source.readiness.next_actions[0] ? <p>{source.readiness.next_actions[0]}</p> : null}
+                </article>
+              ))}
+              {!state.legalSources?.sources.length ? <div className="empty">Legal source manifest not loaded.</div> : null}
             </div>
           </div>
 

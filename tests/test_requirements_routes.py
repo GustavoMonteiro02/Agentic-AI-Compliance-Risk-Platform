@@ -57,3 +57,7 @@ def test_requirements_legal_sources_report_manifest_readiness():
     assert payload["validation"]["ready"] is False
     assert payload["validation"]["errors"]
     assert any(source["chunk_count"] > 0 for source in payload["sources"])
+    ai_act = next(source for source in payload["sources"] if source["id"] == "eu-ai-act")
+    assert ai_act["coverage_percent"] < 3
+    assert ai_act["readiness"]["ready"] is False
+    assert "partial_article_coverage" in ai_act["readiness"]["warnings"]

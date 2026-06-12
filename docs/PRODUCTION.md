@@ -203,10 +203,10 @@ make ingest-pinecone
 
 The Qdrant and Pinecone payloads store requirement metadata, tags, source URLs, effective dates, and citation labels. Pinecone deployments set `VECTOR_DB=pinecone`, `PINECONE_API_KEY`, `PINECONE_INDEX_HOST`, and optionally `PINECONE_NAMESPACE`. The default embedding provider is deterministic and local for repeatable development. Production can set `EMBEDDING_PROVIDER=openai` to use managed OpenAI embeddings behind the same vector-store contract.
 
-For full legal corpora, add official article-level Markdown files under `data/legal_sources/` and register them in `data/legal_sources_manifest.json`. The manifest records source URL, jurisdiction, document type, ingestion status, and local path. Chunks include locator and content hash metadata for citation-grade retrieval.
-Operators can inspect corpus readiness through `GET /requirements/legal-sources` and `/runtime/readiness`; both expose source counts, local availability, chunk counts, and whether every manifest source is locally available.
-Use `make validate-legal-sources` as a release gate when promoting a full official corpus. The command exits non-zero while manifest sources are missing, only sample extracts are present, or article-level chunks cannot be parsed.
-Use `scripts/register_legal_source.py` to register a new local official-source Markdown file with jurisdiction, authority, source URL, document type, and local path metadata before running vector ingestion.
+For full legal corpora, add official article-level Markdown files under `data/legal_sources/` and register them in `data/legal_sources_manifest.json`. The manifest records source URL, jurisdiction, document type, ingestion status, local path, expected article count, and required locators. Chunks include locator and content hash metadata for citation-grade retrieval.
+Operators can inspect corpus readiness through `GET /requirements/legal-sources` and `/runtime/readiness`; both expose source counts, local availability, chunk counts, parsed locators, coverage percentage, missing required locators, source-level blockers, warnings, and next actions.
+Use `make validate-legal-sources` as a release gate when promoting a full official corpus. The command exits non-zero while manifest sources are missing, only sample extracts are present, article-level chunks cannot be parsed, required locators are absent, or expected article coverage is incomplete.
+Use `scripts/register_legal_source.py` to register a new local official-source Markdown file with jurisdiction, authority, source URL, document type, local path, expected article count, and required locator metadata before running vector ingestion.
 
 ## Release Gate
 

@@ -13,8 +13,8 @@ This document maps the original project requirements to the current implementati
 - Follow-up answers accepted through `POST /systems/{system_id}/assess`.
 - LangGraph-compiled governance workflow with intake, missing-info check, risk classification, regulatory retrieval, control mapping, gap analysis, evidence generation, system card generation, audit report generation, and human review gate.
 - Local RAG knowledge base with policies, controls, source-linked regulation summaries, section metadata, citation payloads, hybrid retrieval, optional Qdrant vector scores, explainable reranking, matched terms, citation quality, and evidence grading.
-- Legal-source manifest and article-level ingestion path with locators and content hashes for official corpus expansion.
-- Legal-source readiness endpoint exposing manifest status, local availability, chunk counts, and full-corpus readiness.
+- Legal-source manifest and article-level ingestion path with locators, expected article counts, required locator coverage, and content hashes for official corpus expansion.
+- Legal-source readiness endpoint exposing manifest status, local availability, chunk counts, parsed locators, coverage percentage, source-level blockers, next actions, and full-corpus readiness.
 - Requirements seeding into the `requirements` database table from Markdown knowledge-base documents.
 - Requirement search API and Streamlit Requirements tab.
 - MCP tool, resource, and prompt catalog with tests.

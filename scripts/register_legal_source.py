@@ -13,6 +13,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source-url", required=True)
     parser.add_argument("--document-type", required=True)
     parser.add_argument("--local-path", required=True)
+    parser.add_argument("--expected-article-count", type=int, default=None)
+    parser.add_argument("--required-locator", action="append", default=[])
     parser.add_argument("--ingestion-status", default="available")
     parser.add_argument("--notes", default="Registered local official-source document.")
     return parser.parse_args()
@@ -28,6 +30,8 @@ if __name__ == "__main__":
         "source_url": args.source_url,
         "document_type": args.document_type,
         "local_path": args.local_path,
+        "expected_article_count": args.expected_article_count,
+        "minimum_required_locators": args.required_locator,
         "ingestion_status": args.ingestion_status,
         "notes": args.notes,
     }

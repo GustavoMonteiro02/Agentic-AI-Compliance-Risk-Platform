@@ -18,6 +18,7 @@ def test_react_saas_ui_scaffold_is_present():
     assert "Open incidents" in app
     assert "Escalated reviews" in app
     assert "Runtime readiness" in app
+    assert "Legal source readiness" in app
     assert "API latency" in app
     assert "Evidence approved" in app
     assert 'getJson<RuntimeMetrics>("/runtime/metrics")' in Path(
@@ -28,6 +29,9 @@ def test_react_saas_ui_scaffold_is_present():
     ).read_text(encoding="utf-8")
     assert 'getJson<Incident[]>("/incidents")' in Path("frontend/react_app/src/api.ts").read_text(encoding="utf-8")
     assert 'getJson<ReviewEscalation[]>("/reviews/escalations")' in Path(
+        "frontend/react_app/src/api.ts"
+    ).read_text(encoding="utf-8")
+    assert 'getJson<LegalSourceSummary>("/requirements/legal-sources")' in Path(
         "frontend/react_app/src/api.ts"
     ).read_text(encoding="utf-8")
     assert "grid-template-columns: 280px minmax(0, 1fr)" in styles

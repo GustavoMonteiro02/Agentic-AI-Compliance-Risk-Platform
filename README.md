@@ -264,9 +264,9 @@ Prompts:
 - Risk results are preliminary and require human compliance/legal review.
 - Retrieval uses local hybrid lexical + metadata ranking with query expansion, explainable reranking, matched-term evidence, citation-quality labels, and evidence grading by default. Qdrant and Pinecone adapters are available as persistent vector-store extension points.
 - Rich RAG search is exposed through `GET /requirements/search?q=...` with optional `jurisdiction`, `document_type`, `category`, `tags`, and `authority` filters.
-- Legal source readiness is exposed through `GET /requirements/legal-sources`; it shows which official-source files are locally available and whether the corpus is complete.
-- `make validate-legal-sources` validates manifest completeness and exits non-zero until official full-text sources are locally available.
-- `scripts/register_legal_source.py` registers a local official-source Markdown file in `data/legal_sources_manifest.json`.
+- Legal source readiness is exposed through `GET /requirements/legal-sources`; it shows file availability, expected article coverage, parsed locators, missing required locators, content hashes, blockers, warnings, and next actions.
+- `make validate-legal-sources` validates manifest completeness and exits non-zero until official full-text sources are locally available, marked `available`, and sufficiently covered.
+- `scripts/register_legal_source.py` registers a local official-source Markdown file in `data/legal_sources_manifest.json`, including optional expected article counts and required locators.
 
 ## Portfolio Value
 

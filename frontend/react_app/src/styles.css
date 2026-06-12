@@ -361,6 +361,49 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.source-list {
+  display: grid;
+  gap: 10px;
+}
+
+.source-list article {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid #eef2f5;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.source-list article div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.source-list strong,
+.source-list p,
+.source-list small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.source-list strong {
+  line-height: 1.35;
+}
+
+.source-list small,
+.source-list p {
+  color: #667085;
+  font-size: 13px;
+}
+
+.source-list p {
+  margin: 0;
+  line-height: 1.4;
+}
+
 .check-list {
   display: grid;
   gap: 8px;
@@ -492,6 +535,10 @@ h2 {
   }
 
   .rag-heading {
+    display: grid;
+  }
+
+  .source-list article div {
     display: grid;
   }
 }

@@ -49,7 +49,16 @@ def test_legal_source_summary_includes_validation_gate():
 
     assert summary["validation"]["ready"] is False
     assert any("sample extract" in warning for warning in summary["validation"]["warnings"])
+    assert any("3/113" in warning for warning in summary["validation"]["warnings"])
     assert any("gdpr" in error for error in summary["validation"]["errors"])
+    ai_act = next(source for source in summary["sources"] if source["id"] == "eu-ai-act")
+    assert ai_act["coverage_percent"] < 3
+    assert ai_act["parsed_locators"] == ["Article 14", "Article 15", "Article 9"]
+    assert ai_act["missing_required_locators"] == []
+    assert ai_act["readiness"]["ready"] is False
+    assert "partial_article_coverage" in ai_act["readiness"]["warnings"]
+    gdpr = next(source for source in summary["sources"] if source["id"] == "gdpr")
+    assert "local_path_missing" in gdpr["readiness"]["blockers"]
 
 
 def test_legal_source_validation_passes_complete_local_sources():
@@ -66,6 +75,7 @@ def test_legal_source_validation_passes_complete_local_sources():
                 "ingestion_status": "available",
                 "available": True,
                 "chunk_count": 3,
+                "missing_required_locators": [],
             }
         ]
     )

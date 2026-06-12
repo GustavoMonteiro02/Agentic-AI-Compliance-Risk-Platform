@@ -101,6 +101,28 @@ export type RequirementSearchResult = {
   evidence_grade?: string;
 };
 
+export type LegalSourceSummary = {
+  manifest?: string;
+  source_count: number;
+  available_count: number;
+  complete_count: number;
+  ready_for_full_legal_corpus: boolean;
+  validation: { ready: boolean; errors: string[]; warnings: string[] };
+  sources: {
+    id: string;
+    title: string;
+    jurisdiction: string;
+    document_type: string;
+    ingestion_status: string;
+    available: boolean;
+    chunk_count: number;
+    coverage_percent?: number;
+    parsed_locators: string[];
+    missing_required_locators: string[];
+    readiness: { ready: boolean; blockers: string[]; warnings: string[]; next_actions: string[] };
+  }[];
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 function headers() {
@@ -133,4 +155,5 @@ export const api = {
   reviewEscalations: () => getJson<ReviewEscalation[]>("/reviews/escalations"),
   requirementSearch: (query: string) =>
     getJson<RequirementSearchResult[]>(`/requirements/search?q=${encodeURIComponent(query)}&top_k=4`),
+  legalSources: () => getJson<LegalSourceSummary>("/requirements/legal-sources"),
 };

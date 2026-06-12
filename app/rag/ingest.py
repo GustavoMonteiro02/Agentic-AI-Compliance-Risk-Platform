@@ -34,16 +34,73 @@ def legal_source_summary(base_path: Path) -> dict:
     sources = []
     for source in manifest.get("sources", []):
         local_path = base_path / source["local_path"]
+        chunks = parse_markdown_requirements(source["local_path"], local_path.read_text(encoding="utf-8")) if local_path.exists() else []
+        locators = sorted({chunk.locator for chunk in chunks if chunk.locator})
+        required_locators = source.get("minimum_required_locators") or []
+        missing_required_locators = sorted(set(required_locators) - set(locators))
+        expected_article_count = source.get("expected_article_count")
+        coverage_percent = (
+            round((len(locators) / expected_article_count) * 100, 2)
+            if expected_article_count
+            else None
+        )
         sources.append(
             {
                 **source,
                 "available": local_path.exists(),
-                "chunk_count": len(parse_markdown_requirements(source["local_path"], local_path.read_text(encoding="utf-8")))
-                if local_path.exists()
-                else 0,
+                "chunk_count": len(chunks),
+                "parsed_locators": locators,
+                "missing_required_locators": missing_required_locators,
+                "coverage_percent": coverage_percent,
+                "content_hashes": sorted({chunk.content_hash for chunk in chunks if chunk.content_hash}),
+                "readiness": _source_readiness(
+                    available=local_path.exists(),
+                    chunk_count=len(chunks),
+                    ingestion_status=source.get("ingestion_status"),
+                    missing_required_locators=missing_required_locators,
+                    expected_article_count=expected_article_count,
+                    locator_count=len(locators),
+                ),
             }
         )
     return {"manifest": manifest.get("version"), "sources": sources, "validation": validate_legal_sources(sources)}
+
+
+def _source_readiness(
+    *,
+    available: bool,
+    chunk_count: int,
+    ingestion_status: str | None,
+    missing_required_locators: list[str],
+    expected_article_count: int | None,
+    locator_count: int,
+) -> dict:
+    blockers: list[str] = []
+    warnings: list[str] = []
+    next_actions: list[str] = []
+
+    if not available:
+        blockers.append("local_path_missing")
+        next_actions.append("Add the official source file at local_path.")
+    if available and chunk_count == 0:
+        blockers.append("no_article_chunks")
+        next_actions.append("Convert the source into article-level Markdown sections.")
+    if missing_required_locators:
+        blockers.append("required_locators_missing")
+        next_actions.append("Add required locators: " + ", ".join(missing_required_locators))
+    if ingestion_status != "available":
+        warnings.append(f"ingestion_status:{ingestion_status or 'missing'}")
+        next_actions.append("Set ingestion_status to available only after full official-source ingestion.")
+    if expected_article_count and locator_count < expected_article_count:
+        warnings.append("partial_article_coverage")
+        next_actions.append(f"Add remaining article locators until coverage reaches {expected_article_count}.")
+
+    return {
+        "ready": not blockers and not warnings,
+        "blockers": blockers,
+        "warnings": warnings,
+        "next_actions": next_actions,
+    }
 
 
 def validate_legal_sources(sources: list[dict]) -> dict:
@@ -66,6 +123,13 @@ def validate_legal_sources(sources: list[dict]) -> dict:
             warnings.append(f"{source_id}: ingestion_status is {status}")
         if status == "sample_extract":
             warnings.append(f"{source_id}: sample extract is not production full-text corpus")
+        if source.get("missing_required_locators"):
+            errors.append(f"{source_id}: missing required locators {', '.join(source['missing_required_locators'])}")
+        expected_article_count = source.get("expected_article_count")
+        if expected_article_count and source.get("chunk_count", 0) < expected_article_count:
+            warnings.append(
+                f"{source_id}: parsed {source.get('chunk_count', 0)}/{expected_article_count} expected article-level chunks"
+            )
 
     return {"ready": not errors and not warnings, "errors": errors, "warnings": warnings}
 
