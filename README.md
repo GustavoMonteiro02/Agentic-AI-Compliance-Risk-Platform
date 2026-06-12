@@ -191,6 +191,9 @@ Copy `.env.example` to `.env` and adjust values.
 - `REVIEW_SLA_HOURS`: default human-review SLA used by review queues and escalation notifications
 - `REVIEW_MISSING_EVIDENCE_ESCALATION_THRESHOLD`: missing evidence count that triggers review attention
 - `REVIEW_HIGH_RISK_CRITICAL_GAP_ESCALATION`: whether high-risk critical gaps trigger urgent escalation
+- `NOTIFICATION_DELIVERY_MODE`: `manual` by default, or `webhook` to dispatch queued notifications
+- `NOTIFICATION_WEBHOOK_URL`: fallback HTTPS webhook target for queued notification dispatch
+- `NOTIFICATION_WEBHOOK_TIMEOUT_SECONDS`: outbound webhook timeout
 - `MCP_TRANSPORT`: `stdio` locally, or an HTTP transport such as `streamable-http` for deployment
 - `MCP_HOST` / `MCP_PORT`: MCP runtime bind settings
 

@@ -25,3 +25,12 @@ class NotificationEventRead(BaseModel):
 class NotificationEventUpdate(BaseModel):
     status: str = Field(pattern="^(queued|delivered|failed|skipped)$")
     delivery_notes: str | None = None
+
+
+class NotificationDispatchResult(BaseModel):
+    notification_id: str
+    status: str
+    channel: str
+    recipient: str | None = None
+    detail: str
+    http_status: int | None = None

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from fastapi.testclient import TestClient
 
+from app.config import get_settings
 from app.api.main import app
 from app.services.review_service import _review_escalation
 
@@ -223,3 +224,53 @@ def test_notification_delivery_status_can_be_updated_and_audited():
     assert payload["payload_json"]["delivery_notes"] == "Accepted by downstream email gateway."
     assert tenant_b.status_code == 404
     assert any(event["action"] == "notification.delivered" for event in events)
+
+
+def test_notification_dispatch_delivers_queued_webhooks(monkeypatch):
+    captured_payloads = []
+
+    class FakeResponse:
+        status_code = 202
+
+        def raise_for_status(self):
+            return None
+
+    def fake_post(url, json, timeout):
+        captured_payloads.append({"url": url, "json": json, "timeout": timeout})
+        return FakeResponse()
+
+    monkeypatch.setenv("NOTIFICATION_DELIVERY_MODE", "webhook")
+    get_settings.cache_clear()
+    monkeypatch.setattr("app.services.notification_service.requests.post", fake_post)
+    try:
+        headers = {"X-Tenant-ID": "dispatch-tenant", "X-User-Role": "admin", "X-User": "review-ops"}
+        system = client.post(
+            "/systems",
+            headers=headers,
+            json={
+                "name": "Webhook Dispatch System",
+                "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+            },
+        ).json()
+        assessment = client.post(f"/systems/{system['id']}/assess", headers=headers).json()
+        notification = client.post(
+            "/reviews/escalations/notifications?recipient=https://hooks.example.test/compliance&channel=webhook",
+            headers=headers,
+        ).json()[0]
+
+        response = client.post("/notifications/dispatch?event_type=review_escalation", headers=headers)
+        listed = client.get("/notifications?status=delivered", headers=headers).json()
+    finally:
+        monkeypatch.delenv("NOTIFICATION_DELIVERY_MODE", raising=False)
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    result = next(item for item in response.json() if item["notification_id"] == notification["id"])
+    assert result["status"] == "delivered"
+    assert result["http_status"] == 202
+    assert captured_payloads[0]["url"] == "https://hooks.example.test/compliance"
+    assert captured_payloads[0]["timeout"] == 10
+    assert captured_payloads[0]["json"]["assessment_id"] == assessment["id"]
+    delivered = next(item for item in listed if item["id"] == notification["id"])
+    assert delivered["delivered_at"]
+    assert delivered["payload_json"]["delivery_http_status"] == 202

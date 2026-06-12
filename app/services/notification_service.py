@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from urllib.parse import urlparse
 
 from fastapi import HTTPException
+import requests
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database import models
-from app.schemas.notifications import NotificationEventUpdate
+from app.schemas.notifications import NotificationDispatchResult, NotificationEventUpdate
 from app.schemas.review import ReviewQueueItem
 from app.security import AuthenticatedUser
 from app.services.audit_service import AuditService
@@ -79,6 +82,118 @@ class NotificationService:
             )
         return event
 
+    def dispatch_queued(
+        self,
+        *,
+        event_type: str | None = None,
+        limit: int = 25,
+        user: AuthenticatedUser | None = None,
+    ) -> list[NotificationDispatchResult]:
+        settings = get_settings()
+        statement = (
+            select(models.NotificationEvent)
+            .where(
+                models.NotificationEvent.tenant_id == self.tenant_id,
+                models.NotificationEvent.status == "queued",
+            )
+        )
+        if event_type:
+            statement = statement.where(models.NotificationEvent.event_type == event_type)
+        statement = statement.order_by(models.NotificationEvent.created_at.asc()).limit(limit)
+        events = list(self.db.scalars(statement))
+        results = [self._dispatch_event(event, settings) for event in events]
+        self.db.commit()
+        for event in events:
+            self.db.refresh(event)
+
+        if user and results:
+            AuditService(self.db).record(
+                user=user,
+                action="notification.dispatch_queued",
+                resource_type="notification_event",
+                details={
+                    "count": len(results),
+                    "delivered": sum(1 for item in results if item.status == "delivered"),
+                    "failed": sum(1 for item in results if item.status == "failed"),
+                    "skipped": sum(1 for item in results if item.status == "skipped"),
+                    "event_type": event_type,
+                },
+            )
+        return results
+
+    def _dispatch_event(self, event: models.NotificationEvent, settings: object) -> NotificationDispatchResult:
+        if settings.notification_delivery_mode != "webhook":
+            event.status = "skipped"
+            event.payload_json = {
+                **(event.payload_json or {}),
+                "delivery_notes": "Notification delivery mode is manual.",
+                "dispatched_at": datetime.utcnow().isoformat(),
+            }
+            return NotificationDispatchResult(
+                notification_id=event.id,
+                status=event.status,
+                channel=event.channel,
+                recipient=event.recipient,
+                detail="Notification delivery mode is manual.",
+            )
+
+        target_url = event.recipient if event.channel == "webhook" and event.recipient else settings.notification_webhook_url
+        if not _valid_webhook_url(target_url):
+            event.status = "failed"
+            event.payload_json = {
+                **(event.payload_json or {}),
+                "delivery_notes": "Missing or invalid HTTPS webhook URL.",
+                "dispatched_at": datetime.utcnow().isoformat(),
+            }
+            return NotificationDispatchResult(
+                notification_id=event.id,
+                status=event.status,
+                channel=event.channel,
+                recipient=event.recipient,
+                detail="Missing or invalid HTTPS webhook URL.",
+            )
+
+        payload = {
+            "id": event.id,
+            "tenant_id": event.tenant_id,
+            "assessment_id": event.assessment_id,
+            "event_type": event.event_type,
+            "subject": event.subject,
+            "message": event.message,
+            "payload": event.payload_json or {},
+            "created_at": event.created_at.isoformat() if event.created_at else None,
+        }
+        try:
+            response = requests.post(
+                target_url,
+                json=payload,
+                timeout=settings.notification_webhook_timeout_seconds,
+            )
+            http_status = response.status_code
+            response.raise_for_status()
+            event.status = "delivered"
+            event.delivered_at = datetime.utcnow()
+            detail = "Webhook delivered."
+        except requests.RequestException as exc:
+            http_status = getattr(getattr(exc, "response", None), "status_code", None)
+            event.status = "failed"
+            detail = f"Webhook delivery failed: {exc}"
+
+        event.payload_json = {
+            **(event.payload_json or {}),
+            "delivery_notes": detail,
+            "delivery_http_status": http_status,
+            "dispatched_at": datetime.utcnow().isoformat(),
+        }
+        return NotificationDispatchResult(
+            notification_id=event.id,
+            status=event.status,
+            channel=event.channel,
+            recipient=event.recipient,
+            detail=detail,
+            http_status=http_status,
+        )
+
     def queue_review_escalations(
         self,
         escalations: list[ReviewQueueItem],
@@ -137,3 +252,10 @@ class NotificationService:
                 },
             )
         return queued
+
+
+def _valid_webhook_url(url: str | None) -> bool:
+    if not url:
+        return False
+    parsed = urlparse(url)
+    return parsed.scheme == "https" and bool(parsed.netloc)

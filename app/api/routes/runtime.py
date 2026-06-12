@@ -49,6 +49,11 @@ def runtime_status() -> dict:
             "missing_evidence_escalation_threshold": settings.review_missing_evidence_escalation_threshold,
             "high_risk_critical_gap_escalation": settings.review_high_risk_critical_gap_escalation,
         },
+        "notification_delivery": {
+            "mode": settings.notification_delivery_mode,
+            "webhook_configured": bool(settings.notification_webhook_url),
+            "webhook_timeout_seconds": settings.notification_webhook_timeout_seconds,
+        },
         "default_user_role": settings.default_user_role,
         "default_tenant_id": settings.default_tenant_id,
     }

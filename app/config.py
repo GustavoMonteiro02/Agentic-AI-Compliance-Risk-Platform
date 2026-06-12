@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     review_sla_hours: int = 48
     review_missing_evidence_escalation_threshold: int = 3
     review_high_risk_critical_gap_escalation: bool = True
+    notification_delivery_mode: str = "manual"
+    notification_webhook_url: str | None = None
+    notification_webhook_timeout_seconds: int = 10
     mcp_server_name: str = "ai-governance-compliance"
     mcp_transport: str = "stdio"
     mcp_host: str = "0.0.0.0"

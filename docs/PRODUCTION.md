@@ -149,7 +149,19 @@ curl -X PATCH -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
   "http://127.0.0.1:8000/notifications/{notification_id}"
 ```
 
-The current delivery model is an internal outbox: events are deduplicated by assessment and escalation level, tenant-scoped, audit logged, and included in audit packages. External Slack, email, or ticketing delivery can consume queued events from this stable API surface, then mark each event as `delivered`, `failed`, or `skipped`.
+The default delivery model is an internal outbox: events are deduplicated by assessment and escalation level, tenant-scoped, audit logged, and included in audit packages. External Slack, email, or ticketing delivery can consume queued events from this stable API surface, then mark each event as `delivered`, `failed`, or `skipped`.
+
+Production deployments can also enable direct webhook dispatch:
+
+```bash
+NOTIFICATION_DELIVERY_MODE=webhook
+NOTIFICATION_WEBHOOK_URL=https://hooks.example.com/compliance
+
+curl -X POST -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: admin" \
+  "http://127.0.0.1:8000/notifications/dispatch?event_type=review_escalation"
+```
+
+Webhook delivery requires HTTPS. Per-event webhook recipients are supported when the event channel is `webhook`; otherwise the configured `NOTIFICATION_WEBHOOK_URL` is used. Dispatch marks each queued event as `delivered`, `failed`, or `skipped` and stores delivery notes, HTTP status, and dispatch timestamp in the notification payload.
 
 ## Incident Regulatory Reporting
 

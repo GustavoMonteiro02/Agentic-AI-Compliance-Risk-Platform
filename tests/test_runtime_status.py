@@ -32,6 +32,11 @@ def test_runtime_status_reports_production_toggles():
         "missing_evidence_escalation_threshold": 3,
         "high_risk_critical_gap_escalation": True,
     }
+    assert payload["notification_delivery"] == {
+        "mode": "manual",
+        "webhook_configured": False,
+        "webhook_timeout_seconds": 10,
+    }
 
 
 def test_runtime_readiness_reports_operational_checks():
