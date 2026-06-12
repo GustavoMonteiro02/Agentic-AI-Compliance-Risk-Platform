@@ -349,7 +349,7 @@ elif page == "Evidence":
         cols[2].metric("Missing", readiness["missing"])
         cols[3].metric("Overdue", readiness.get("overdue", 0))
         cols[4].metric("Expired", readiness.get("expired", 0))
-        cols[5].metric("Total", readiness["total"])
+        cols[5].metric("Retention due", readiness.get("retention_due", 0))
         evidence_records = api_get(f"/evidence/assessments/{assessment['id']}")
         st.dataframe(
             [
@@ -360,6 +360,8 @@ elif page == "Evidence":
                     "Owner": item["owner"],
                     "Due": item.get("due_date"),
                     "Expires": item.get("expires_at"),
+                    "Source": item.get("source_system"),
+                    "Collected": item.get("collected_at"),
                     "Approved by": item.get("approved_by"),
                 }
                 for item in evidence_records
@@ -378,9 +380,14 @@ elif page == "Evidence":
         owner = edit_cols[1].text_input("Owner", value=selected["owner"])
         approved_by = edit_cols[2].text_input("Approved by", value=selected.get("approved_by") or "")
         file_url = st.text_input("Evidence URL", value=selected.get("file_url") or "")
-        date_cols = st.columns(2)
+        source_cols = st.columns(2)
+        source_system = source_cols[0].text_input("Source system", value=selected.get("source_system") or "")
+        evidence_hash = source_cols[1].text_input("Checksum / hash", value=selected.get("evidence_hash") or "")
+        date_cols = st.columns(4)
         due_date = date_cols[0].date_input("Due date", value=parse_api_date(selected.get("due_date")))
         expires_at = date_cols[1].date_input("Expires at", value=parse_api_date(selected.get("expires_at")))
+        collected_at = date_cols[2].date_input("Collected at", value=parse_api_date(selected.get("collected_at")))
+        retention_until = date_cols[3].date_input("Retention until", value=parse_api_date(selected.get("retention_until")))
         description = st.text_area("Evidence notes", value=selected.get("description") or "", height=90)
         review_notes = st.text_area("Review notes", value=selected.get("review_notes") or "", height=80)
         if st.button("Update evidence", use_container_width=True):
@@ -391,6 +398,10 @@ elif page == "Evidence":
                     "owner": owner,
                     "description": description,
                     "file_url": file_url or None,
+                    "source_system": source_system or None,
+                    "evidence_hash": evidence_hash or None,
+                    "collected_at": date_to_api_datetime(collected_at),
+                    "retention_until": date_to_api_datetime(retention_until),
                     "due_date": date_to_api_datetime(due_date),
                     "expires_at": date_to_api_datetime(expires_at),
                     "approved_by": approved_by or None,

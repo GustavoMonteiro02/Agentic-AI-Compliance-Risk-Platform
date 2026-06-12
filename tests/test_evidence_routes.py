@@ -28,18 +28,34 @@ def test_evidence_items_can_be_listed_and_updated():
     assert evidence_items
 
     item = evidence_items[0]
+    collected_at = datetime.utcnow().isoformat()
     update_response = client.patch(
         f"/evidence/items/{item['id']}",
-        json={"status": "uploaded", "description": "Uploaded draft evidence."},
+        json={
+            "status": "uploaded",
+            "description": "Uploaded draft evidence.",
+            "file_url": "s3://audit-evidence/hr-bias-report.pdf",
+            "source_system": "GRC evidence vault",
+            "evidence_hash": "sha256:abc123",
+            "collected_at": collected_at,
+            "evidence_metadata_json": {"control_id": "HUMAN_OVERSIGHT_001", "collector": "qa-analyst"},
+        },
     )
 
+    payload = update_response.json()
     assert update_response.status_code == 200
-    assert update_response.json()["status"] == "uploaded"
-    assert update_response.json()["description"] == "Uploaded draft evidence."
-    assert update_response.json()["due_date"]
+    assert payload["status"] == "uploaded"
+    assert payload["description"] == "Uploaded draft evidence."
+    assert payload["file_url"] == "s3://audit-evidence/hr-bias-report.pdf"
+    assert payload["source_system"] == "GRC evidence vault"
+    assert payload["evidence_hash"] == "sha256:abc123"
+    assert payload["evidence_metadata_json"]["collector"] == "qa-analyst"
+    assert payload["due_date"]
     audit_events = client.get(f"/audit/assessments/{assessment['id']}/events").json()
     assert audit_events[0]["action"] == "evidence.updated"
     assert audit_events[0]["details_json"]["previous_status"] == item["status"]
+    assert audit_events[0]["details_json"]["source_system"] == "GRC evidence vault"
+    assert audit_events[0]["details_json"]["evidence_hash_present"] is True
 
 
 def test_readiness_score_reflects_evidence_updates():
@@ -60,6 +76,7 @@ def test_readiness_tracks_approval_and_expiry():
     assessment = _create_assessment()
     item = client.get(f"/evidence/assessments/{assessment['id']}").json()[0]
     expired_at = (datetime.utcnow() - timedelta(days=1)).isoformat()
+    retention_until = (datetime.utcnow() - timedelta(days=2)).isoformat()
 
     approved = client.patch(
         f"/evidence/items/{item['id']}",
@@ -68,6 +85,7 @@ def test_readiness_tracks_approval_and_expiry():
             "approved_by": "Compliance Lead",
             "review_notes": "Reviewed against source evidence.",
             "expires_at": expired_at,
+            "retention_until": retention_until,
         },
     ).json()
 
@@ -77,3 +95,4 @@ def test_readiness_tracks_approval_and_expiry():
     assert approved["approved_at"]
     assert approved["review_notes"] == "Reviewed against source evidence."
     assert readiness["expired"] >= 1
+    assert readiness["retention_due"] >= 1

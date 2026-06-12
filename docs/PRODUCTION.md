@@ -107,6 +107,8 @@ curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
 
 The package includes the tenant-scoped system record, assessment snapshot, mapped controls, gaps, evidence, risks, policy exceptions, incidents, human reviews, tool calls, audit events, system card, audit report, and a summary manifest.
 
+Evidence records support operational audit metadata such as source system, file URL, checksum/hash, collection date, expiry date, retention date, reviewer notes, and custom metadata. These fields are included in evidence APIs and audit packages so exported evidence can be reconciled against external GRC, ticketing, storage, or data-governance systems.
+
 ## Runtime Check
 
 Use:

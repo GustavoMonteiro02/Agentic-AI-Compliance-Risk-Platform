@@ -62,6 +62,37 @@ MIGRATIONS: tuple[DatabaseMigration, ...] = (
             ),
         ),
     ),
+    DatabaseMigration(
+        migration_id="20260612_003_evidence_metadata",
+        description="Add source, checksum, collection, retention, and metadata fields to evidence records.",
+        operations=(
+            ColumnMigration(
+                "evidence_items",
+                "source_system",
+                "ALTER TABLE evidence_items ADD COLUMN source_system VARCHAR(255)",
+            ),
+            ColumnMigration(
+                "evidence_items",
+                "evidence_hash",
+                "ALTER TABLE evidence_items ADD COLUMN evidence_hash VARCHAR(255)",
+            ),
+            ColumnMigration(
+                "evidence_items",
+                "collected_at",
+                "ALTER TABLE evidence_items ADD COLUMN collected_at DATETIME",
+            ),
+            ColumnMigration(
+                "evidence_items",
+                "retention_until",
+                "ALTER TABLE evidence_items ADD COLUMN retention_until DATETIME",
+            ),
+            ColumnMigration(
+                "evidence_items",
+                "evidence_metadata_json",
+                "ALTER TABLE evidence_items ADD COLUMN evidence_metadata_json JSON DEFAULT '{}'",
+            ),
+        ),
+    ),
 )
 
 

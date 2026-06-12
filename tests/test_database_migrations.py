@@ -20,7 +20,18 @@ def test_database_migrations_add_missing_columns_to_existing_tables(tmp_path):
     system_columns = {column["name"] for column in inspector.get_columns("ai_systems")}
     assert result["current"] is True
     assert "20260610_001_evidence_lifecycle" in result["applied"]
-    assert {"due_date", "expires_at", "approved_by", "approved_at", "review_notes"}.issubset(evidence_columns)
+    assert {
+        "due_date",
+        "expires_at",
+        "approved_by",
+        "approved_at",
+        "review_notes",
+        "source_system",
+        "evidence_hash",
+        "collected_at",
+        "retention_until",
+        "evidence_metadata_json",
+    }.issubset(evidence_columns)
     assert "tenant_id" in system_columns
     assert migration_status(engine)["pending"] == []
 

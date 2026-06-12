@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +13,11 @@ class EvidenceRecordRead(BaseModel):
     owner: str
     status: str
     file_url: str | None = None
+    source_system: str | None = None
+    evidence_hash: str | None = None
+    collected_at: datetime | None = None
+    retention_until: datetime | None = None
+    evidence_metadata_json: dict[str, Any] = Field(default_factory=dict)
     due_date: datetime | None = None
     expires_at: datetime | None = None
     approved_by: str | None = None
@@ -28,6 +34,11 @@ class EvidenceUpdate(BaseModel):
     description: str | None = None
     owner: str | None = None
     file_url: str | None = None
+    source_system: str | None = None
+    evidence_hash: str | None = None
+    collected_at: datetime | None = None
+    retention_until: datetime | None = None
+    evidence_metadata_json: dict[str, Any] | None = None
     due_date: datetime | None = None
     expires_at: datetime | None = None
     approved_by: str | None = None

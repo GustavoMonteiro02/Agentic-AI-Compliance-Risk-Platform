@@ -57,6 +57,16 @@ class EvidenceService:
             record.owner = payload.owner
         if payload.file_url is not None:
             record.file_url = payload.file_url
+        if payload.source_system is not None:
+            record.source_system = payload.source_system
+        if payload.evidence_hash is not None:
+            record.evidence_hash = payload.evidence_hash
+        if payload.collected_at is not None:
+            record.collected_at = payload.collected_at
+        if payload.retention_until is not None:
+            record.retention_until = payload.retention_until
+        if payload.evidence_metadata_json is not None:
+            record.evidence_metadata_json = payload.evidence_metadata_json
         if payload.due_date is not None:
             record.due_date = payload.due_date
         if payload.expires_at is not None:
@@ -84,6 +94,8 @@ class EvidenceService:
                     "status": record.status,
                     "owner": record.owner,
                     "file_url_present": bool(record.file_url),
+                    "source_system": record.source_system,
+                    "evidence_hash_present": bool(record.evidence_hash),
                 },
             )
         return record
@@ -91,7 +103,15 @@ class EvidenceService:
     def readiness_score(self, assessment_id: str) -> dict:
         items = self.list_for_assessment(assessment_id)
         if not items:
-            return {"assessment_id": assessment_id, "score": 0.0, "approved": 0, "total": 0, "overdue": 0, "expired": 0}
+            return {
+                "assessment_id": assessment_id,
+                "score": 0.0,
+                "approved": 0,
+                "total": 0,
+                "overdue": 0,
+                "expired": 0,
+                "retention_due": 0,
+            }
 
         now = datetime.utcnow()
         weights = {"missing": 0.0, "rejected": 0.0, "partial": 0.35, "generated": 0.55, "uploaded": 0.75, "approved": 1.0}
@@ -111,4 +131,5 @@ class EvidenceService:
             "missing": sum(1 for item in items if item.status == "missing"),
             "overdue": sum(1 for item in items if item.status not in {"approved", "rejected"} and item.due_date and item.due_date < now),
             "expired": len(expired_items),
+            "retention_due": sum(1 for item in items if item.retention_until and item.retention_until < now),
         }

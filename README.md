@@ -68,7 +68,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Requirement-to-control mapping
 - Compliance gap analysis
 - Remediation plan generation from gaps and missing evidence
-- Evidence checklist generation with owner, due-date, expiry, approval, and readiness lifecycle tracking
+- Evidence checklist generation with owner, due-date, expiry, source, checksum, retention, approval, and readiness lifecycle tracking
 - Risk register and policy exception workflows with compensating controls
 - AI incident reporting, triage, resolution tracking, and audit events
 - Structured audit trail for evidence updates and human review decisions
