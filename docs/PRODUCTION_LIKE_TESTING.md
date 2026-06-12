@@ -1,10 +1,10 @@
 # Production-Like Local Testing
 
-This path runs the app as close to production as practical on a laptop: FastAPI, PostgreSQL, Qdrant, Streamlit, React, MCP, API-key auth, live OpenAI LLM calls, and OpenAI embeddings for vector search.
+This path runs the app as close to production as practical on a laptop: FastAPI, PostgreSQL, Qdrant, React, MCP, API-key auth, and optional live LLM calls. It can use paid OpenAI or a free local Ollama model.
 
 ## Required Keys
 
-Only one external provider key is required for the default production-like stack:
+No external LLM key is required when using local Ollama. For paid OpenAI mode, set:
 
 ```bash
 OPENAI_API_KEY=replace-with-your-openai-api-key
@@ -57,6 +57,35 @@ MCP_TRANSPORT=streamable-http
 NOTIFICATION_DELIVERY_MODE=manual
 ```
 
+For a free local LLM with no OpenAI credits, use:
+
+```bash
+AI_GENERATION_MODE=llm
+LLM_PROVIDER=openai_compatible
+OPENAI_BASE_URL=http://ollama:11434/v1
+OPENAI_API_KEY=ollama
+OPENAI_MODEL=llama3.2:3b
+VECTOR_DB=qdrant
+EMBEDDING_PROVIDER=local_hash
+EMBEDDING_DIMENSIONS=128
+LANGSMITH_TRACING=false
+AUTH_MODE=api_key
+MCP_TRANSPORT=streamable-http
+```
+
+After `make prod-up`, pull the local model once:
+
+```bash
+make prod-pull-ollama-model
+```
+
+To use a different local model, set the same model in `.env` and pull it explicitly:
+
+```bash
+OPENAI_MODEL=qwen2.5:3b
+make prod-pull-ollama-model OLLAMA_MODEL=qwen2.5:3b
+```
+
 Optional integrations remain disabled until their keys are set:
 
 - Add `ANTHROPIC_API_KEY` to make Anthropic appear in the UI provider selector.
@@ -98,6 +127,7 @@ make prod-ingest-qdrant
 ```
 
 With `EMBEDDING_PROVIDER=openai`, this creates OpenAI embeddings for the local regulatory and policy knowledge base and stores them in Qdrant.
+With `EMBEDDING_PROVIDER=local_hash`, ingestion is fully local and costs nothing.
 
 ## Run The Production Smoke Test
 

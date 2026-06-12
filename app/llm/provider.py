@@ -214,17 +214,23 @@ class OptionalLLMProvider:
             request_user_prompt = user_prompt + json_instruction
             data, attempts = self._anthropic_completion(system_prompt, request_user_prompt)
         else:
+            payload: dict[str, Any] = {
+                "model": self.model_name(),
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+            }
+            if self.provider_name == "openai_compatible":
+                json_instruction = "\n\nReturn only a valid JSON object. Do not include markdown fences."
+                request_user_prompt = user_prompt + json_instruction
+                payload["messages"][1]["content"] = request_user_prompt
+            else:
+                payload["response_format"] = {"type": "json_object"}
             data, attempts = self._chat_completion(
-                {
-                    "model": self.model_name(),
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "temperature": self.temperature,
-                    "response_format": {"type": "json_object"},
-                    "max_tokens": self.max_tokens,
-                },
+                payload,
                 timeout=self.timeout_seconds,
             )
         content = self._content_from_response(data)

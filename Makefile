@@ -1,6 +1,7 @@
-.PHONY: test security-check ci api ui mcp migrate-db llm-smoke prod-up prod-down prod-ingest-qdrant prod-smoke ingest-qdrant ingest-pinecone validate-legal-sources register-legal-source
+.PHONY: test security-check ci api ui mcp migrate-db llm-smoke prod-up prod-down prod-ingest-qdrant prod-pull-ollama-model prod-smoke ingest-qdrant ingest-pinecone validate-legal-sources register-legal-source
 
 PYTHON ?= python3.11
+OLLAMA_MODEL ?= llama3.2:3b
 
 test:
 	pytest
@@ -33,6 +34,9 @@ prod-down:
 
 prod-ingest-qdrant:
 	docker compose --env-file .env -f docker-compose.production.yml exec -e PYTHONPATH=/app api python scripts/ingest_qdrant.py
+
+prod-pull-ollama-model:
+	docker compose --env-file .env -f docker-compose.production.yml exec ollama ollama pull $(OLLAMA_MODEL)
 
 prod-smoke:
 	set -a; . ./.env; set +a; API_BASE_URL=http://127.0.0.1:8000 $(PYTHON) scripts/smoke_production_stack.py

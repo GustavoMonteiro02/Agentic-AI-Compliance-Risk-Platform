@@ -155,17 +155,18 @@ def configured_llm_providers() -> list[dict]:
     settings = get_settings()
     providers = []
     if settings.openai_api_key:
-        providers.append(
-            {
-                "id": "openai",
-                "label": "OpenAI",
-                "configured": True,
-                "model": settings.openai_model,
-                "base_url": settings.openai_base_url,
-                "requires_key": "OPENAI_API_KEY",
-            }
-        )
-        if settings.openai_base_url.rstrip("/") != "https://api.openai.com/v1":
+        if settings.openai_base_url.rstrip("/") == "https://api.openai.com/v1":
+            providers.append(
+                {
+                    "id": "openai",
+                    "label": "OpenAI",
+                    "configured": True,
+                    "model": settings.openai_model,
+                    "base_url": settings.openai_base_url,
+                    "requires_key": "OPENAI_API_KEY",
+                }
+            )
+        else:
             providers.append(
                 {
                     "id": "openai_compatible",

@@ -54,6 +54,7 @@ def test_runtime_status_reports_production_toggles():
 
 def test_runtime_llm_options_only_lists_configured_providers(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     get_settings.cache_clear()
     try:
@@ -61,6 +62,7 @@ def test_runtime_llm_options_only_lists_configured_providers(monkeypatch):
         response = test_client.get("/runtime/llm-options")
     finally:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         get_settings.cache_clear()
 
@@ -69,6 +71,32 @@ def test_runtime_llm_options_only_lists_configured_providers(monkeypatch):
     assert [provider["id"] for provider in payload["providers"]] == ["openai"]
     assert payload["default_provider"] == "openai"
     assert payload["defaults"]["max_tokens"] == 2000
+
+
+def test_runtime_llm_options_lists_openai_compatible_for_custom_base_url(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "ollama")
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://ollama:11434/v1")
+    monkeypatch.setenv("OPENAI_MODEL", "llama3.2:3b")
+    monkeypatch.setenv("LLM_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    get_settings.cache_clear()
+    try:
+        test_client = TestClient(create_app())
+        response = test_client.get("/runtime/llm-options")
+    finally:
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+        monkeypatch.delenv("OPENAI_MODEL", raising=False)
+        monkeypatch.delenv("LLM_PROVIDER", raising=False)
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert [provider["id"] for provider in payload["providers"]] == ["openai_compatible"]
+    assert payload["providers"][0]["model"] == "llama3.2:3b"
+    assert payload["providers"][0]["base_url"] == "http://ollama:11434/v1"
+    assert payload["default_provider"] == "openai_compatible"
 
 
 def test_runtime_readiness_reports_operational_checks():
