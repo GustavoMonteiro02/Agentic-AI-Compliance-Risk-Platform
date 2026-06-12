@@ -95,6 +95,28 @@ MIGRATIONS: tuple[DatabaseMigration, ...] = (
     ),
 )
 
+TABLE_MIGRATIONS: tuple[tuple[str, str, str], ...] = (
+    (
+        "20260612_004_notification_outbox",
+        "Create notification outbox table for review escalation and operational notifications.",
+        "CREATE TABLE IF NOT EXISTS notification_events ("
+        "id VARCHAR PRIMARY KEY, "
+        "tenant_id VARCHAR(120) DEFAULT 'default', "
+        "assessment_id VARCHAR, "
+        "event_type VARCHAR(120), "
+        "channel VARCHAR(80) DEFAULT 'in_app', "
+        "recipient VARCHAR(255), "
+        "subject VARCHAR(255), "
+        "message TEXT, "
+        "status VARCHAR(80) DEFAULT 'queued', "
+        "dedupe_key VARCHAR(255), "
+        "payload_json JSON DEFAULT '{}', "
+        "created_at DATETIME, "
+        "delivered_at DATETIME"
+        ")",
+    ),
+)
+
 
 def apply_database_migrations(engine: Engine) -> dict:
     _ensure_schema_migrations_table(engine)
@@ -105,6 +127,25 @@ def apply_database_migrations(engine: Engine) -> dict:
     with engine.begin() as connection:
         inspector = inspect(connection)
         table_names = set(inspector.get_table_names())
+        for migration_id, description, ddl in TABLE_MIGRATIONS:
+            if migration_id in applied:
+                skipped.append(migration_id)
+                continue
+            connection.execute(text(ddl))
+            connection.execute(
+                text(
+                    "INSERT INTO schema_migrations (migration_id, description, applied_at) "
+                    "VALUES (:migration_id, :description, :applied_at)"
+                ),
+                {
+                    "migration_id": migration_id,
+                    "description": description,
+                    "applied_at": datetime.now(UTC).isoformat(),
+                },
+            )
+            applied_now.append(migration_id)
+            table_names = set(inspector.get_table_names())
+
         for migration in MIGRATIONS:
             if migration.migration_id in applied:
                 skipped.append(migration.migration_id)
@@ -136,7 +177,9 @@ def apply_database_migrations(engine: Engine) -> dict:
 def migration_status(engine: Engine) -> dict:
     _ensure_schema_migrations_table(engine)
     applied = _applied_migrations(engine)
-    migration_ids = [migration.migration_id for migration in MIGRATIONS]
+    migration_ids = [migration.migration_id for migration in MIGRATIONS] + [
+        migration_id for migration_id, _, _ in TABLE_MIGRATIONS
+    ]
     pending = [migration_id for migration_id in migration_ids if migration_id not in applied]
     return {
         "ok": not pending,

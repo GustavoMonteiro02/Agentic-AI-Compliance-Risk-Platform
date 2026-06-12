@@ -24,7 +24,7 @@ This document maps the original project requirements to the current implementati
 - AI incident lifecycle for reporting, triage, containment, resolution, corrective actions, regulatory report review, tenant scoping, and audit events.
 - AI system card and audit report Markdown generation/export.
 - Dedicated Pydantic schema modules for risk, controls, requirements, evidence, review, report, system, and assessment contracts.
-- Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, review history, and SLA/critical-gap escalation signals.
+- Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, review history, SLA/critical-gap escalation signals, and a tenant-scoped notification outbox for escalation handoff.
 - Structured audit events for evidence updates and human review decisions.
 - Tenant-scoped systems, assessments, evidence, reports, review queues, and audit events.
 - Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.

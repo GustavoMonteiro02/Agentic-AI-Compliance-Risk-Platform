@@ -80,7 +80,7 @@ See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, Lang
 - Named database migration registry with migration readiness checks
 - AI system card and audit report generation
 - Human review workflow: draft, approved, rejected, needs more evidence
-- Review queue escalation signals for SLA breaches, high-risk gaps, and missing evidence
+- Review queue escalation signals and notification outbox for SLA breaches, high-risk gaps, and missing evidence
 - Guardrails that prevent final compliance claims without human approval
 - Evaluation tests for risk consistency, RAG relevance, structured outputs, and prompt-injection resistance
 - Markdown and PDF exports for system cards and audit reports

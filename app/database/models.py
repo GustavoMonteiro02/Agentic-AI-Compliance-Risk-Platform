@@ -272,6 +272,24 @@ class AuditEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class NotificationEvent(Base):
+    __tablename__ = "notification_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
+    assessment_id: Mapped[str | None] = mapped_column(String, index=True)
+    event_type: Mapped[str] = mapped_column(String(120), index=True)
+    channel: Mapped[str] = mapped_column(String(80), default="in_app")
+    recipient: Mapped[str | None] = mapped_column(String(255))
+    subject: Mapped[str] = mapped_column(String(255))
+    message: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(80), default="queued", index=True)
+    dedupe_key: Mapped[str] = mapped_column(String(255), index=True)
+    payload_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
 class EvaluationResult(Base):
     __tablename__ = "evaluation_results"
 

@@ -18,6 +18,7 @@ def test_database_migrations_add_missing_columns_to_existing_tables(tmp_path):
 
     evidence_columns = {column["name"] for column in inspector.get_columns("evidence_items")}
     system_columns = {column["name"] for column in inspector.get_columns("ai_systems")}
+    table_names = set(inspector.get_table_names())
     assert result["current"] is True
     assert "20260610_001_evidence_lifecycle" in result["applied"]
     assert {
@@ -33,6 +34,7 @@ def test_database_migrations_add_missing_columns_to_existing_tables(tmp_path):
         "evidence_metadata_json",
     }.issubset(evidence_columns)
     assert "tenant_id" in system_columns
+    assert "notification_events" in table_names
     assert migration_status(engine)["pending"] == []
 
 

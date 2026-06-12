@@ -88,3 +88,69 @@ def test_review_queue_surfaces_escalation_signals():
     assert item["escalation_level"] in {"urgent", "attention", "sla_breach"}
     assert item["escalation_reason"]
     assert any(escalation["assessment_id"] == assessment["id"] for escalation in escalations)
+
+
+def test_review_escalations_can_queue_notifications_without_duplicates():
+    headers = {"X-Tenant-ID": "notify-tenant", "X-User-Role": "admin", "X-User": "review-ops"}
+    system = client.post(
+        "/systems",
+        headers=headers,
+        json={
+            "name": "Notification Escalation System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    ).json()
+    assessment = client.post(f"/systems/{system['id']}/assess", headers=headers).json()
+
+    first = client.post(
+        "/reviews/escalations/notifications?recipient=compliance@example.com&channel=email",
+        headers=headers,
+    )
+    second = client.post(
+        "/reviews/escalations/notifications?recipient=compliance@example.com&channel=email",
+        headers=headers,
+    )
+    listed = client.get(
+        "/notifications?event_type=review_escalation",
+        headers={"X-Tenant-ID": "notify-tenant", "X-User-Role": "auditor"},
+    )
+    tenant_b = client.get(
+        "/notifications?event_type=review_escalation",
+        headers={"X-Tenant-ID": "notify-tenant-b", "X-User-Role": "auditor"},
+    )
+
+    assert first.status_code == 200
+    notifications = [item for item in first.json() if item["assessment_id"] == assessment["id"]]
+    assert notifications
+    notification = notifications[0]
+    assert notification["event_type"] == "review_escalation"
+    assert notification["status"] == "queued"
+    assert notification["channel"] == "email"
+    assert notification["recipient"] == "compliance@example.com"
+    assert notification["payload_json"]["assessment_id"] == assessment["id"]
+    assert second.status_code == 200
+    assert [item["id"] for item in second.json() if item["assessment_id"] == assessment["id"]] == [notification["id"]]
+    assert any(item["id"] == notification["id"] for item in listed.json())
+    assert tenant_b.json() == []
+
+
+def test_review_notification_events_are_included_in_audit_package():
+    headers = {"X-Tenant-ID": "package-notify", "X-User-Role": "admin", "X-User": "review-ops"}
+    system = client.post(
+        "/systems",
+        headers=headers,
+        json={
+            "name": "Notification Audit Package System",
+            "description": "AI assistant in HR analyzes CVs and recommends candidates to recruiters.",
+        },
+    ).json()
+    assessment = client.post(f"/systems/{system['id']}/assess", headers=headers).json()
+    client.post("/reviews/escalations/notifications", headers=headers)
+
+    package = client.get(
+        f"/audit/assessments/{assessment['id']}/package",
+        headers={"X-Tenant-ID": "package-notify", "X-User-Role": "auditor"},
+    ).json()
+
+    assert any(event["event_type"] == "review_escalation" for event in package["notification_events"])
+    assert package["summary"]["notification_event_count"] >= 1

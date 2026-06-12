@@ -109,6 +109,20 @@ The package includes the tenant-scoped system record, assessment snapshot, mappe
 
 Evidence records support operational audit metadata such as source system, file URL, checksum/hash, collection date, expiry date, retention date, reviewer notes, and custom metadata. These fields are included in evidence APIs and audit packages so exported evidence can be reconciled against external GRC, ticketing, storage, or data-governance systems.
 
+## Notifications
+
+Review escalations can be converted into queued notification events:
+
+```bash
+curl -X POST -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: compliance_reviewer" \
+  "http://127.0.0.1:8000/reviews/escalations/notifications?channel=email&recipient=compliance@example.com"
+
+curl -H "X-API-Key: $PLATFORM_API_KEY" -H "X-User-Role: auditor" \
+  "http://127.0.0.1:8000/notifications?event_type=review_escalation&status=queued"
+```
+
+The current delivery model is an internal outbox: events are deduplicated by assessment and escalation level, tenant-scoped, audit logged, and included in audit packages. External Slack, email, or ticketing delivery can consume queued events from this stable API surface.
+
 ## Runtime Check
 
 Use:

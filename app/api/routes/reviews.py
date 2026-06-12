@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, Query, Response
 
 from app.api.deps import DbSession
 from app.api.pagination import PaginationParams, get_pagination, paginate
+from app.schemas.notifications import NotificationEventRead
 from app.schemas.review import ReviewDecision, ReviewQueueItem, ReviewRead
 from app.security import AuthenticatedUser, require_roles
+from app.services.notification_service import NotificationService
 from app.services.review_service import ReviewService
 
 router = APIRouter(prefix="/reviews", tags=["reviews"], dependencies=[Depends(require_roles("compliance_reviewer"))])
@@ -34,6 +36,24 @@ def review_escalations(
 ) -> list[ReviewQueueItem]:
     escalations = ReviewService(db, user.tenant_id).escalations(sla_hours=sla_hours)
     return paginate(escalations, pagination, response)
+
+
+@router.post("/escalations/notifications")
+def queue_review_escalation_notifications(
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
+    sla_hours: int = Query(default=48, ge=1, le=720),
+    channel: str = Query(default="in_app"),
+    recipient: str | None = Query(default=None),
+) -> list[NotificationEventRead]:
+    escalations = ReviewService(db, user.tenant_id).escalations(sla_hours=sla_hours)
+    notifications = NotificationService(db, user.tenant_id).queue_review_escalations(
+        escalations,
+        recipient=recipient,
+        channel=channel,
+        user=user,
+    )
+    return [NotificationEventRead.model_validate(item) for item in notifications]
 
 
 @router.get("/{assessment_id}/history")

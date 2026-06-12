@@ -52,6 +52,7 @@ class AuditPackageService:
                     "human_reviews",
                     "tool_calls",
                     "audit_events",
+                    "notification_events",
                     "system_card",
                     "audit_report",
                 ],
@@ -88,6 +89,11 @@ class AuditPackageService:
                 models.AuditEvent,
                 models.AuditEvent.assessment_id == assessment_id,
                 models.AuditEvent.tenant_id == self.tenant_id,
+            ),
+            "notification_events": self._list(
+                models.NotificationEvent,
+                models.NotificationEvent.assessment_id == assessment_id,
+                models.NotificationEvent.tenant_id == self.tenant_id,
             ),
             "system_card": self._to_dict(system_card) if system_card else None,
             "audit_report": self._to_dict(audit_report) if audit_report else None,
@@ -165,4 +171,5 @@ class AuditPackageService:
                 [incident for incident in incidents if incident["status"] not in {"resolved", "closed"}]
             ),
             "audit_event_count": len(package["audit_events"]),
+            "notification_event_count": len(package["notification_events"]),
         }
