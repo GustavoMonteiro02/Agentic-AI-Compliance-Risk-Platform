@@ -46,6 +46,17 @@ def test_qdrant_payload_contains_metadata_and_citation():
     assert payload["embedding_provider"] == "local_hash"
 
 
+def test_qdrant_collection_vector_size_supports_existing_collection_shapes():
+    store = QdrantVectorStore("http://localhost:6333", "test")
+
+    unnamed = {"result": {"config": {"params": {"vectors": {"size": 128, "distance": "Cosine"}}}}}
+    named = {"result": {"config": {"params": {"vectors": {"default": {"size": 1536}}}}}}
+
+    assert store._collection_vector_size(unnamed) == 128
+    assert store._collection_vector_size(named) == 1536
+    assert store._collection_vector_size({"result": {}}) is None
+
+
 def test_pinecone_payload_contains_metadata_namespace_and_citation():
     chunk = DocumentChunk(
         requirement_id="REQ_1",

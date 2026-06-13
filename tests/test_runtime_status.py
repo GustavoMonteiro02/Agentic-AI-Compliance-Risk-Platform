@@ -99,6 +99,9 @@ def test_runtime_llm_options_lists_openai_compatible_for_custom_base_url(monkeyp
     assert payload["providers"][0]["model"] == "llama3.2:3b"
     assert payload["providers"][0]["base_url"] == "http://ollama:11434/v1"
     assert payload["default_provider"] == "openai_compatible"
+    assert payload["defaults"]["timeout_seconds"] == 45
+    assert payload["defaults"]["max_retries"] == 0
+    assert payload["defaults"]["max_tokens"] == 768
 
 
 def test_runtime_config_update_saves_provider_without_echoing_secret(monkeypatch, tmp_path):

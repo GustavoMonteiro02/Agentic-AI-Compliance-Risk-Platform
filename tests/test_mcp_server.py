@@ -1,4 +1,4 @@
-from app.mcp_server.server import PROMPTS, RESOURCES, TOOLS, read_resource
+from app.mcp_server.server import PROMPTS, RESOURCES, TOOLS, _prompt_reader, _resource_reader, read_resource
 from app.mcp_server.runtime import runtime_config
 
 
@@ -25,6 +25,16 @@ def test_mcp_resource_reader_loads_policy_text():
     text = read_resource("compliance://policies/internal-ai-policy")
 
     assert "Human oversight" in text
+
+
+def test_mcp_registered_callbacks_have_stable_names():
+    resource_callback = _resource_reader("compliance://policies/internal-ai-policy")
+    prompt_callback = _prompt_reader("human_review_prompt", "Require human review.")
+
+    assert resource_callback.__name__ == "read_compliance_policies_internal_ai_policy"
+    assert prompt_callback.__name__ == "read_human_review_prompt"
+    assert "Human oversight" in resource_callback()
+    assert prompt_callback() == "Require human review."
 
 
 def test_mcp_runtime_config_exposes_deployment_surface():

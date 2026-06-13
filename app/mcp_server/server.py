@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from app.config import get_settings
@@ -43,6 +44,26 @@ def read_resource(uri: str) -> str:
     return Path(path).read_text(encoding="utf-8")
 
 
+def _resource_reader(uri: str):
+    def read_registered_resource() -> str:
+        return read_resource(uri)
+
+    read_registered_resource.__name__ = f"read_{_callback_name(uri)}"
+    return read_registered_resource
+
+
+def _prompt_reader(name: str, prompt: str):
+    def read_registered_prompt() -> str:
+        return prompt
+
+    read_registered_prompt.__name__ = f"read_{name}"
+    return read_registered_prompt
+
+
+def _callback_name(value: str) -> str:
+    return re.sub(r"[^0-9a-zA-Z_]+", "_", value).strip("_")
+
+
 def create_fastmcp_server():
     """Create a FastMCP server when fastmcp is installed.
 
@@ -56,10 +77,10 @@ def create_fastmcp_server():
         mcp.tool(name=name)(tool)
 
     for uri in RESOURCES:
-        mcp.resource(uri)(lambda uri=uri: read_resource(uri))
+        mcp.resource(uri)(_resource_reader(uri))
 
     for name, prompt in PROMPTS.items():
-        mcp.prompt(name=name)(lambda prompt=prompt: prompt)
+        mcp.prompt(name=name)(_prompt_reader(name, prompt))
     return mcp
 
 

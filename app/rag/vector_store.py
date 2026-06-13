@@ -44,12 +44,21 @@ class QdrantVectorStore:
     def ensure_collection(self) -> dict:
         import requests
 
+        existing = requests.get(f"{self.url}/collections/{self.collection}", timeout=5)
+        if existing.status_code == 200:
+            vector_size = self._collection_vector_size(existing.json())
+            if vector_size == self.dimensions:
+                return {"ok": True, "status_code": existing.status_code, "recreated": False}
+            delete_response = requests.delete(f"{self.url}/collections/{self.collection}", timeout=10)
+            delete_response.raise_for_status()
+
         response = requests.put(
             f"{self.url}/collections/{self.collection}",
             json={"vectors": {"size": self.dimensions, "distance": "Cosine"}},
             timeout=5,
         )
-        return {"ok": response.status_code < 400, "status_code": response.status_code}
+        ok = response.status_code < 400 or response.status_code == 409
+        return {"ok": ok, "status_code": response.status_code, "recreated": existing.status_code == 200}
 
     def upsert(self, chunks: list[DocumentChunk]) -> dict:
         import requests
@@ -131,6 +140,21 @@ class QdrantVectorStore:
                 "requirement_id": chunk.requirement_id,
             },
         }
+
+    def _collection_vector_size(self, response_json: dict) -> int | None:
+        vectors = (
+            response_json.get("result", {})
+            .get("config", {})
+            .get("params", {})
+            .get("vectors")
+        )
+        if isinstance(vectors, dict) and "size" in vectors:
+            return int(vectors["size"])
+        if isinstance(vectors, dict):
+            first_vector = next(iter(vectors.values()), None)
+            if isinstance(first_vector, dict) and "size" in first_vector:
+                return int(first_vector["size"])
+        return None
 
 
 class PineconeVectorStore:

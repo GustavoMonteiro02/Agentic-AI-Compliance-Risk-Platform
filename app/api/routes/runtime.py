@@ -114,7 +114,9 @@ def runtime_status() -> dict:
         "llm_enabled": OptionalLLMProvider().enabled(),
         "llm_provider": settings.llm_provider,
         "openai_model": settings.openai_model,
-        "openai_base_url": settings.openai_base_url if settings.ai_generation_mode == "openai" else None,
+        "openai_base_url": settings.openai_base_url
+        if settings.llm_provider in {"openai", "openai_compatible"}
+        else None,
         "anthropic_model": settings.anthropic_model if settings.llm_provider == "anthropic" else None,
         "anthropic_base_url": settings.anthropic_base_url if settings.llm_provider == "anthropic" else None,
         "openai_timeout_seconds": settings.openai_timeout_seconds,
@@ -171,6 +173,10 @@ def runtime_llm_options() -> dict:
     providers = configured_llm_providers()
     configured_ids = {provider["id"] for provider in providers}
     default_provider = settings.llm_provider if settings.llm_provider in configured_ids else (providers[0]["id"] if providers else None)
+    local_ollama = (
+        default_provider == "openai_compatible"
+        and "ollama" in settings.openai_base_url.lower()
+    )
     return {
         "default_mode": settings.ai_generation_mode,
         "default_provider": default_provider,
@@ -184,9 +190,9 @@ def runtime_llm_options() -> dict:
         "providers": providers,
         "configured_provider_count": len(providers),
         "defaults": {
-            "timeout_seconds": settings.openai_timeout_seconds,
-            "max_retries": settings.openai_max_retries,
-            "max_tokens": settings.openai_max_tokens,
+            "timeout_seconds": min(settings.openai_timeout_seconds, 45) if local_ollama else settings.openai_timeout_seconds,
+            "max_retries": 0 if local_ollama else settings.openai_max_retries,
+            "max_tokens": min(settings.openai_max_tokens, 768) if local_ollama else settings.openai_max_tokens,
             "temperature": 0.1,
         },
         "limits": {

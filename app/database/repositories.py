@@ -108,6 +108,7 @@ class AssessmentRepository:
             status=assessment.status,
         )
         self.db.add(record)
+        self.db.flush()
         self.db.add(
             models.AISystemProfile(
                 tenant_id=self.tenant_id,
