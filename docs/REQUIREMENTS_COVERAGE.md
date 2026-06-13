@@ -16,7 +16,7 @@ This document maps the original project requirements to the current implementati
 - Legal-source manifest and article-level ingestion path with locators, expected article counts, required locator coverage, and content hashes for official corpus expansion.
 - Legal-source readiness endpoint exposing manifest status, local availability, chunk counts, parsed locators, coverage percentage, source-level blockers, next actions, and full-corpus readiness.
 - Requirements seeding into the `requirements` database table from Markdown knowledge-base documents.
-- Requirement search API and Streamlit Requirements tab.
+- Requirement search API and React Legal library page.
 - MCP tool, resource, and prompt catalog with tests.
 - Evidence checklist records, evidence status updates, owners, due dates, expiry, approval metadata, and compliance readiness score.
 - Remediation plan endpoint generated from critical gaps, medium gaps, missing evidence, owners, priorities, and due dates.
@@ -27,8 +27,7 @@ This document maps the original project requirements to the current implementati
 - Human review queue, approve/reject/request-more-evidence actions, reviewer notes, risk override validation, review history, configurable SLA/critical-gap/missing-evidence escalation policy, tenant-scoped notification outbox, and optional HTTPS webhook dispatch for escalation handoff.
 - Structured audit events for evidence updates and human review decisions.
 - Tenant-scoped systems, assessments, evidence, reports, review queues, and audit events.
-- Streamlit UI for dashboard, intake, assessment, requirements, evidence, system card, audit report, review, and evaluation.
-- React SaaS command center for portfolio-grade governance operations metrics.
+- React UI for dashboard, intake, assessment traceability, requirements, evidence, system card, audit report, review, history, and runtime settings.
 - Evaluation suite covering risk classification consistency, retrieval grounding, retrieval quality top-k recall, system card coverage, evidence completeness, human approval bypass resistance, legal-advice guardrails, and LangSmith-compatible experiment payloads.
 - Guardrails preventing automatic approval or final legal compliance claims without human review.
 - Dockerfile, Docker Compose, Makefile, CI workflow, security/configuration scan, runtime readiness checks, production preflight release gate, Docker healthchecks, and pytest suite.
@@ -45,4 +44,4 @@ These are represented by stable interfaces and roadmap entries, but are not enab
 
 - Test suite: run with `pytest`.
 - Local API: `http://127.0.0.1:8000`.
-- Local UI: `http://127.0.0.1:8501`.
+- Local UI: `http://127.0.0.1:5173`.

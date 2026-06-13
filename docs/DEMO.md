@@ -22,14 +22,14 @@ This guide describes the portfolio demo path for the AI Governance & Compliance 
 
 ## Recommended Demo Script
 
-1. Open the Streamlit UI at `http://127.0.0.1:8501`.
-2. Go to **Demo Scenarios** and run `Recruitment CV Screening Assistant`.
-3. Open **Assessment** and explain the LangGraph workflow output: risk, requirements, controls, and gaps.
-4. Open **Requirements** and search for `human oversight`.
-5. Open **Evidence** and update one evidence item from `missing` to `uploaded`.
-6. Open **System Card** and **Audit Report**, then download Markdown or PDF.
-7. Open **Human Review** and request more evidence or approve with reviewer notes.
-8. Open **Evaluation** to show guardrail and groundedness metrics.
+1. Open the React UI at `http://127.0.0.1:5173`.
+2. Start at **1. Intake** and create an AI system from the recruitment screening scenario.
+3. Open **2. Assessment map** and explain the LangGraph workflow output: risk, requirements, controls, evidence links, gaps, and review impact.
+4. Open **Legal library** and search for `human oversight`.
+5. Open **3. Evidence** and update one evidence item from `missing` to `uploaded`.
+6. Download the system card, audit report, or ZIP audit package from **2. Assessment map**; Markdown or PDF exports remain available through the report endpoints.
+7. Open **5. Human review** and request more evidence or approve with reviewer notes.
+8. Open **Settings** and **History** to show runtime configuration, LLM usage, audit events, guardrails, and traceability.
 
 ## Optional Integrations
 

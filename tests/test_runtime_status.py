@@ -13,7 +13,7 @@ client = TestClient(app)
 
 def test_settings_ignore_frontend_only_environment_keys(monkeypatch):
     monkeypatch.setenv("API_BASE_URL", "http://127.0.0.1:8000")
-    monkeypatch.setenv("PLATFORM_USER", "streamlit-user")
+    monkeypatch.setenv("PLATFORM_USER", "react-user")
     monkeypatch.setenv("PLATFORM_USER_ROLE", "admin")
     monkeypatch.setenv("PLATFORM_TENANT_ID", "default")
 

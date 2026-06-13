@@ -10,9 +10,9 @@
       "document_type": "regulation",
       "local_path": "legal_sources/eu_ai_act_articles.md",
       "expected_article_count": 113,
-      "minimum_required_locators": ["Article 9", "Article 14", "Article 15"],
-      "ingestion_status": "sample_extract",
-      "notes": "Use this path for article-level full-text ingestion. The committed content is a compact sample extract, not the full legal act."
+      "minimum_required_locators": ["Article 9", "Article 10", "Article 11", "Article 12", "Article 13", "Article 14", "Article 15", "Article 16"],
+      "ingestion_status": "official_source_extract",
+      "notes": "Official-source article-level records for audit testing with locators and source URLs. This is not the complete legal corpus and must not be used as legal advice."
     },
     {
       "id": "gdpr",
@@ -24,8 +24,8 @@
       "local_path": "legal_sources/gdpr_articles.md",
       "expected_article_count": 99,
       "minimum_required_locators": ["Article 5", "Article 6", "Article 9", "Article 22", "Article 30", "Article 32", "Article 35"],
-      "ingestion_status": "planned",
-      "notes": "Add official article-level text locally before production legal-corpus use."
+      "ingestion_status": "official_source_extract",
+      "notes": "Official-source article-level records for audit testing with locators and source URLs. This is not the complete legal corpus and must not be used as legal advice."
     }
   ]
 }

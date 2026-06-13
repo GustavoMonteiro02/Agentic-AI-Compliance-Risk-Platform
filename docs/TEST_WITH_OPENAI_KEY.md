@@ -50,7 +50,7 @@ curl http://127.0.0.1:8000/runtime/preflight?target=development
 
 `/runtime/status` should show `llm_enabled: true`.
 
-## 5. Start the Streamlit UI
+## 5. Start the React UI
 
 In another terminal:
 
@@ -61,7 +61,7 @@ make ui
 Open:
 
 ```text
-http://127.0.0.1:8501
+http://127.0.0.1:5173
 ```
 
 Create or run an assessment. The workflow will run deterministic controls first, then the `llm_refiner` node if your key is valid.

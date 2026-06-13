@@ -1,10 +1,5 @@
-import py_compile
 import json
 from pathlib import Path
-
-
-def test_streamlit_app_compiles():
-    py_compile.compile(str(Path("frontend/streamlit_app.py")), doraise=True)
 
 
 def test_react_saas_ui_scaffold_is_present():
@@ -14,9 +9,9 @@ def test_react_saas_ui_scaffold_is_present():
 
     assert package["scripts"]["dev"].startswith("vite")
     assert "lucide-react" in package["dependencies"]
-    assert "Governance command center" in app
-    assert "Create assessment" in app
-    assert "Assessment workspace" in app
+    assert "Enterprise AI risk platform" in app
+    assert "Create and assess" in app
+    assert "Traceability map" in app
     assert "Requirements search" in app
     assert "Evidence center" in app
     assert "Risk register" in app
@@ -25,6 +20,7 @@ def test_react_saas_ui_scaffold_is_present():
     assert "LLM usage" in app
     assert "Configured LLMs" in app
     assert "Runtime readiness" in app
+    assert "Governance support, not legal advice." in app
     api = Path("frontend/react_app/src/api.ts").read_text(encoding="utf-8")
     assert 'request<RuntimeMetrics>("GET", "/runtime/metrics")' in api
     assert 'request<LLMOptions>("GET", "/runtime/llm-options")' in api

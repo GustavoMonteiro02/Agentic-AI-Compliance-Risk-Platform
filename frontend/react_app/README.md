@@ -2,7 +2,7 @@
 
 This is the production-oriented SaaS interface for the AI Governance & Compliance Intelligence Platform.
 
-It runs beside the Streamlit demo UI and consumes the same FastAPI backend.
+It is the primary local UI and consumes the FastAPI backend.
 
 ## Run
 

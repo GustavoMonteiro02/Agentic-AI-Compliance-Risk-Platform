@@ -15,7 +15,7 @@ api:
 	uvicorn app.api.main:app --reload
 
 ui:
-	streamlit run frontend/streamlit_app.py
+	cd frontend/react_app && npm run dev -- --host 127.0.0.1 --port 5173
 
 mcp:
 	$(PYTHON) scripts/run_mcp_server.py

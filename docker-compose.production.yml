@@ -22,20 +22,6 @@ services:
       retries: 5
       start_period: 25s
 
-  streamlit:
-    build:
-      context: .
-      target: streamlit
-    env_file:
-      - .env
-    environment:
-      API_BASE_URL: http://api:8000
-    ports:
-      - "8501:8501"
-    depends_on:
-      api:
-        condition: service_healthy
-
   react:
     build:
       context: .

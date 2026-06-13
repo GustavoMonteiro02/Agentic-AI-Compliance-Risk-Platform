@@ -48,17 +48,18 @@ def test_legal_source_summary_includes_validation_gate():
     summary = legal_source_summary(Path("data"))
 
     assert summary["validation"]["ready"] is False
-    assert any("sample extract" in warning for warning in summary["validation"]["warnings"])
-    assert any("3/113" in warning for warning in summary["validation"]["warnings"])
-    assert any("gdpr" in error for error in summary["validation"]["errors"])
+    assert any("official_source_extract" in warning for warning in summary["validation"]["warnings"])
+    assert any("8/113" in warning for warning in summary["validation"]["warnings"])
+    assert summary["validation"]["errors"] == []
     ai_act = next(source for source in summary["sources"] if source["id"] == "eu-ai-act")
-    assert ai_act["coverage_percent"] < 3
-    assert ai_act["parsed_locators"] == ["Article 14", "Article 15", "Article 9"]
+    assert ai_act["coverage_percent"] < 10
+    assert set(ai_act["parsed_locators"]) == {"Article 9", "Article 10", "Article 11", "Article 12", "Article 13", "Article 14", "Article 15", "Article 16"}
     assert ai_act["missing_required_locators"] == []
     assert ai_act["readiness"]["ready"] is False
     assert "partial_article_coverage" in ai_act["readiness"]["warnings"]
     gdpr = next(source for source in summary["sources"] if source["id"] == "gdpr")
-    assert "local_path_missing" in gdpr["readiness"]["blockers"]
+    assert gdpr["readiness"]["blockers"] == []
+    assert set(gdpr["parsed_locators"]) == {"Article 5", "Article 6", "Article 9", "Article 22", "Article 30", "Article 32", "Article 35"}
 
 
 def test_legal_source_validation_passes_complete_local_sources():

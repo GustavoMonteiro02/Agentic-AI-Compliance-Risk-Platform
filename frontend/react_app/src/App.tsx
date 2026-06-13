@@ -10,8 +10,11 @@ import {
   Database,
   FileCheck2,
   FileText,
+  GitBranch,
   Layers3,
+  Link2,
   RefreshCw,
+  Scale,
   Search,
   ShieldCheck,
   Siren,
@@ -167,13 +170,13 @@ function App() {
         </div>
         <nav>
           <NavButton page="overview" current={page} setPage={setPage} icon={<Activity size={17} />} label="Start here" />
-          <NavButton page="intake" current={page} setPage={setPage} icon={<Layers3 size={17} />} label="1. Create & run" />
-          <NavButton page="assessments" current={page} setPage={setPage} icon={<FileText size={17} />} label="2. Results" />
+          <NavButton page="intake" current={page} setPage={setPage} icon={<Layers3 size={17} />} label="1. Intake" />
+          <NavButton page="assessments" current={page} setPage={setPage} icon={<GitBranch size={17} />} label="2. Assessment map" />
           <NavButton page="evidence" current={page} setPage={setPage} icon={<FileCheck2 size={17} />} label="3. Evidence" />
-          <NavButton page="risks" current={page} setPage={setPage} icon={<AlertTriangle size={17} />} label="4. Risks" />
-          <NavButton page="reviews" current={page} setPage={setPage} icon={<Users size={17} />} label="5. Review" />
+          <NavButton page="risks" current={page} setPage={setPage} icon={<AlertTriangle size={17} />} label="4. Risk register" />
+          <NavButton page="reviews" current={page} setPage={setPage} icon={<Users size={17} />} label="5. Human review" />
           <NavButton page="history" current={page} setPage={setPage} icon={<Clock3 size={17} />} label="History" />
-          <NavButton page="requirements" current={page} setPage={setPage} icon={<Search size={17} />} label="Library" />
+          <NavButton page="requirements" current={page} setPage={setPage} icon={<Search size={17} />} label="Legal library" />
           <NavButton page="incidents" current={page} setPage={setPage} icon={<Siren size={17} />} label="Incidents" />
           <NavButton page="operations" current={page} setPage={setPage} icon={<Database size={17} />} label="Settings" />
         </nav>
@@ -210,6 +213,7 @@ function App() {
           </div>
         </header>
 
+        <LegalNotice />
         {notice ? <div className="notice">{notice}</div> : null}
         {error ? <div className="error">{error}</div> : null}
         <WorkflowGuide state={state} currentPage={page} setPage={setPage} />
@@ -226,6 +230,18 @@ function App() {
         {page === "operations" ? <Operations state={state} run={run} /> : null}
       </section>
     </main>
+  );
+}
+
+function LegalNotice() {
+  return (
+    <div className="legal-notice">
+      <Scale size={18} />
+      <div>
+        <strong>Governance support, not legal advice.</strong>
+        <span>This platform prepares audit and risk-review drafts. Legal conclusions, compliance decisions, and regulatory submissions require qualified human review.</span>
+      </div>
+    </div>
   );
 }
 
@@ -539,11 +555,15 @@ function Assessments({ assessment, state, run }: { assessment: Assessment | null
         </div>
         <p className="muted">{assessment.disclaimer}</p>
       </Panel>
+      <Panel title="Traceability map" meta="Requirement to review">
+        <RelationshipMap assessment={assessment} risks={state.risks.filter((risk) => risk.assessment_id === assessment.id)} />
+      </Panel>
       <Panel title="Mapped controls" meta={`${assessment.mapped_controls.length} controls`}>
-        <Table headers={["Requirement", "Control", "Status"]}>
+        <Table headers={["Requirement", "Source", "Control", "Status"]}>
           {assessment.mapped_controls.map((control) => (
             <div className="tr" key={control.requirement_id}>
               <span>{control.requirement}</span>
+              <span>{sourceLabelFor(assessment, control.requirement_id)}</span>
               <span>{control.mapped_control}</span>
               <span>{control.control_status}</span>
             </div>
@@ -562,6 +582,64 @@ function Assessments({ assessment, state, run }: { assessment: Assessment | null
   );
 }
 
+function RelationshipMap({ assessment, risks }: { assessment: Assessment; risks: RiskItem[] }) {
+  const gaps = [
+    ...assessment.gap_analysis.critical_gaps.map((gap) => ({ ...gap, severity: "critical" })),
+    ...assessment.gap_analysis.medium_gaps.map((gap) => ({ ...gap, severity: "medium" })),
+    ...assessment.gap_analysis.low_gaps.map((gap) => ({ ...gap, severity: "low" })),
+  ];
+
+  return (
+    <div className="relationship-stack">
+      {assessment.mapped_controls.map((control) => {
+        const requirement = assessment.retrieved_requirements.find((item) => item.requirement_id === control.requirement_id);
+        const relatedGaps = gaps.filter((gap) => textMatches(gap.gap, control.requirement, control.mapped_control) || textMatches(gap.recommended_action, control.requirement, control.mapped_control));
+        const relatedEvidence = control.evidence_needed.length ? control.evidence_needed : assessment.evidence_checklist.map((item) => item.evidence).slice(0, 2);
+        return (
+          <article className="relationship-card" key={control.requirement_id}>
+            <div className="relationship-node source">
+              <span>Requirement</span>
+              <strong>{requirement?.locator || control.requirement_id}</strong>
+              <p>{requirement?.title || control.requirement}</p>
+              {requirement?.source_url ? <a href={requirement.source_url} target="_blank" rel="noreferrer"><Link2 size={13} /> Official source</a> : null}
+            </div>
+            <ArrowRight className="relationship-arrow" size={18} />
+            <div className="relationship-node control">
+              <span>Control</span>
+              <strong>{control.control_status}</strong>
+              <p>{control.mapped_control}</p>
+            </div>
+            <ArrowRight className="relationship-arrow" size={18} />
+            <div className="relationship-node evidence">
+              <span>Evidence</span>
+              <strong>{relatedEvidence.length} item{relatedEvidence.length === 1 ? "" : "s"}</strong>
+              <p>{relatedEvidence.slice(0, 2).join("; ") || "No evidence mapped yet."}</p>
+            </div>
+            <ArrowRight className="relationship-arrow" size={18} />
+            <div className="relationship-node review">
+              <span>Review impact</span>
+              <strong>{relatedGaps.length} gap{relatedGaps.length === 1 ? "" : "s"} · {risks.length} risk{risks.length === 1 ? "" : "s"}</strong>
+              <p>{relatedGaps[0]?.recommended_action || assessment.gap_analysis.priority_actions[0] || "No priority action generated yet."}</p>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function sourceLabelFor(assessment: Assessment, requirementId: string) {
+  const requirement = assessment.retrieved_requirements.find((item) => item.requirement_id === requirementId);
+  if (!requirement) return "Generated";
+  return [requirement.locator, requirement.authority || requirement.jurisdiction, requirement.evidence_grade].filter(Boolean).join(" · ") || requirement.source || "Source linked";
+}
+
+function textMatches(text: string, requirement: string, control: string) {
+  const haystack = text.toLowerCase();
+  const tokens = `${requirement} ${control}`.toLowerCase().split(/[^a-z0-9]+/).filter((token) => token.length > 4);
+  return tokens.some((token) => haystack.includes(token));
+}
+
 function Requirements({ query, setQuery, results, setResults, run, legalSources }: { query: string; setQuery: (value: string) => void; results: RequirementSearchResult[]; setResults: (items: RequirementSearchResult[]) => void; run: (fn: () => Promise<void>, success: string) => Promise<void>; legalSources?: LegalSourceSummary }) {
   return (
     <section className="grid-2">
@@ -575,10 +653,20 @@ function Requirements({ query, setQuery, results, setResults, run, legalSources 
         </div>
       </Panel>
       <Panel title="Legal source readiness" meta={legalSources?.ready_for_full_legal_corpus ? "Ready" : "Partial"}>
+        <p className="muted">Source-linked records are for governance testing and audit preparation. Review the official source before relying on any legal interpretation.</p>
         {(legalSources?.sources || []).map((source) => (
           <article className="list-item" key={source.id}>
-            <strong>{source.title}</strong>
-            <p>{source.chunk_count} chunks, {source.ingestion_status}</p>
+            <div className="split">
+              <strong>{source.title}</strong>
+              <span className={`pill ${source.available ? "risk-low" : "risk-high"}`}>{source.available ? "available" : "missing"}</span>
+            </div>
+            <p>{source.chunk_count} chunks · {source.ingestion_status} · {Math.round(source.coverage_percent || 0)}% article coverage</p>
+            <div className="tag-row">
+              <span>{source.jurisdiction}</span>
+              <span>{source.document_type}</span>
+              {source.source_url ? <a className="tag-link" href={source.source_url} target="_blank" rel="noreferrer"><Link2 size={13} /> Official source</a> : null}
+            </div>
+            {[...source.readiness.blockers, ...source.readiness.warnings].slice(0, 2).map((item) => <p className="muted" key={item}>{item}</p>)}
           </article>
         ))}
       </Panel>
@@ -978,10 +1066,12 @@ function RequirementCard({ item }: { item: RequirementSearchResult }) {
     <article className="list-item">
       <div className="split"><strong>{item.title}</strong><span>{item.score?.toFixed(1) || "0.0"}</span></div>
       <p>{item.summary}</p>
+      <KeyValues values={[["Locator", item.locator || item.requirement_id], ["Authority", item.authority || item.jurisdiction || "Internal"], ["Evidence", item.evidence_grade || "Source-linked"]]} />
       <div className="tag-row">
         <span>{item.jurisdiction || "internal"}</span>
         <span>{item.document_type || "policy"}</span>
         <span>{item.citation_quality || "citation"}</span>
+        {item.source_url ? <a className="tag-link" href={item.source_url} target="_blank" rel="noreferrer"><Link2 size={13} /> Official source</a> : null}
       </div>
     </article>
   );

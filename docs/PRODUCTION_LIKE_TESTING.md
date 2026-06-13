@@ -113,8 +113,7 @@ make prod-up
 Open:
 
 - API docs: http://127.0.0.1:8000/docs
-- Streamlit UI: http://127.0.0.1:8501
-- React command center: http://127.0.0.1:5173
+- React UI: http://127.0.0.1:5173
 - MCP HTTP server: http://127.0.0.1:9000
 - Qdrant: http://127.0.0.1:6333/dashboard
 

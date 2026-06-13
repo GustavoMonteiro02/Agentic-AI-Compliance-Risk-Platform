@@ -2,13 +2,13 @@
 
 The platform runs locally without credentials in deterministic mode, but it is designed to run with real LLM-backed refinement in production.
 
-For an end-to-end local stack with PostgreSQL, Qdrant, Streamlit, React, MCP, API-key auth, live OpenAI LLM calls, and OpenAI embeddings, follow [Production-Like Local Testing](PRODUCTION_LIKE_TESTING.md).
+For an end-to-end local stack with PostgreSQL, Qdrant, React, MCP, API-key auth, live LLM calls, and optional managed embeddings, follow [Production-Like Local Testing](PRODUCTION_LIKE_TESTING.md).
 
 ## Required Services
 
 - FastAPI backend
 - PostgreSQL database
-- Streamlit frontend
+- React frontend
 - Optional Qdrant vector database
 - Optional OpenAI-compatible LLM provider
 - Optional LangSmith observability
@@ -282,7 +282,7 @@ docker compose up --build
 Then open:
 
 - API: `http://127.0.0.1:8000`
-- UI: `http://127.0.0.1:8501`
+- UI: `http://127.0.0.1:5173`
 
-The React SaaS UI is available in `frontend/react_app` and can be run with `npm run dev` after installing its dependencies. It uses the same API key, role, and tenant headers as the Streamlit UI through `VITE_*` environment variables.
+The React SaaS UI is available in `frontend/react_app` and can be run with `npm run dev` after installing its dependencies. It uses API key, role, and tenant headers through `VITE_*` environment variables.
 GitHub Actions installs Node.js and runs `npm install && npm run build` for the React command center on push and pull request.

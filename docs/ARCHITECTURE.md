@@ -32,7 +32,7 @@ flowchart TD
 - `app/database`: SQLAlchemy models, session lifecycle, and repositories.
 - `app/schemas`: Pydantic contracts for API, agents, and persistence.
 - `app/services`: orchestration layer that joins repositories and agent workflows.
-- `frontend`: Streamlit UI for product workflow.
+- `frontend/react_app`: React UI for the product workflow.
 - `data`: summarized regulations, policies, controls, and sample systems.
 - `tests`: unit, API, guardrail, and evaluation tests.
 

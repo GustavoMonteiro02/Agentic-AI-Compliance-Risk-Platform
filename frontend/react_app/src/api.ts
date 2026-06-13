@@ -232,6 +232,7 @@ export type LegalSourceSummary = {
     title: string;
     jurisdiction: string;
     document_type: string;
+    source_url?: string;
     ingestion_status: string;
     available: boolean;
     chunk_count: number;

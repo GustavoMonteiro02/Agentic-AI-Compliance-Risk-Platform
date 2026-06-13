@@ -1,6 +1,6 @@
 # AI Governance & Compliance Intelligence Platform
 
-A production-oriented agentic AI governance platform that classifies AI system risk, maps regulatory and internal policy requirements to controls, identifies compliance gaps, generates evidence checklists, and produces audit-ready AI system cards using LangGraph-style orchestration, RAG, MCP, FastAPI, PostgreSQL, and Streamlit.
+A production-oriented agentic AI governance platform that classifies AI system risk, maps regulatory and internal policy requirements to controls, identifies compliance gaps, generates evidence checklists, and produces audit-ready AI system cards using LangGraph-style orchestration, RAG, MCP, FastAPI, PostgreSQL, and a React product UI.
 
 > This project supports governance, risk, compliance, and audit preparation. It does not provide legal advice and never marks an AI system as compliant without human review.
 
@@ -14,7 +14,7 @@ This platform demonstrates how an AI Engineer / Agentic AI Engineer can build ag
 
 ```mermaid
 flowchart LR
-    UI["Streamlit UI"] --> API["FastAPI API"]
+    UI["React UI"] --> API["FastAPI API"]
     API --> DB["PostgreSQL or SQLite dev DB"]
     API --> Graph["Governance LangGraph Workflow"]
     Graph --> Intake["Intake Agent"]
@@ -47,7 +47,7 @@ See [Requirements Coverage](docs/REQUIREMENTS_COVERAGE.md) for a mapping from th
 See [Demo Guide](docs/DEMO.md) for the recommended walkthrough.
 See [Production Mode](docs/PRODUCTION.md) for enabling real LLM refinement, LangSmith metadata, PostgreSQL, and Qdrant.
 See [Test With Your OpenAI API Key](docs/TEST_WITH_OPENAI_KEY.md) for a local live-LLM smoke test and app runbook.
-See [Production-Like Local Testing](docs/PRODUCTION_LIKE_TESTING.md) for a Docker stack with API-key auth, PostgreSQL, Qdrant, Streamlit, React, MCP, live OpenAI LLM calls, and OpenAI embeddings.
+See [Production-Like Local Testing](docs/PRODUCTION_LIKE_TESTING.md) for a Docker stack with API-key auth, PostgreSQL, Qdrant, React, MCP, live LLM calls, and optional managed embeddings.
 
 ## Stack
 
@@ -57,7 +57,7 @@ See [Production-Like Local Testing](docs/PRODUCTION_LIKE_TESTING.md) for a Docke
 - MCP/FastMCP server exposing tools, resources, and prompts
 - PostgreSQL and Qdrant via Docker Compose, SQLite for fast local development and tests
 - Optional OpenAI advisory mode and LangSmith trace metadata
-- Streamlit product UI
+- React product UI
 - pytest evaluation and guardrail tests
 
 ## Features
@@ -139,12 +139,6 @@ uvicorn app.api.main:app --reload
 In another terminal:
 
 ```bash
-API_BASE_URL=http://127.0.0.1:8000 streamlit run frontend/streamlit_app.py
-```
-
-React SaaS UI:
-
-```bash
 cd frontend/react_app
 npm install
 VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev
@@ -156,7 +150,7 @@ Docker:
 docker compose up --build
 ```
 
-Production-like Docker with live LLMs, Qdrant, PostgreSQL, Streamlit, React, and MCP:
+Production-like Docker with live LLMs, Qdrant, PostgreSQL, React, and MCP:
 
 ```bash
 # Fill OPENAI_API_KEY in .env.
@@ -165,7 +159,7 @@ make prod-ingest-qdrant
 make prod-smoke
 ```
 
-`make prod-up` starts FastAPI, Streamlit, React/Vite, MCP, PostgreSQL, and Qdrant from Docker Compose. The React and Python services are built from separate Dockerfile targets.
+`make prod-up` starts FastAPI, React/Vite, MCP, PostgreSQL, and Qdrant from Docker Compose. The React and Python services are built from separate Dockerfile targets.
 
 ## Environment
 
@@ -281,7 +275,7 @@ Prompts:
 
 ## Limitations
 
-- Regulatory documents are summarized, source-linked study notes for product demonstration, not a complete legal corpus.
+- Regulatory documents are source-linked article-level governance records for product testing, not a complete legal corpus or legal advice.
 - The MVP uses deterministic policy logic by default for reproducible tests.
 - Risk results are preliminary and require human compliance/legal review.
 - Retrieval uses local hybrid lexical + metadata ranking with query expansion, explainable reranking, matched-term evidence, citation-quality labels, and evidence grading by default. Qdrant and Pinecone adapters are available as persistent vector-store extension points.
@@ -292,7 +286,7 @@ Prompts:
 
 ## Portfolio Value
 
-- Built an AI Governance & Compliance Intelligence Platform using LangGraph-style orchestration, RAG, MCP, FastAPI, PostgreSQL, and Streamlit to classify AI system risk, map requirements to controls, identify gaps, and generate audit-ready AI system cards.
+- Built an AI Governance & Compliance Intelligence Platform using LangGraph-style orchestration, RAG, MCP, FastAPI, PostgreSQL, and React to classify AI system risk, map requirements to controls, identify gaps, and generate audit-ready AI system cards.
 - Designed agentic workflows for intake, adaptive follow-up questioning, risk classification, regulatory retrieval, control mapping, evidence generation, audit reporting, and human compliance review.
 - Implemented a RAG-based compliance knowledge base over regulatory summaries and internal AI policies to ground recommendations.
 - Created guardrails ensuring AI-generated compliance assessments remain draft-only until approved by a reviewer.

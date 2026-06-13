@@ -5,7 +5,7 @@
 - FastAPI service with health, systems, assessments, reviews, reports, and evaluation routes.
 - SQLAlchemy persistence with SQLite dev support and PostgreSQL compatibility.
 - Deterministic agent workflow covering intake, risk, RAG, controls, gaps, evidence, card, report, and human review.
-- Streamlit UI for dashboard, intake, assessment, evidence, report, and review queue.
+- React UI for dashboard, intake, assessment traceability, evidence, reports, runtime settings, and review queue.
 - pytest coverage for core guardrails and API.
 
 ## v0.2 RAG Knowledge Base - Done
