@@ -427,6 +427,7 @@ function Overview({
 
 function Intake({ state, run, setSelectedAssessmentId }: { state: LoadState; run: (fn: () => Promise<void>, success: string) => Promise<void>; setSelectedAssessmentId: (id: string) => void }) {
   const defaultProvider = state.llmOptions?.providers[0];
+  const runtimeUsesLlm = state.runtime?.ai_generation_mode === "llm" || state.runtime?.ai_generation_mode === "openai";
   const [form, setForm] = useState({
     name: "Recruitment CV Screening Assistant",
     business_unit: "People Operations",
@@ -441,7 +442,7 @@ function Intake({ state, run, setSelectedAssessmentId }: { state: LoadState; run
     autonomy_level: "human-in-the-loop",
     human_oversight_process: "Recruiters review AI rankings before any hiring decision.",
     description: "AI assistant in HR analyzes CVs, ranks candidates, stores embeddings, and produces recommendations for recruiters. Human reviewers make final decisions.",
-    generation_mode: defaultProvider ? "llm" : "deterministic",
+    generation_mode: runtimeUsesLlm && defaultProvider ? "llm" : "deterministic",
     llm_provider: defaultProvider?.id || "",
     model: defaultProvider?.model || "",
   });
@@ -770,9 +771,9 @@ function ProviderSettings({ config, run }: { config?: RuntimeConfig; run: (fn: (
   const active = config?.active;
   const [form, setForm] = useState({
     ai_generation_mode: active?.ai_generation_mode || "deterministic",
-    llm_provider: active?.llm_provider || "openai_compatible",
-    openai_base_url: active?.openai_base_url || "http://ollama:11434/v1",
-    openai_model: active?.openai_model || "llama3.2:3b",
+    llm_provider: active?.llm_provider || "openai",
+    openai_base_url: active?.openai_base_url || "https://api.openai.com/v1",
+    openai_model: active?.openai_model || "gpt-4.1-mini",
     openai_api_key: "",
     anthropic_base_url: active?.anthropic_base_url || "https://api.anthropic.com/v1",
     anthropic_model: active?.anthropic_model || "claude-3-5-sonnet-latest",
@@ -814,15 +815,92 @@ function ProviderSettings({ config, run }: { config?: RuntimeConfig; run: (fn: (
   }, [active]);
 
   const update = (key: string, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const applyPreset = (preset: "deterministic" | "ollama" | "openai" | "anthropic") => {
+    if (preset === "deterministic") {
+      setForm((current) => ({
+        ...current,
+        ai_generation_mode: "deterministic",
+        llm_provider: "openai",
+        openai_base_url: "https://api.openai.com/v1",
+        openai_model: "gpt-4.1-mini",
+        openai_timeout_seconds: "60",
+        openai_max_retries: "2",
+        openai_max_tokens: "2000",
+        embedding_provider: "local_hash",
+        embedding_dimensions: "128",
+      }));
+      return;
+    }
+    if (preset === "ollama") {
+      setForm((current) => ({
+        ...current,
+        ai_generation_mode: "llm",
+        llm_provider: "openai_compatible",
+        openai_base_url: "http://ollama:11434/v1",
+        openai_model: "llama3.2:3b",
+        openai_api_key: current.openai_api_key || "ollama",
+        openai_timeout_seconds: "45",
+        openai_max_retries: "0",
+        openai_max_tokens: "768",
+        embedding_provider: "local_hash",
+        embedding_dimensions: "128",
+      }));
+      return;
+    }
+    if (preset === "openai") {
+      setForm((current) => ({
+        ...current,
+        ai_generation_mode: "llm",
+        llm_provider: "openai",
+        openai_base_url: "https://api.openai.com/v1",
+        openai_model: current.openai_model && current.openai_model !== "llama3.2:3b" ? current.openai_model : "gpt-4.1-mini",
+        openai_api_key: current.openai_api_key === "ollama" ? "" : current.openai_api_key,
+        openai_timeout_seconds: "60",
+        openai_max_retries: "2",
+        openai_max_tokens: "2000",
+      }));
+      return;
+    }
+    setForm((current) => ({
+      ...current,
+      ai_generation_mode: "llm",
+      llm_provider: "anthropic",
+      anthropic_base_url: "https://api.anthropic.com/v1",
+      anthropic_model: current.anthropic_model || "claude-3-5-sonnet-latest",
+      openai_timeout_seconds: "60",
+      openai_max_retries: "2",
+      openai_max_tokens: "2000",
+    }));
+  };
   const selectedProvider = form.llm_provider;
   const providerConfigured =
-    selectedProvider === "anthropic"
+    form.ai_generation_mode === "deterministic"
+      ? true
+      : selectedProvider === "anthropic"
       ? Boolean(form.anthropic_api_key || config?.secrets.anthropic_api_key?.configured)
       : Boolean(form.openai_api_key || config?.secrets.openai_api_key?.configured);
 
   return (
-    <Panel title="Provider settings" meta={providerConfigured ? "Configured" : "Needs key"}>
+    <Panel title="Provider settings" meta={providerConfigured ? "Ready" : "Needs key"}>
       <div className="settings-stack">
+        <div className="preset-grid">
+          <button className={`preset-card ${form.ai_generation_mode === "deterministic" ? "selected" : ""}`} onClick={() => applyPreset("deterministic")}>
+            <strong>Deterministic demo</strong>
+            <small>Fast and safe for testing the app flow. No LLM calls, no API key, no local model load.</small>
+          </button>
+          <button className={`preset-card ${form.llm_provider === "openai_compatible" && form.openai_base_url.includes("ollama") ? "selected" : ""}`} onClick={() => applyPreset("ollama")}>
+            <strong>Local Ollama</strong>
+            <small>Free local LLM. Requires Ollama running and can be slow on smaller machines.</small>
+          </button>
+          <button className={`preset-card ${form.llm_provider === "openai" && form.ai_generation_mode === "llm" ? "selected" : ""}`} onClick={() => applyPreset("openai")}>
+            <strong>OpenAI</strong>
+            <small>Production-style LLM calls. Requires an OpenAI API key and account credits.</small>
+          </button>
+          <button className={`preset-card ${form.llm_provider === "anthropic" ? "selected" : ""}`} onClick={() => applyPreset("anthropic")}>
+            <strong>Anthropic</strong>
+            <small>Alternative production provider. Requires an Anthropic API key.</small>
+          </button>
+        </div>
         <Select label="Generation mode" value={form.ai_generation_mode} options={["deterministic", "llm"]} onChange={(value) => update("ai_generation_mode", value)} />
         <Select label="Provider" value={form.llm_provider} options={["openai_compatible", "openai", "anthropic"]} onChange={(value) => {
           const preset = value === "openai" ? { openai_base_url: "https://api.openai.com/v1", openai_model: "gpt-4.1-mini" } : value === "openai_compatible" ? { openai_base_url: form.openai_base_url || "http://ollama:11434/v1", openai_model: form.openai_model || "llama3.2:3b" } : {};

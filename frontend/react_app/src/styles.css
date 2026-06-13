@@ -130,6 +130,36 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .inline-form input { flex: 1 1 320px; }
 .settings-stack { display: grid; gap: 4px; }
 .mini-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.preset-card {
+  min-width: 0;
+  min-height: 116px;
+  border: 1px solid #dce3ea;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfe;
+  color: #172033;
+  text-align: left;
+}
+.preset-card:hover, .preset-card.selected {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+.preset-card strong, .preset-card small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.preset-card small {
+  margin-top: 6px;
+  color: #667085;
+  line-height: 1.35;
+}
 
 .workflow-band {
   display: grid;
@@ -308,6 +338,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   .grid-2, .form-grid { grid-template-columns: 1fr; }
   .workflow-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .action-grid { grid-template-columns: 1fr; }
+  .preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -315,5 +346,5 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   .topbar, .top-actions, .workflow-head, .operator-lane, .operator-actions { display: grid; align-items: stretch; }
   .top-actions select { min-width: 0; }
   nav, .runtime, .workflow-steps { grid-template-columns: 1fr; }
-  .mini-grid { grid-template-columns: 1fr; }
+  .mini-grid, .preset-grid { grid-template-columns: 1fr; }
 }
