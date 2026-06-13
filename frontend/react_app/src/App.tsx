@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
   BarChart3,
   CheckCircle2,
+  ClipboardCheck,
   Database,
   FileCheck2,
   FileText,
@@ -204,8 +206,9 @@ function App() {
 
         {notice ? <div className="notice">{notice}</div> : null}
         {error ? <div className="error">{error}</div> : null}
+        <WorkflowGuide state={state} currentPage={page} setPage={setPage} />
 
-        {page === "overview" ? <Overview state={state} summary={summary} /> : null}
+        {page === "overview" ? <Overview state={state} summary={summary} setPage={setPage} /> : null}
         {page === "intake" ? <Intake state={state} run={run} setSelectedAssessmentId={setSelectedAssessmentId} /> : null}
         {page === "assessments" ? <Assessments assessment={selectedAssessment} state={state} run={run} /> : null}
         {page === "requirements" ? <Requirements query={requirementQuery} setQuery={setRequirementQuery} results={requirements} setResults={setRequirements} run={run} legalSources={state.legalSources} /> : null}
@@ -225,6 +228,73 @@ function NavButton({ page, current, setPage, icon, label }: { page: Page; curren
       {icon} {label}
     </button>
   );
+}
+
+type WorkflowStep = {
+  page: Page;
+  label: string;
+  status: "done" | "active" | "todo" | "attention";
+  metric: string;
+};
+
+function getWorkflowSteps(state: LoadState): WorkflowStep[] {
+  const hasRuntime = Boolean(state.runtime);
+  const hasSystems = state.systems.length > 0;
+  const hasAssessment = state.assessments.length > 0;
+  const missingEvidence = state.assessments.flatMap((item) => item.evidence_checklist).filter((item) => item.status === "missing").length;
+  const hasRisks = state.risks.length > 0;
+  const pendingReviews = state.assessments.filter((item) => item.human_review_status !== "approved").length;
+  return [
+    { page: "operations", label: "Runtime", status: hasRuntime && state.readiness?.ready ? "done" : hasRuntime ? "attention" : "active", metric: state.runtime?.llm_provider || "setup" },
+    { page: "intake", label: "Create", status: hasSystems ? "done" : "active", metric: `${state.systems.length} systems` },
+    { page: "assessments", label: "Assess", status: hasAssessment ? "done" : hasSystems ? "active" : "todo", metric: `${state.assessments.length} runs` },
+    { page: "evidence", label: "Evidence", status: !hasAssessment ? "todo" : missingEvidence ? "attention" : "done", metric: `${missingEvidence} missing` },
+    { page: "risks", label: "Risks", status: !hasAssessment ? "todo" : hasRisks ? "done" : "active", metric: `${state.risks.length} items` },
+    { page: "reviews", label: "Review", status: !hasAssessment ? "todo" : pendingReviews ? "attention" : "done", metric: `${pendingReviews} pending` },
+  ];
+}
+
+function nextWorkflowPage(steps: WorkflowStep[]): Page {
+  return steps.find((step) => step.status === "active" || step.status === "attention")?.page || "assessments";
+}
+
+function WorkflowGuide({ state, currentPage, setPage }: { state: LoadState; currentPage: Page; setPage: (page: Page) => void }) {
+  const steps = getWorkflowSteps(state);
+  const nextPage = nextWorkflowPage(steps);
+  return (
+    <section className="workflow-band">
+      <div className="workflow-head">
+        <div>
+          <span className="eyebrow">Assessment flow</span>
+          <strong>{workflowSummary(steps)}</strong>
+        </div>
+        <button className="primary compact" onClick={() => setPage(nextPage)}>
+          Continue <ArrowRight size={15} />
+        </button>
+      </div>
+      <div className="workflow-steps">
+        {steps.map((step, index) => (
+          <button
+            key={step.page}
+            className={`flow-step ${step.status} ${currentPage === step.page ? "selected" : ""}`}
+            onClick={() => setPage(step.page)}
+          >
+            <span className="flow-index">{step.status === "done" ? <CheckCircle2 size={15} /> : index + 1}</span>
+            <span>
+              <strong>{step.label}</strong>
+              <small>{step.metric}</small>
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function workflowSummary(steps: WorkflowStep[]) {
+  const next = steps.find((step) => step.status === "active" || step.status === "attention");
+  if (!next) return "Assessment package ready";
+  return `${next.label} is next`;
 }
 
 function titleFor(page: Page) {
@@ -257,6 +327,7 @@ function Metric({ label, value, detail, icon }: { label: string; value: string |
 function Overview({
   state,
   summary,
+  setPage,
 }: {
   state: LoadState;
   summary: {
@@ -266,7 +337,10 @@ function Overview({
     openRisks: RiskItem[];
     openIncidents: Incident[];
   };
+  setPage: (page: Page) => void;
 }) {
+  const steps = getWorkflowSteps(state);
+  const nextPage = nextWorkflowPage(steps);
   return (
     <>
       <section className="metrics-grid">
@@ -278,6 +352,20 @@ function Overview({
         <Metric label="Open incidents" value={summary.openIncidents.length} detail="Response workflow" icon={<Siren size={20} />} />
         <Metric label="LLM tokens" value={state.llmUsage?.total_tokens || 0} detail={`${state.llmUsage?.llm_call_count || 0} calls`} icon={<BarChart3 size={20} />} />
         <Metric label="Preflight" value={state.preflight?.release_ready ? "Ready" : "Review"} detail={`${state.preflight?.warning_count || 0} warnings`} icon={<ShieldCheck size={20} />} />
+      </section>
+      <section className="operator-lane">
+        <div>
+          <span className="eyebrow">Current handoff</span>
+          <h2>{workflowSummary(steps)}</h2>
+        </div>
+        <div className="operator-actions">
+          <button className="primary" onClick={() => setPage(nextPage)}>
+            Open next workspace <ArrowRight size={16} />
+          </button>
+          <button className="secondary" onClick={() => setPage("operations")}>
+            <ClipboardCheck size={16} /> Check runtime
+          </button>
+        </div>
       </section>
       <section className="grid-2">
         <Panel title="Recent assessments" meta={`${state.assessments.length} total`}>
