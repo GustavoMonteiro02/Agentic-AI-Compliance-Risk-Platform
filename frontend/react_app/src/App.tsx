@@ -6,6 +6,7 @@ import {
   BarChart3,
   CheckCircle2,
   ClipboardCheck,
+  Clock3,
   Database,
   FileCheck2,
   FileText,
@@ -19,6 +20,7 @@ import {
 import { API_BASE_URL, api } from "./api";
 import type {
   Assessment,
+  AuditEvent,
   EvidenceRecord,
   Incident,
   LegalSourceSummary,
@@ -36,7 +38,7 @@ import type {
 } from "./api";
 import "./styles.css";
 
-type Page = "overview" | "intake" | "assessments" | "requirements" | "evidence" | "risks" | "incidents" | "reviews" | "operations";
+type Page = "overview" | "intake" | "assessments" | "requirements" | "evidence" | "risks" | "incidents" | "reviews" | "history" | "operations";
 
 type LoadState = {
   runtime?: RuntimeStatus;
@@ -51,6 +53,7 @@ type LoadState = {
   incidents: Incident[];
   reviewQueue: ReviewQueueItem[];
   escalations: ReviewEscalation[];
+  auditEvents: AuditEvent[];
   legalSources?: LegalSourceSummary;
 };
 
@@ -61,6 +64,7 @@ const emptyState: LoadState = {
   incidents: [],
   reviewQueue: [],
   escalations: [],
+  auditEvents: [],
 };
 
 const riskOrder: Record<string, number> = { critical: 5, unacceptable: 4, high: 3, medium: 2, limited: 1, minimal: 0, low: 0 };
@@ -88,7 +92,7 @@ function App() {
 
   const refresh = async () => {
     setError("");
-    const [runtime, runtimeConfig, llmOptions, readiness, preflight, llmUsage, systems, assessments, risks, incidents, reviewQueue, escalations, legalSources] =
+    const [runtime, runtimeConfig, llmOptions, readiness, preflight, llmUsage, systems, assessments, risks, incidents, reviewQueue, escalations, auditEvents, legalSources] =
       await Promise.all([
         api.runtime(),
         api.runtimeConfig(),
@@ -102,9 +106,10 @@ function App() {
         api.incidents(),
         api.reviewQueue(),
         api.reviewEscalations(),
+        api.auditEvents(),
         api.legalSources(),
       ]);
-    setState({ runtime, runtimeConfig, llmOptions, readiness, preflight, llmUsage, systems, assessments, risks, incidents, reviewQueue, escalations, legalSources });
+    setState({ runtime, runtimeConfig, llmOptions, readiness, preflight, llmUsage, systems, assessments, risks, incidents, reviewQueue, escalations, auditEvents, legalSources });
     if (!selectedAssessmentId && assessments[0]) setSelectedAssessmentId(assessments[0].id);
   };
 
@@ -161,15 +166,16 @@ function App() {
           </div>
         </div>
         <nav>
-          <NavButton page="overview" current={page} setPage={setPage} icon={<Activity size={17} />} label="Overview" />
-          <NavButton page="intake" current={page} setPage={setPage} icon={<Layers3 size={17} />} label="Create Assessment" />
-          <NavButton page="assessments" current={page} setPage={setPage} icon={<FileText size={17} />} label="Assessments" />
-          <NavButton page="requirements" current={page} setPage={setPage} icon={<Search size={17} />} label="Requirements" />
-          <NavButton page="evidence" current={page} setPage={setPage} icon={<FileCheck2 size={17} />} label="Evidence" />
-          <NavButton page="risks" current={page} setPage={setPage} icon={<AlertTriangle size={17} />} label="Risks" />
+          <NavButton page="overview" current={page} setPage={setPage} icon={<Activity size={17} />} label="Start here" />
+          <NavButton page="intake" current={page} setPage={setPage} icon={<Layers3 size={17} />} label="1. Create & run" />
+          <NavButton page="assessments" current={page} setPage={setPage} icon={<FileText size={17} />} label="2. Results" />
+          <NavButton page="evidence" current={page} setPage={setPage} icon={<FileCheck2 size={17} />} label="3. Evidence" />
+          <NavButton page="risks" current={page} setPage={setPage} icon={<AlertTriangle size={17} />} label="4. Risks" />
+          <NavButton page="reviews" current={page} setPage={setPage} icon={<Users size={17} />} label="5. Review" />
+          <NavButton page="history" current={page} setPage={setPage} icon={<Clock3 size={17} />} label="History" />
+          <NavButton page="requirements" current={page} setPage={setPage} icon={<Search size={17} />} label="Library" />
           <NavButton page="incidents" current={page} setPage={setPage} icon={<Siren size={17} />} label="Incidents" />
-          <NavButton page="reviews" current={page} setPage={setPage} icon={<Users size={17} />} label="Reviews" />
-          <NavButton page="operations" current={page} setPage={setPage} icon={<Database size={17} />} label="Operations" />
+          <NavButton page="operations" current={page} setPage={setPage} icon={<Database size={17} />} label="Settings" />
         </nav>
         <div className="runtime">
           <span>Tenant</span>
@@ -216,6 +222,7 @@ function App() {
         {page === "risks" ? <Risks risks={state.risks} assessment={selectedAssessment} run={run} /> : null}
         {page === "incidents" ? <Incidents incidents={state.incidents} systems={state.systems} assessment={selectedAssessment} run={run} /> : null}
         {page === "reviews" ? <Reviews queue={state.reviewQueue} assessment={selectedAssessment} run={run} /> : null}
+        {page === "history" ? <History events={state.auditEvents} setPage={setPage} /> : null}
         {page === "operations" ? <Operations state={state} run={run} /> : null}
       </section>
     </main>
@@ -307,6 +314,7 @@ function titleFor(page: Page) {
     risks: "Risk register",
     incidents: "Incident response",
     reviews: "Human review",
+    history: "Activity history",
     operations: "Runtime operations",
   }[page];
 }
@@ -367,6 +375,32 @@ function Overview({
           </button>
         </div>
       </section>
+      <section className="action-grid">
+        <button className="action-card" onClick={() => setPage("intake")}>
+          <Layers3 size={20} />
+          <span>
+            <strong>Create and run an assessment</strong>
+            <small>Register the AI system and immediately generate risk, gaps, evidence, and reports.</small>
+          </span>
+          <ArrowRight size={16} />
+        </button>
+        <button className="action-card" onClick={() => setPage("assessments")}>
+          <FileText size={20} />
+          <span>
+            <strong>Open assessment results</strong>
+            <small>Read the risk decision, mapped controls, gap analysis, and export audit documents.</small>
+          </span>
+          <ArrowRight size={16} />
+        </button>
+        <button className="action-card" onClick={() => setPage("reviews")}>
+          <Users size={20} />
+          <span>
+            <strong>Finish human review</strong>
+            <small>Approve, reject, or request more evidence for the selected assessment.</small>
+          </span>
+          <ArrowRight size={16} />
+        </button>
+      </section>
       <section className="grid-2">
         <Panel title="Recent assessments" meta={`${state.assessments.length} total`}>
           <Table headers={["System", "Risk", "Review", "Evidence"]}>
@@ -382,6 +416,9 @@ function Overview({
         </Panel>
         <Panel title="Runtime readiness" meta={state.readiness?.ready ? "Ready" : "Needs attention"}>
           <KeyValues values={Object.entries(state.readiness?.checks || {}).slice(0, 8).map(([key, value]) => [key.replace(/_/g, " "), value.ok === false || value.current === false ? "attention" : "ok"])} />
+        </Panel>
+        <Panel title="Recent history" meta={`${state.auditEvents.length} persisted events`}>
+          <Timeline events={state.auditEvents.slice(0, 8)} />
         </Panel>
       </section>
     </>
@@ -651,6 +688,53 @@ function Reviews({ queue, assessment, run }: { queue: ReviewQueueItem[]; assessm
   );
 }
 
+function History({ events, setPage }: { events: AuditEvent[]; setPage: (page: Page) => void }) {
+  return (
+    <section className="grid-2">
+      <Panel title="Persistent activity history" meta={`${events.length} latest events`}>
+        <Timeline events={events} />
+      </Panel>
+      <Panel title="What is stored" meta="Audit trail">
+        <div className="key-values">
+          <div><span>System creation</span><strong>persisted</strong></div>
+          <div><span>Assessment runs</span><strong>persisted</strong></div>
+          <div><span>Evidence updates</span><strong>persisted</strong></div>
+          <div><span>Risk/review/incident actions</span><strong>persisted</strong></div>
+        </div>
+        <div className="button-row">
+          <button className="secondary" onClick={() => setPage("intake")}>Create new assessment</button>
+          <button className="secondary" onClick={() => setPage("assessments")}>Open results</button>
+        </div>
+      </Panel>
+    </section>
+  );
+}
+
+function Timeline({ events }: { events: AuditEvent[] }) {
+  if (!events.length) return <Empty text="No persisted activity yet. Create and run an assessment to start the history." />;
+  return (
+    <div className="timeline">
+      {events.map((event) => (
+        <article className="timeline-item" key={event.id}>
+          <span className="timeline-dot" />
+          <div>
+            <div className="split">
+              <strong>{actionLabel(event.action)}</strong>
+              <small>{formatDateTime(event.created_at)}</small>
+            </div>
+            <p>{eventSummary(event)}</p>
+            <div className="tag-row">
+              <span>{event.actor}</span>
+              <span>{event.resource_type}</span>
+              {event.assessment_id ? <span>assessment</span> : null}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function Operations({ state, run }: { state: LoadState; run: (fn: () => Promise<void>, success: string) => Promise<void> }) {
   return (
     <section className="grid-2">
@@ -860,6 +944,24 @@ function KeyValues({ values }: { values: [string, string | number][] }) {
 
 function Empty({ text }: { text: string }) {
   return <div className="empty">{text}</div>;
+}
+
+function actionLabel(action: string) {
+  return action.replace(/\./g, " ").replace(/_/g, " ");
+}
+
+function eventSummary(event: AuditEvent) {
+  const details = event.details_json || {};
+  const name = typeof details.system_name === "string" ? details.system_name : typeof details.name === "string" ? details.name : "";
+  const risk = typeof details.risk_level === "string" ? ` Risk: ${details.risk_level}.` : "";
+  const status = typeof details.status === "string" ? ` Status: ${details.status}.` : "";
+  if (name) return `${name}.${risk}${status}`.trim();
+  return `${nice(event.resource_id || event.assessment_id || event.resource_type)}.${risk}${status}`.trim();
+}
+
+function formatDateTime(value: string) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
 export default App;

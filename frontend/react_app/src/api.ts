@@ -240,6 +240,19 @@ export type LegalSourceSummary = {
   }[];
 };
 
+export type AuditEvent = {
+  id: string;
+  tenant_id: string;
+  assessment_id?: string;
+  actor: string;
+  actor_role: string;
+  action: string;
+  resource_type: string;
+  resource_id?: string;
+  details_json: Record<string, unknown>;
+  created_at: string;
+};
+
 export type PolicyExceptionQueueItem = {
   id: string;
   title: string;
@@ -305,6 +318,7 @@ export const api = {
   updateIncident: (incidentId: string, payload: Record<string, unknown>) => request<Incident>("PATCH", `/incidents/${incidentId}`, payload),
   reviewQueue: () => request<ReviewQueueItem[]>("GET", "/reviews/queue"),
   reviewEscalations: () => request<ReviewEscalation[]>("GET", "/reviews/escalations"),
+  auditEvents: () => request<AuditEvent[]>("GET", "/audit/events?limit=100"),
   reviewAction: (assessmentId: string, action: "approve" | "reject" | "request-more-evidence", payload: Record<string, unknown>) =>
     request<Record<string, unknown>>("POST", `/reviews/${assessmentId}/${action}`, payload),
   requirementSearch: (query: string) => request<RequirementSearchResult[]>("GET", `/requirements/search?q=${encodeURIComponent(query)}&top_k=8`),

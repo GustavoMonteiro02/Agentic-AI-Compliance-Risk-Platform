@@ -54,3 +54,17 @@ def test_audit_events_are_scoped_by_tenant():
     assert tenant_a_events[0]["tenant_id"] == "tenant-a"
     assert tenant_a_events[0]["action"] == "evidence.updated"
     assert tenant_b_events == []
+
+
+def test_tenant_activity_history_is_persisted_and_scoped():
+    system = _create_system("history-tenant-a", "Tenant A History System")
+    assessment = client.post(f"/systems/{system['id']}/assess", headers=_headers("history-tenant-a")).json()
+
+    tenant_a_events = client.get("/audit/events", headers=_headers("history-tenant-a", "auditor")).json()
+    tenant_b_events = client.get("/audit/events", headers=_headers("history-tenant-b", "auditor")).json()
+
+    actions = [event["action"] for event in tenant_a_events]
+    assert "system.created" in actions
+    assert "assessment.created" in actions
+    assert any(event["assessment_id"] == assessment["id"] for event in tenant_a_events)
+    assert tenant_b_events == []

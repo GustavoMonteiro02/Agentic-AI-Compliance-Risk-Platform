@@ -47,3 +47,13 @@ class AuditService:
                 .order_by(models.AuditEvent.created_at.desc())
             )
         )
+
+    def list_for_tenant(self, tenant_id: str = "default", limit: int = 100) -> list[models.AuditEvent]:
+        return list(
+            self.db.scalars(
+                select(models.AuditEvent)
+                .where(models.AuditEvent.tenant_id == tenant_id)
+                .order_by(models.AuditEvent.created_at.desc())
+                .limit(limit)
+            )
+        )

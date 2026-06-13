@@ -8,6 +8,7 @@ from app.schemas.assessment import AssessmentRunRequest
 from app.schemas.system import AISystemCreate, AISystemUpdate
 from app.security import AuthenticatedUser, require_roles
 from app.services.assessment_service import AssessmentService
+from app.services.audit_service import AuditService
 from app.services.system_service import SystemService
 
 router = APIRouter(prefix="/systems", tags=["systems"], dependencies=[Depends(require_roles("viewer"))])
@@ -48,7 +49,15 @@ def create_system(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("admin"))],
 ) -> dict:
-    return serialize_system(SystemService(db, user.tenant_id).create(payload))
+    system = SystemService(db, user.tenant_id).create(payload)
+    AuditService(db).record(
+        user=user,
+        action="system.created",
+        resource_type="ai_system",
+        resource_id=system.id,
+        details={"name": system.name, "business_unit": system.business_unit, "deployment_status": system.deployment_status},
+    )
+    return serialize_system(system)
 
 
 @router.get("")
@@ -78,7 +87,15 @@ def update_system(
     db: DbSession,
     user: Annotated[AuthenticatedUser, Depends(require_roles("admin"))],
 ) -> dict:
-    return serialize_system(SystemService(db, user.tenant_id).update(system_id, payload))
+    system = SystemService(db, user.tenant_id).update(system_id, payload)
+    AuditService(db).record(
+        user=user,
+        action="system.updated",
+        resource_type="ai_system",
+        resource_id=system.id,
+        details={"name": system.name, "deployment_status": system.deployment_status},
+    )
+    return serialize_system(system)
 
 
 @router.post("/{system_id}/intake", dependencies=[Depends(require_roles("compliance_reviewer"))])
@@ -88,7 +105,16 @@ def intake_system(
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
     payload: AssessmentRunRequest | None = None,
 ) -> dict:
-    return AssessmentService(db, user.tenant_id).assess_system(system_id, payload).model_dump(mode="json")["profile"]
+    assessment = AssessmentService(db, user.tenant_id).assess_system(system_id, payload)
+    AuditService(db).record(
+        user=user,
+        action="assessment.intake_completed",
+        resource_type="assessment",
+        resource_id=assessment.id,
+        assessment_id=assessment.id,
+        details={"system_id": system_id, "system_name": assessment.profile.system_name},
+    )
+    return assessment.model_dump(mode="json")["profile"]
 
 
 @router.post("/{system_id}/assess", dependencies=[Depends(require_roles("compliance_reviewer"))])
@@ -98,7 +124,21 @@ def assess_system(
     user: Annotated[AuthenticatedUser, Depends(require_roles("compliance_reviewer"))],
     payload: AssessmentRunRequest | None = None,
 ) -> dict:
-    return AssessmentService(db, user.tenant_id).assess_system(system_id, payload).model_dump(mode="json")
+    assessment = AssessmentService(db, user.tenant_id).assess_system(system_id, payload)
+    AuditService(db).record(
+        user=user,
+        action="assessment.created",
+        resource_type="assessment",
+        resource_id=assessment.id,
+        assessment_id=assessment.id,
+        details={
+            "system_id": system_id,
+            "system_name": assessment.profile.system_name,
+            "risk_level": assessment.risk_classification.risk_level,
+            "generation_mode": payload.llm_config.ai_generation_mode if payload and payload.llm_config else None,
+        },
+    )
+    return assessment.model_dump(mode="json")
 
 
 @router.get("/{system_id}/assessment")

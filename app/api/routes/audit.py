@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import Response as FastAPIResponse
 
 from app.api.deps import DbSession
@@ -32,6 +32,21 @@ def tenant_audit_export_zip(
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{user.tenant_id}_audit_export.zip"'},
     )
+
+
+@router.get("/events")
+def tenant_events(
+    response: Response,
+    db: DbSession,
+    user: Annotated[AuthenticatedUser, Depends(require_roles("auditor"))],
+    limit: int = Query(default=100, ge=1, le=250),
+    pagination: PaginationParams = Depends(get_pagination),
+) -> list[AuditEventRead]:
+    events = [
+        AuditEventRead.model_validate(event)
+        for event in AuditService(db).list_for_tenant(user.tenant_id, limit=limit)
+    ]
+    return paginate(events, pagination, response)
 
 
 @router.get("/assessments/{assessment_id}/events")
